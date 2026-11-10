@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alendronato: Só Água!</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #071a2b, #123b5d);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        #game {
+            width: 900px;
+            max-width: 95vw;
+            height: 650px;
+            max-height: 95vh;
+            background: linear-gradient(#80d8ff 0%, #dff8ff 70%, #79c267 70%);
+            border: 5px solid #ffffff;
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.5);
+        }
+
+        /* ---------------- MENU ---------------- */
+
+        #menu {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, #09243b, #087e9f);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .menu-content {
+            width: 90%;
+            max-width: 600px;
+        }
+
+        .logo {
+            font-size: 70px;
+            margin-bottom: 5px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        h1 {
+            font-size: 42px;
+            color: #ffffff;
+            text-shadow: 3px 3px 0 #06344e;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 20px;
+            margin-bottom: 25px;
+        }
+
+        .instructions {
+            background: rgba(255,255,255,0.12);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            line-height: 1.6;
+            text-align: left;
+        }
+
+        .instructions strong {
+            color: #7dffcc;
+        }
+
+        button {
+            border: none;
+            background: #00d084;
+            color: white;
+            padding: 16px 35px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #008a58;
+            transition: 0.15s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            background: #00e897;
+        }
+
+        button:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 #008a58;
+        }
+
+        /* ---------------- HUD ---------------- */
+
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 75px;
+            background: rgba(5, 36, 57, 0.92);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            border-bottom: 3px solid white;
+        }
+
+        .hud-item {
+            font-size: 21px;
+            font-weight: bold;
+        }
+
+        #message {
+            position: absolute;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.85);
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            z-index: 20;
+            opacity: 0;
+            transition: opacity 0.3s;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        #message.show {
+            opacity: 1;
+        }
+
+        #message.good {
+            background: #008f61;
+            border: 2px solid #7dffcc;
+        }
+
+        #message.bad {
+            background: #d62828;
+            border: 2px solid #ff7d7d;
+        }
+
+        /* ---------------- JOGO ---------------- */
+
+        #gameArea {
+            position: absolute;
+            top: 75px;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .cloud {
+            position: absolute;
+            background: white;
+            width: 100px;
+            height: 35px;
+            border-radius: 30px;
+            opacity: 0.7;
+        }
+
+        .cloud::before,
+        .cloud::after {
+            content: "";
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+        }
+
+        .cloud::before {
+            width: 45px;
+            height: 45px;
+            left: 15px;
+            top: -20px;
+        }
+
+        .cloud::after {
+            width: 55px;
+            height: 55px;
+            right: 10px;
+            top: -28px;
+        }
+
+        .c1 {
+            left: 10%;
+            top: 12%;
+        }
+
+        .c2 {
+            right: 15%;
+            top: 25%;
+            transform: scale(0.7);
+        }
+
+        /* ---------------- JOGADOR ---------------- */
+
+        #player {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85px;
+            height: 85px;
+            background: #fff;
+            border: 4px solid #06344e;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 50px;
+            z-index: 5;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        #player.hit {
+            animation: hit 0.45s;
+        }
+
+        @keyframes hit {
+            0%, 100% {
+                transform: translateX(-50%) rotate(0);
+            }
+
+            25% {
+                transform: translateX(-50%) rotate(-15deg) scale(1.1);
+            }
+
+            50% {
+                transform: translateX(-50%) rotate(15deg) scale(0.9);
+            }
+
+            75% {
+                transform: translateX(-50%) rotate(-10deg) scale(1.1);
+            }
+        }
+
+        /* ---------------- BEBIDAS ---------------- */
+
+        .drink {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 35px;
+            border: 3px solid white;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.3);
+            z-index: 4;
+        }
+
+        .drink-label {
+            position: absolute;
+            top: 62px;
+            font-size: 11px;
+            font-weight: bold;
+            color: #06344e;
+            background: white;
+            padding: 2px 6px;
+            border-radius: 8px;
+            white-space: nowrap;
+        }
+
+        .water {
+            background: #27bfff;
+        }
+
+        .coffee {
+            background: #6f4e37;
+        }
+
+        .milk {
+            background: #e0e0e0;
+        }
+
+        .juice {
+            background: #ff9d00;
+        }
+
+        /* ---------------- REMÉDIO ESPECIAL ---------------- */
+
+        .special-medicine {
+            background: linear-gradient(
+                135deg,
+                #ff4fa3,
+                #d90075
+            );
+
+            border: 3px solid #ffe066;
+
+            box-shadow:
+                0 0 12px #ff4fa3,
+                0 0 25px #ffe066,
+                0 5px 10px rgba(0,0,0,0.3);
+
+            animation: specialPulse 0.8s infinite alternate;
+        }
+
+        @keyframes specialPulse {
+            from {
+                transform: scale(1);
+                box-shadow:
+                    0 0 10px #ff4fa3,
+                    0 0 15px #ffe066;
+            }
+
+            to {
+                transform: scale(1.12);
+                box-shadow:
+                    0 0 20px #ff4fa3,
+                    0 0 35px #ffe066;
+            }
+        }
+
+        /* ---------------- GAME OVER ---------------- */
+
+        #gameOver {
+            position: absolute;
+            inset: 0;
+            background: rgba(3, 24, 38, 0.95);
+            z-index: 50;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        #gameOver.show {
+            display: flex;
+        }
+
+        .gameover-content {
+            width: 90%;
+            max-width: 550px;
+        }
+
+        .gameover-icon {
+            font-size: 70px;
+            margin-bottom: 10px;
+        }
+
+        .lesson {
+            background: #123b5d;
+            padding: 18px;
+            border-radius: 15px;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            text-align: left;
+            font-size: 15px;
+        }
+
+        #tip {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #06344e;
+            font-weight: bold;
+            font-size: 14px;
+            z-index: 3;
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="game">
+
+    <!-- MENU -->
+    <div id="menu">
+
+        <div class="menu-content">
+
+            <div class="logo">💊💧</div>
+
+            <h1>ALENDRONATO</h1>
+
+            <div class="subtitle">
+                <strong>Só Água!</strong>
+            </div>
+
+            <div class="instructions">
+
+                <p>
+                    O <strong>Alendronato de Sódio</strong> precisa ser tomado
+                    exclusivamente com <strong>Água pura</strong>!
+                </p>
+
+                <br>
+
+                <p>
+                    💧 Pegue a <strong>ÁGUA</strong>!
+                    Se deixar ela ir embora, você <strong>perde vida</strong>!
+                </p>
+
+                <p>
+                    ☕ 🥛 🧃 Evite <strong>Outras Bebidas</strong>.
+                </p>
+
+                <p>
+                    💊 Pegue o <strong>REMÉDIO ESPECIAL</strong>
+                    para recuperar 1 vida!
+                </p>
+
+                <br>
+
+                <p>
+                    🎮 <strong>Controles:</strong>
+                    Use ← → / A D ou
+                    <strong>Arraste o Dedo</strong> na tela.
+                </p>
+
+            </div>
+
+            <button onclick="startGame()">
+                ▶ COMEÇAR JOGO
+            </button>
+
+        </div>
+
+    </div>
+
+    <!-- HUD -->
+    <div id="hud">
+
+        <div class="hud-item">
+            ❤️ Vidas: <span id="lives">3</span>
+        </div>
+
+    </div>
+
+    <!-- MENSAGEM -->
+    <div id="message"></div>
+
+    <!-- ÁREA DO JOGO -->
+    <div id="gameArea">
+
+        <div class="cloud c1"></div>
+        <div class="cloud c2"></div>
+
+        <div id="player">💊</div>
+
+        <div id="tip">
+            💧 Não deixe a ÁGUA passar!
+            &nbsp;&nbsp; 💊 Remédio especial = +1 vida
+        </div>
+
+    </div>
+
+    <!-- GAME OVER -->
+    <div id="gameOver">
+
+        <div class="gameover-content">
+
+            <div class="gameover-icon">
+                🏥
+            </div>
+
+            <h1>Fim de Jogo!</h1>
+
+            <div class="lesson">
+
+                <strong>
+                    📚 Por que a água é indispensável?
+                </strong>
+
+                <br><br>
+
+                O Alendronato precisa de um copo cheio de
+                <strong>água pura</strong> para descer rapidamente
+                ao estômago sem irritar o esôfago.
+
+                <br><br>
+
+                Por isso, é importante seguir corretamente
+                as orientações de uso do medicamento.
+
+            </div>
+
+            <button onclick="restartGame()">
+                🔄 JOGAR NOVAMENTE
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+    // ================================
+    // ÁUDIO
+    // ================================
+
+    const audioCtx = new (
+        window.AudioContext ||
+        window.webkitAudioContext
+    )();
+
+    function playSound(type) {
+
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'good') {
+
+            osc.frequency.setValueAtTime(
+                587.33,
+                audioCtx.currentTime
+            );
+
+            osc.frequency.exponentialRampToValueAtTime(
+                880,
+                audioCtx.currentTime + 0.15
+            );
+
+            gain.gain.setValueAtTime(
+                0.1,
+                audioCtx.currentTime
+            );
+
+            gain.gain.exponentialRampToValueAtTime(
+                0.01,
+                audioCtx.currentTime + 0.15
+            );
+
+            osc.start();
+
+            osc.stop(
+                audioCtx.currentTime + 0.15
+            );
+
+        } else {
+
+            osc.type = 'sawtooth';
+
+            osc.frequency.setValueAtTime(
+                150,
+                audioCtx.currentTime
+            );
+
+            osc.frequency.linearRampToValueAtTime(
+                80,
+                audioCtx.currentTime + 0.2
+            );
+
+            gain.gain.setValueAtTime(
+                0.15,
+                audioCtx.currentTime
+            );
+
+            gain.gain.exponentialRampToValueAtTime(
+                0.01,
+                audioCtx.currentTime + 0.2
+            );
+
+            osc.start();
+
+            osc.stop(
+                audioCtx.currentTime + 0.2
+            );
+        }
+    }
+
+
+    // ================================
+    // ELEMENTOS
+    // ================================
+
+    const gameArea =
+        document.getElementById("gameArea");
+
+    const player =
+        document.getElementById("player");
+
+    const livesElement =
+        document.getElementById("lives");
+
+    const message =
+        document.getElementById("message");
+
+    const menu =
+        document.getElementById("menu");
+
+    const gameOver =
+        document.getElementById("gameOver");
+
+
+    // ================================
+    // ESTADO DO JOGO
+    // ================================
+
+    let lives = 3;
+
+    let gameRunning = false;
+
+    let playerX = 50;
+
+    let drinks = [];
+
+    let spawnTimer = null;
+
+    let medicineTimer = null;
+
+    let gameLoop = null;
+
+    let difficulty = 1;
+
+    let keys = {
+        ArrowLeft: false,
+        ArrowRight: false,
+        a: false,
+        d: false
+    };
+
+    let msgTimeout = null;
+
+
+    // ================================
+    // TECLADO
+    // ================================
+
+    window.addEventListener("keydown", e => {
+
+        const key = e.key.toLowerCase();
+
+        if (
+            e.key === "ArrowLeft" ||
+            e.key === "ArrowRight" ||
+            key === "a" ||
+            key === "d"
+        ) {
+
+            if (e.key === "ArrowLeft") {
+                keys.ArrowLeft = true;
+            }
+
+            if (e.key === "ArrowRight") {
+                keys.ArrowRight = true;
+            }
+
+            if (key === "a") {
+                keys.a = true;
+            }
+
+            if (key === "d") {
+                keys.d = true;
+            }
+        }
+    });
+
+
+    window.addEventListener("keyup", e => {
+
+        const key = e.key.toLowerCase();
+
+        if (e.key === "ArrowLeft") {
+            keys.ArrowLeft = false;
+        }
+
+        if (e.key === "ArrowRight") {
+            keys.ArrowRight = false;
+        }
+
+        if (key === "a") {
+            keys.a = false;
+        }
+
+        if (key === "d") {
+            keys.d = false;
+        }
+    });
+
+
+    // ================================
+    // TOUCH / CELULAR
+    // ================================
+
+    gameArea.addEventListener("touchmove", e => {
+
+        if (!gameRunning) return;
+
+        e.preventDefault();
+
+        const rect =
+            gameArea.getBoundingClientRect();
+
+        const touchX =
+            e.touches[0].clientX - rect.left;
+
+        playerX =
+            (touchX / rect.width) * 100;
+
+        playerX =
+            Math.max(
+                5,
+                Math.min(95, playerX)
+            );
+
+    }, { passive: false });
+
+
+    // ================================
+    // MENSAGENS
+    // ================================
+
+    function showMessage(text, type) {
+
+        message.textContent = text;
+
+        message.className =
+            `show ${type}`;
+
+        clearTimeout(msgTimeout);
+
+        msgTimeout = setTimeout(() => {
+
+            message.className = "";
+
+        }, 1200);
+    }
+
+
+    // ================================
+    // INICIAR JOGO
+    // ================================
+
+    function startGame() {
+
+        menu.style.display = "none";
+
+        gameOver.classList.remove("show");
+
+        lives = 3;
+
+        difficulty = 1;
+
+        playerX = 50;
+
+        livesElement.textContent = lives;
+
+        player.style.left =
+            playerX + "%";
+
+
+        // Remove bebidas antigas
+
+        drinks.forEach(d => {
+
+            d.element.remove();
+
+        });
+
+        drinks = [];
+
+
+        gameRunning = true;
+
+
+        clearInterval(spawnTimer);
+
+        clearInterval(medicineTimer);
+
+        cancelAnimationFrame(gameLoop);
+
+
+        // Cria bebidas
+
+        spawnTimer =
+            setInterval(
+                createDrink,
+                1000
+            );
+
+
+        // Cria o remédio especial
+        // a cada 30 segundos
+
+        medicineTimer =
+            setInterval(
+                createSpecialMedicine,
+                30000
+            );
+
+
+        gameLoop =
+            requestAnimationFrame(
+                updateGame
+            );
+
+
+        showMessage(
+            "💊 Pegue a ÁGUA e evite o resto!",
+            "good"
+        );
+    }
+
+
+    // ================================
+    // CRIAR BEBIDA
+    // ================================
+
+    function createDrink() {
+
+        if (!gameRunning) return;
+
+
+        const types = [
+
+            {
+                type: "water",
+                emoji: "💧",
+                name: "ÁGUA",
+                good: true,
+                msg: "Perfeito! Água pura!"
+            },
+
+            {
+                type: "coffee",
+                emoji: "☕",
+                name: "CAFÉ",
+                good: false,
+                msg: "Evite o café!"
+            },
+
+            {
+                type: "milk",
+                emoji: "🥛",
+                name: "LEITE",
+                good: false,
+                msg: "Evite o leite!"
+            },
+
+            {
+                type: "juice",
+                emoji: "🧃",
+                name: "SUCO",
+                good: false,
+                msg: "Evite o suco!"
+            }
+
+        ];
+
+
+        // 45% de chance de aparecer água
+
+        const isWater =
+            Math.random() < 0.45;
+
+
+        const selected =
+            isWater
+                ? types[0]
+                : types[
+                    Math.floor(
+                        Math.random() * 3
+                    ) + 1
+                ];
+
+
+        const drinkDiv =
+            document.createElement("div");
+
+
+        drinkDiv.className =
+            `drink ${selected.type}`;
+
+
+        drinkDiv.innerHTML =
+            `${selected.emoji}
+            <span class="drink-label">
+                ${selected.name}
+            </span>`;
+
+
+        const maxX =
+            gameArea.clientWidth - 70;
+
+
+        const xPos =
+            Math.random() * maxX;
+
+
+        drinkDiv.style.left =
+            xPos + "px";
+
+
+        drinkDiv.style.top =
+            "-80px";
+
+
+        gameArea.appendChild(
+            drinkDiv
+        );
+
+
+        drinks.push({
+
+            element: drinkDiv,
+
+            x: xPos,
+
+            y: -80,
+
+            speed:
+                (2.5 +
+                Math.random() * 1.5)
+                * difficulty,
+
+            good: selected.good,
+
+            msg: selected.msg
+
+        });
+    }
+
+
+    // ================================
+    // CRIAR REMÉDIO ESPECIAL
+    // ================================
+
+    function createSpecialMedicine() {
+
+        if (!gameRunning) return;
+
+
+        const medicineDiv =
+            document.createElement("div");
+
+
+        medicineDiv.className =
+            "drink special-medicine";
+
+
+        medicineDiv.innerHTML =
+            `💊
+            <span class="drink-label">
+                REMÉDIO
+            </span>`;
+
+
+        const maxX =
+            gameArea.clientWidth - 70;
+
+
+        const xPos =
+            Math.random() * maxX;
+
+
+        medicineDiv.style.left =
+            xPos + "px";
+
+
+        medicineDiv.style.top =
+            "-80px";
+
+
+        gameArea.appendChild(
+            medicineDiv
+        );
+
+
+        drinks.push({
+
+            element: medicineDiv,
+
+            x: xPos,
+
+            y: -80,
+
+            speed: 2.8,
+
+            good: "medicine",
+
+            msg:
+                "💊 Remédio especial! +1 vida!"
+
+        });
+
+
+        showMessage(
+            "💊 Um remédio especial apareceu!",
+            "good"
+        );
+    }
+
+
+    // ================================
+    // LOOP DO JOGO
+    // ================================
+
+    function updateGame() {
+
+        if (!gameRunning) return;
+
+
+        // Movimento do jogador
+
+        if (
+            keys.ArrowLeft ||
+            keys.a
+        ) {
+
+            playerX -= 1.6;
+
+        }
+
+
+        if (
+            keys.ArrowRight ||
+            keys.d
+        ) {
+
+            playerX += 1.6;
+
+        }
+
+
+        playerX =
+            Math.max(
+                5,
+                Math.min(95, playerX)
+            );
+
+
+        player.style.left =
+            playerX + "%";
+
+
+        const playerRect =
+            player.getBoundingClientRect();
+
+
+        // Atualiza bebidas
+
+        for (
+            let i = drinks.length - 1;
+            i >= 0;
+            i--
+        ) {
+
+            const d = drinks[i];
+
+
+            d.y += d.speed;
+
+
+            d.element.style.top =
+                d.y + "px";
+
+
+            const drinkRect =
+                d.element.getBoundingClientRect();
+
+
+            // Colisão
+
+            const isColliding = !(
+                playerRect.right <
+                    drinkRect.left ||
+
+                playerRect.left >
+                    drinkRect.right ||
+
+                playerRect.bottom <
+                    drinkRect.top ||
+
+                playerRect.top >
+                    drinkRect.bottom
+            );
+
+
+            if (isColliding) {
+
+                // ============================
+                // REMÉDIO ESPECIAL
+                // ============================
+
+                if (d.good === "medicine") {
+
+                    // Recupera 1 vida,
+                    // mas nunca passa de 3
+
+                    if (lives < 3) {
+
+                        lives++;
+
+                        livesElement.textContent =
+                            lives;
+
+                        playSound("good");
+
+                        showMessage(
+                            "💊 Remédio especial! +1 vida!",
+                            "good"
+                        );
+
+                    } else {
+
+                        showMessage(
+                            "💊 Você já está com 3 vidas!",
+                            "good"
+                        );
+                    }
+
+                }
+
+                // ============================
+                // ÁGUA
+                // ============================
+
+                else if (d.good) {
+
+                    playSound("good");
+
+                    showMessage(
+                        d.msg,
+                        "good"
+                    );
+
+
+                    // Aumenta a dificuldade
+
+                    difficulty += 0.05;
+
+
+                    clearInterval(
+                        spawnTimer
+                    );
+
+
+                    spawnTimer =
+                        setInterval(
+                            createDrink,
+                            Math.max(
+                                450,
+                                1000 -
+                                difficulty * 70
+                            )
+                        );
+
+                }
+
+                // ============================
+                // BEBIDA ERRADA
+                // ============================
+
+                else {
+
+                    takeDamage(
+                        d.msg
+                    );
+
+                    if (lives <= 0) {
+                        return;
+                    }
+                }
+
+
+                d.element.remove();
+
+                drinks.splice(i, 1);
+
+                continue;
+            }
+
+
+            // ============================
+            // BEBIDA CHEGOU AO CHÃO
+            // ============================
+
+            if (
+                d.y >
+                gameArea.clientHeight
+            ) {
+
+                // Somente a água causa
+                // perda de vida quando passa
+
+                if (d.good === true) {
+
+                    takeDamage(
+                        "Atenção! Você deixou a água passar!"
+                    );
+
+
+                    if (lives <= 0) {
+                        return;
+                    }
+                }
+
+
+                // O remédio especial não
+                // causa dano quando perdido
+
+                d.element.remove();
+
+                drinks.splice(i, 1);
+            }
+        }
+
+
+        gameLoop =
+            requestAnimationFrame(
+                updateGame
+            );
+    }
+
+
+    // ================================
+    // PERDER VIDA
+    // ================================
+
+    function takeDamage(msgText) {
+
+        lives--;
+
+        livesElement.textContent =
+            lives;
+
+
+        playSound("bad");
+
+
+        player.classList.add(
+            "hit"
+        );
+
+
+        setTimeout(() => {
+
+            player.classList.remove(
+                "hit"
+            );
+
+        }, 450);
+
+
+        showMessage(
+            msgText,
+            "bad"
+        );
+
+
+        if (lives <= 0) {
+
+            endGame();
+
+        }
+    }
+
+
+    // ================================
+    // FIM DO JOGO
+    // ================================
+
+    function endGame() {
+
+        gameRunning = false;
+
+
+        clearInterval(
+            spawnTimer
+        );
+
+
+        clearInterval(
+            medicineTimer
+        );
+
+
+        cancelAnimationFrame(
+            gameLoop
+        );
+
+
+        gameOver.classList.add(
+            "show"
+        );
+    }
+
+
+    // ================================
+    // REINICIAR
+    // ================================
+
+    function restartGame() {
+
+        startGame();
+
+    }
+
+</script>
+
+</body>
+</html>

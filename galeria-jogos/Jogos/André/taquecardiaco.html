@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Clonezepam 2.5D - Laboratório</title>
+<style>
+  body { margin:0; background:#000; display:flex; justify-content:center; align-items:center; height:100vh; font-family:'Courier New',monospace; color:#fff; overflow:hidden; }
+  canvas { background:#0a1929; border:3px solid #00ffcc; box-shadow:0 0 40px #00ffcc60, inset 0 0 40px #00ffcc20; }
+  #info { position:absolute; top:10px; left:10px; font-size:12px; color:#00ffcc; text-shadow:0 0 4px #00ffcc; }
+</style>
+</head>
+<body>
+<canvas id="game" width="960" height="540"></canvas>
+<div id="info">← → / A D: mover | ESPAÇO / W / ↑: pular | R: reiniciar</div>
+<script>
+const cv = document.getElementById('game');
+const ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height;
+
+const keys = {};
+addEventListener('keydown', e => { keys[e.code] = true; if(['Space','ArrowUp','ArrowDown'].includes(e.code)) e.preventDefault(); });
+addEventListener('keyup', e => keys[e.code] = false);
+
+let state = 'menu';
+let camX = 0;
+const LEVEL_W = 3400;
+
+const PAL = {
+  bgDeep: '#0a1929',
+  bgMid: '#0d2944',
+  bgLight: '#164066',
+  cyan: '#00ffcc',
+  cyanDark: '#0088aa',
+  magenta: '#ff00aa',
+  magentaDark: '#aa0066',
+  magentaLight: '#ff66cc',
+  yellow: '#ffee00',
+  green: '#00ff66',
+  red: '#ff3355',
+  white: '#e0f7ff',
+  steel: '#4a6a8a',
+  steelDark: '#2a3a4a',
+  coffee: '#6b3410',
+  coffeeLight: '#8b5a2b'
+};
+
+const player = {
+  x: 80, y: 400, w: 30, h: 46,
+  vx: 0, vy: 0, onGround: false, facing: 1,
+  sleep: 100, caffeine: 0, invuln: 0, anim: 0
+};
+
+const platforms = [
+  {x:0,y:480,w:600,h:60},
+  {x:680,y:480,w:400,h:60},
+  {x:1160,y:480,w:300,h:60},
+  {x:1540,y:480,w:500,h:60},
+  {x:2120,y:480,w:400,h:60},
+  {x:2600,y:480,w:800,h:60},
+  {x:250,y:380,w:110,h:18},
+  {x:420,y:310,w:110,h:18},
+  {x:600,y:240,w:110,h:18},
+  {x:820,y:360,w:130,h:18},
+  {x:1000,y:280,w:130,h:18},
+  {x:1200,y:380,w:110,h:18},
+  {x:1350,y:300,w:110,h:18},
+  {x:1600,y:360,w:160,h:18},
+  {x:1800,y:280,w:160,h:18},
+  {x:2000,y:200,w:130,h:18},
+  {x:2200,y:360,w:130,h:18},
+  {x:2400,y:280,w:130,h:18},
+  {x:2700,y:360,w:160,h:18},
+  {x:2900,y:280,w:160,h:18},
+];
+
+// ============ MONSTROS PÍLULA (quadrúpedes) ============
+const monsters = [];
+function spawnMonster(platIdx, speed=1.0) {
+  const p = platforms[platIdx];
+  monsters.push({
+    x: p.x + 20,
+    y: p.y - 30,
+    w: 36, h: 30,
+    vx: speed,
+    platIdx: platIdx,
+    anim: Math.random()*Math.PI*2,
+    blinkTimer: 0,
+    blink: false
+  });
+}
+
+// Distribuir monstros pelas plataformas (chão e algumas flutuantes)
+spawnMonster(0, 1.0);   // primeira plataforma chão
+spawnMonster(0, -0.8);  // segunda no mesmo chão
+spawnMonster(1, 1.2);   // segunda plataforma chão
+spawnMonster(3, 1.0);   // quarta plataforma chão
+spawnMonster(3, -1.1);
+spawnMonster(4, 0.9);   // quinta plataforma chão
+spawnMonster(5, 1.3);   // sexta plataforma chão (perto do boss)
+spawnMonster(5, -1.0);
+spawnMonster(6, 0.7);   // plataforma flutuante
+spawnMonster(13, 0.8);  // outra flutuante
+spawnMonster(17, -0.9); // outra flutuante
+
+// ============ MINAS DE CAFÉ ============
+const mines = [];
+function spawnMine(x, y) {
+  mines.push({x, y, w:18, h:18, active:true, exploding:0});
+}
+// Minas espalhadas pelo chão
+spawnMine(200, 462);
+spawnMine(450, 462);
+spawnMine(780, 462);
+spawnMine(1050, 462);
+spawnMine(1280, 462);
+spawnMine(1650, 462);
+spawnMine(1900, 462);
+spawnMine(2250, 462);
+spawnMine(2500, 462);
+spawnMine(2850, 462);
+// Algumas em plataformas flutuantes
+spawnMine(280, 362);
+spawnMine(1030, 262);
+spawnMine(1630, 342);
+spawnMine(2230, 342);
+
+// ============ CAFÉ NORMAL ============
+const coffees = [];
+for (let i=0;i<22;i++) {
+  coffees.push({x: 200 + i*130 + Math.random()*40, y: 180 + Math.random()*220, w:22, h:26, taken:false});
+}
+
+// ============ ELEMENTOS DE FUNDO ============
+const labProps = [];
+for (let i=0;i<14;i++) {
+  labProps.push({type:'tube', x: 100 + i*250, y: 100 + (i%3)*40, h: 300 + (i%2)*80, color: i%2===0 ? PAL.cyan : PAL.magenta, bubbles: Math.random()*Math.PI*2});
+}
+for (let i=0;i<8;i++) {
+  labProps.push({type:'monitor', x: 300 + i*400, y: 150 + (i%2)*60, w: 80, h: 60, flicker: Math.random()*Math.PI*2});
+}
+for (let i=0;i<10;i++) {
+  labProps.push({type:'shelf', x: 200 + i*320, y: 80 + (i%3)*30});
+}
+for (let i=0;i<12;i++) {
+  labProps.push({type:'cable', x: 150 + i*280, y: 0, h: 100 + Math.random()*150});
+}
+
+// ============ BOSS ============
+const boss = {
+  x: 3100, y: 280, w: 140, h: 140,
+  hp: 12, maxHp: 12,
+  phase: 0, timer: 0,
+  active: false, defeated: false,
+  flash: 0, pulse: 0
+};
+
+const particles = [];
+function addParticle(x,y,color,count=8,spread=6) {
+  for (let i=0;i<count;i++) {
+    particles.push({x,y,vx:(Math.random()-0.5)*spread,vy:(Math.random()-0.5)*spread-2,life:30,color,size:2+Math.random()*3});
+  }
+}
+
+const bossBullets = [];
+
+function reset() {
+  player.x=80; player.y=400; player.vx=0; player.vy=0;
+  player.sleep=100; player.caffeine=0; player.invuln=0;
+  camX=0;
+  monsters.forEach(m=>{
+    const p = platforms[m.platIdx];
+    m.x = p.x + 20;
+    m.y = p.y - m.h;
+  });
+  mines.forEach(m=>{m.active=true;m.exploding=0;});
+  coffees.forEach(c=>c.taken=false);
+  boss.hp=boss.maxHp; boss.active=false; boss.defeated=false;
+  bossBullets.length=0; particles.length=0;
+  state='play';
+}
+
+function rectCollide(a,b){
+  return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y;
+}
+
+function update() {
+  if (state === 'menu') {
+    if (keys['Space'] || keys['Enter']) reset();
+    return;
+  }
+  if (state === 'win' || state === 'lose' || state === 'cardiac') {
+    if (keys['KeyR']) state='menu';
+    return;
+  }
+
+  const speed = 4.2;
+  if (keys['ArrowLeft']||keys['KeyA']) { player.vx = -speed; player.facing=-1; }
+  else if (keys['ArrowRight']||keys['KeyD']) { player.vx = speed; player.facing=1; }
+  else player.vx *= 0.7;
+
+  if ((keys['Space']||keys['ArrowUp']||keys['KeyW']) && player.onGround) {
+    player.vy = -13; player.onGround = false;
+    addParticle(player.x+player.w/2, player.y+player.h, PAL.cyan, 5, 3);
+  }
+
+  player.vy += 0.65;
+  if (player.vy > 15) player.vy = 15;
+
+  player.x += player.vx;
+  for (const p of platforms) {
+    if (rectCollide(player,p)) {
+      if (player.vx > 0) player.x = p.x - player.w;
+      else if (player.vx < 0) player.x = p.x + p.w;
+    }
+  }
+  if (player.x < 0) player.x = 0;
+  if (player.x > LEVEL_W - player.w) player.x = LEVEL_W - player.w;
+
+  player.y += player.vy;
+  player.onGround = false;
+  for (const p of platforms) {
+    if (rectCollide(player,p)) {
+      if (player.vy > 0) { player.y = p.y - player.h; player.vy = 0; player.onGround = true; }
+      else if (player.vy < 0) { player.y = p.y + p.h; player.vy = 0; }
+    }
+  }
+
+  if (player.y > H + 100) { state='lose'; return; }
+
+  player.sleep -= 0.08;
+  if (player.sleep <= 0) { state='lose'; return; }
+
+  if (player.invuln > 0) player.invuln--;
+  if (Math.abs(player.vx) > 0.5) player.anim += 0.25;
+
+  // ============ MONSTROS PÍLULA ============
+  for (const m of monsters) {
+    const p = platforms[m.platIdx];
+    m.anim += 0.15;
+    m.blinkTimer++;
+    if (m.blinkTimer > 120) {
+      m.blink = true;
+      if (m.blinkTimer > 130) { m.blink = false; m.blinkTimer = 0; }
+    }
+
+    // movimento horizontal (patrulha na plataforma)
+    m.x += m.vx;
+    // limites da plataforma
+    if (m.x < p.x) { m.x = p.x; m.vx = Math.abs(m.vx); }
+    if (m.x + m.w > p.x + p.w) { m.x = p.x + p.w - m.w; m.vx = -Math.abs(m.vx); }
+    // manter em cima da plataforma
+    m.y = p.y - m.h;
+
+    // colisão com jogador
+    if (player.invuln === 0 && rectCollide(player,m)) {
+      player.sleep -= 20; player.invuln = 50; player.vy = -7;
+      addParticle(player.x+player.w/2, player.y+player.h/2, PAL.magenta, 15);
+      if (player.sleep <= 0) { state='lose'; return; }
+    }
+  }
+
+  // ============ MINAS DE CAFÉ ============
+  for (const m of mines) {
+    if (m.exploding > 0) {
+      m.exploding--;
+      if (m.exploding === 0) m.active = false;
+      continue;
+    }
+    if (!m.active) continue;
+    if (rectCollide(player,m)) {
+      // EXPLODE! +30% cafeína, +5% sono (café concentrado!)
+      m.exploding = 20;
+      player.caffeine += 30;
+      player.sleep = Math.min(100, player.sleep + 5);
+      player.vy = -8;
+      addParticle(m.x+m.w/2, m.y+m.h/2, PAL.coffee, 20, 8);
+      addParticle(m.x+m.w/2, m.y+m.h/2, PAL.coffeeLight, 15, 6);
+      addParticle(m.x+m.w/2, m.y+m.h/2, PAL.yellow, 10, 10);
+      if (player.caffeine >= 100) {
+        state = 'cardiac';
+        addParticle(player.x+player.w/2, player.y+player.h/2, PAL.red, 50, 12);
+        return;
+      }
+    }
+  }
+
+  // ============ CAFÉ NORMAL ============
+  for (const c of coffees) {
+    if (!c.taken && rectCollide(player,c)) {
+      c.taken = true;
+      player.sleep = Math.min(100, player.sleep + 20);
+      player.caffeine += 14;
+      addParticle(c.x+10, c.y+10, PAL.yellow, 10);
+      if (player.caffeine >= 100) {
+        state = 'cardiac';
+        addParticle(player.x+player.w/2, player.y+player.h/2, PAL.red, 40);
+        return;
+      }
+    }
+  }
+  player.caffeine = Math.max(0, player.caffeine - 0.05);
+
+  // ============ BOSS ============
+  if (!boss.active && player.x > 2850) { boss.active = true; state = 'boss'; }
+  if (boss.active && !boss.defeated) {
+    boss.timer++;
+    boss.pulse += 0.1;
+    boss.y = 280 + Math.sin(boss.timer*0.025)*90;
+    boss.x = 3100 + Math.cos(boss.timer*0.018)*120;
+    if (boss.timer % 55 === 0) {
+      const dx = player.x - boss.x;
+      const dy = player.y - boss.y;
+      const d = Math.hypot(dx,dy) || 1;
+      bossBullets.push({x:boss.x+boss.w/2, y:boss.y+boss.h/2, vx:dx/d*4.5, vy:dy/d*4.5, w:18, h:24, life:180});
+    }
+    if (boss.timer % 160 === 0) {
+      bossBullets.push({x:boss.x+boss.w/2-40, y:boss.y+boss.h, vx:-2, vy:3, w:18, h:24, life:200});
+      bossBullets.push({x:boss.x+boss.w/2+40, y:boss.y+boss.h, vx:2, vy:3, w:18, h:24, life:200});
+      bossBullets.push({x:boss.x+boss.w/2, y:boss.y+boss.h, vx:0, vy:4, w:18, h:24, life:200});
+    }
+    if (player.vy > 0 && player.invuln === 0) {
+      if (player.x+player.w > boss.x && player.x < boss.x+boss.w &&
+          player.y+player.h > boss.y && player.y+player.h < boss.y+45) {
+        boss.hp--; boss.flash = 25; player.vy = -11; player.invuln = 30;
+        addParticle(boss.x+boss.w/2, boss.y+25, PAL.yellow, 25);
+        if (boss.hp <= 0) {
+          boss.defeated = true; state = 'win';
+          addParticle(boss.x+boss.w/2, boss.y+boss.h/2, PAL.magenta, 80, 10);
+          addParticle(boss.x+boss.w/2, boss.y+boss.h/2, PAL.cyan, 60, 10);
+        }
+      }
+    }
+    if (boss.flash > 0) boss.flash--;
+  }
+
+  for (let i=bossBullets.length-1;i>=0;i--) {
+    const b = bossBullets[i];
+    b.x += b.vx; b.y += b.vy; b.vy += 0.12; b.life--;
+    if (b.life<=0 || b.y>H+50) { bossBullets.splice(i,1); continue; }
+    if (player.invuln===0 && rectCollide(player,b)) {
+      player.sleep -= 20; player.invuln = 50; player.vy = -5;
+      addParticle(player.x+player.w/2, player.y+player.h/2, PAL.magenta, 12);
+      bossBullets.splice(i,1);
+      if (player.sleep <= 0) { state='lose'; return; }
+    }
+  }
+
+  for (let i=particles.length-1;i>=0;i--) {
+    const p = particles[i];
+    p.x+=p.vx; p.y+=p.vy; p.vy+=0.2; p.life--;
+    if (p.life<=0) particles.splice(i,1);
+  }
+
+  const targetCam = player.x - W/2 + player.w/2;
+  camX += (targetCam - camX) * 0.1;
+  if (camX < 0) camX = 0;
+  if (camX > LEVEL_W - W) camX = LEVEL_W - W;
+}
+
+// ============ RENDER ============
+function drawBlock3D(x, y, w, h, depth, topColor, frontColor, sideColor, glow=null) {
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  ctx.beginPath();
+  ctx.ellipse(x + w/2, y + h + 4, w/2, 5, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle = topColor;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + depth, y - depth*0.6);
+  ctx.lineTo(x + w + depth, y - depth*0.6);
+  ctx.lineTo(x + w, y);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = sideColor;
+  ctx.beginPath();
+  ctx.moveTo(x + w, y);
+  ctx.lineTo(x + w + depth, y - depth*0.6);
+  ctx.lineTo(x + w + depth, y - depth*0.6 + h);
+  ctx.lineTo(x + w, y + h);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = frontColor;
+  ctx.fillRect(x, y, w, h);
+
+  ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x, y, w, h);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+  ctx.beginPath();
+  ctx.moveTo(x+1, y+1);
+  ctx.lineTo(x+w-1, y+1);
+  ctx.stroke();
+
+  if (glow) {
+    ctx.shadowColor = glow;
+    ctx.shadowBlur = 15;
+    ctx.strokeStyle = glow;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x, y, w, h);
+    ctx.shadowBlur = 0;
+  }
+}
+
+function drawLabBackground() {
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#050d1a');
+  grad.addColorStop(0.5, PAL.bgDeep);
+  grad.addColorStop(1, PAL.bgMid);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.strokeStyle = 'rgba(0, 255, 204, 0.08)';
+  ctx.lineWidth = 1;
+  for (let i=0;i<30;i++) {
+    const gx = (i*80 - camX*0.2) % W;
+    const x = gx < 0 ? gx + W : gx;
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, H);
+    ctx.stroke();
+  }
+  for (let i=0;i<15;i++) {
+    ctx.beginPath();
+    ctx.moveTo(0, i*50);
+    ctx.lineTo(W, i*50);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = '#0a2040';
+  for (let i=0;i<15;i++) {
+    const bx = (i*250 - camX*0.3) % (W+500);
+    const x = bx < -250 ? bx + W + 500 : bx;
+    const bh = 150 + (i*37)%100;
+    ctx.fillRect(x, H-200-bh, 180, bh+200);
+    ctx.fillStyle = 'rgba(0, 255, 204, 0.3)';
+    for (let j=0;j<4;j++) {
+      for (let k=0;k<3;k++) {
+        if ((i+j+k)%2===0) ctx.fillRect(x+20+k*45, H-180-bh+j*40, 20, 15);
+      }
+    }
+    ctx.fillStyle = '#0a2040';
+  }
+
+  const t = Date.now()/1000;
+  for (const prop of labProps) {
+    const px = prop.x - camX*0.6;
+    if (px < -200 || px > W+200) continue;
+
+    if (prop.type === 'tube') {
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = 'rgba(0, 255, 204, 0.1)';
+      ctx.fillRect(px, prop.y, 50, prop.h);
+      ctx.strokeStyle = prop.color;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(px, prop.y, 50, prop.h);
+      const liquidH = prop.h * 0.7;
+      ctx.fillStyle = prop.color + '40';
+      ctx.fillRect(px+3, prop.y + prop.h - liquidH, 44, liquidH-3);
+      for (let i=0;i<4;i++) {
+        const by = prop.y + prop.h - 20 - ((t*30 + i*40 + prop.bubbles*20) % liquidH);
+        const bx = px + 10 + (i*10)%30;
+        ctx.fillStyle = prop.color;
+        ctx.globalAlpha = 0.7;
+        ctx.beginPath();
+        ctx.arc(bx, by, 3, 0, Math.PI*2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    } else if (prop.type === 'monitor') {
+      ctx.globalAlpha = 0.6;
+      ctx.fillStyle = PAL.steelDark;
+      ctx.fillRect(px, prop.y, prop.w, prop.h);
+      ctx.fillStyle = '#000';
+      ctx.fillRect(px+4, prop.y+4, prop.w-8, prop.h-8);
+      const flick = Math.sin(t*3 + prop.flicker) > -0.3 ? 1 : 0.3;
+      ctx.strokeStyle = PAL.cyan;
+      ctx.globalAlpha = 0.8 * flick;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for (let i=0;i<prop.w-12;i+=2) {
+        const wy = prop.y + prop.h/2 + Math.sin((i+t*50+prop.flicker*20)*0.1)*10;
+        if (i===0) ctx.moveTo(px+6+i, wy);
+        else ctx.lineTo(px+6+i, wy);
+      }
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    } else if (prop.type === 'shelf') {
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = PAL.steel;
+      ctx.fillRect(px, prop.y, 100, 4);
+      for (let i=0;i<4;i++) {
+        const fx = px + 8 + i*22;
+        const col = [PAL.cyan, PAL.magenta, PAL.yellow, PAL.green][i];
+        ctx.fillStyle = col + '60';
+        ctx.fillRect(fx, prop.y-20, 14, 20);
+        ctx.strokeStyle = col;
+        ctx.strokeRect(fx, prop.y-20, 14, 20);
+      }
+      ctx.globalAlpha = 1;
+    } else if (prop.type === 'cable') {
+      ctx.globalAlpha = 0.4;
+      ctx.strokeStyle = PAL.magentaDark;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(px, prop.y);
+      ctx.quadraticCurveTo(px + 20, prop.y + prop.h/2, px - 10, prop.y + prop.h);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  for (let i=0;i<10;i++) {
+    const lx = (i*350 - camX*0.5) % (W+350);
+    const x = lx < -100 ? lx + W + 350 : lx;
+    ctx.fillStyle = 'rgba(0, 255, 204, 0.1)';
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x+100, 0);
+    ctx.lineTo(x+150, H);
+    ctx.lineTo(x-50, H);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+function drawScientist() {
+  const px = player.x - camX, py = player.y;
+  if (player.invuln > 0 && Math.floor(player.invuln/4)%2===0) return;
+
+  const walk = Math.abs(player.vx) > 0.5;
+  const legAnim = walk ? Math.sin(player.anim)*4 : 0;
+  const armAnim = walk ? Math.sin(player.anim + Math.PI)*3 : 0;
+  const sleepiness = 1 - player.sleep/100;
+
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  ctx.beginPath();
+  ctx.ellipse(px + player.w/2, py + player.h + 2, 14, 4, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle = '#2a3a5a';
+  ctx.fillRect(px+7, py+32, 7, 14+legAnim);
+  ctx.fillRect(px+16, py+32, 7, 14-legAnim);
+  ctx.fillStyle = '#1a1a2a';
+  ctx.fillRect(px+6, py+44+legAnim, 9, 3);
+  ctx.fillRect(px+15, py+44-legAnim, 9, 3);
+
+  ctx.fillStyle = PAL.white;
+  ctx.fillRect(px+5, py+16, 20, 18);
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.fillRect(px+5, py+30, 20, 4);
+  ctx.fillStyle = PAL.cyan;
+  for (let i=0;i<3;i++) ctx.fillRect(px+14, py+18+i*5, 2, 2);
+  ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(px+7, py+24, 6, 5);
+  ctx.fillStyle = PAL.magenta;
+  ctx.fillRect(px+9, py+22, 1, 4);
+
+  ctx.fillStyle = PAL.white;
+  ctx.fillRect(px+2, py+17+armAnim, 5, 12);
+  ctx.fillRect(px+23, py+17-armAnim, 5, 12);
+  ctx.fillStyle = '#ffcc99';
+  ctx.fillRect(px+2, py+28+armAnim, 5, 4);
+  ctx.fillRect(px+23, py+28-armAnim, 5, 4);
+
+  ctx.fillStyle = '#ffcc99';
+  ctx.fillRect(px+12, py+13, 6, 4);
+  ctx.fillRect(px+7, py, 16, 14);
+
+  ctx.fillStyle = '#00aaff';
+  ctx.beginPath();
+  ctx.moveTo(px+6, py+4);
+  ctx.lineTo(px+9, py-4);
+  ctx.lineTo(px+12, py+2);
+  ctx.lineTo(px+15, py-6);
+  ctx.lineTo(px+18, py+1);
+  ctx.lineTo(px+21, py-3);
+  ctx.lineTo(px+24, py+4);
+  ctx.lineTo(px+24, py+6);
+  ctx.lineTo(px+6, py+6);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillRect(px+6, py+3, 3, 6);
+  ctx.fillRect(px+21, py+3, 3, 6);
+  ctx.fillStyle = '#66ddff';
+  ctx.fillRect(px+10, py-2, 2, 3);
+  ctx.fillRect(px+17, py-4, 2, 3);
+
+  ctx.fillStyle = '#222';
+  ctx.fillRect(px+7, py+6, 16, 4);
+  ctx.fillStyle = PAL.cyan;
+  ctx.fillRect(px+8, py+7, 5, 2);
+  ctx.fillRect(px+17, py+7, 5, 2);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(px+9, py+7, 1, 1);
+  ctx.fillRect(px+18, py+7, 1, 1);
+
+  ctx.fillStyle = '#aa3333';
+  if (sleepiness > 0.6) {
+    ctx.beginPath();
+    ctx.arc(px+15, py+12, 2, 0, Math.PI*2);
+    ctx.fill();
+  } else {
+    ctx.fillRect(px+13, py+12, 4, 1);
+  }
+
+  if (player.sleep < 40) {
+    ctx.fillStyle = PAL.cyan;
+    ctx.font = 'bold 14px monospace';
+    ctx.fillText('Z', px+26, py-2);
+    ctx.font = 'bold 10px monospace';
+    ctx.fillText('z', px+34, py-10);
+    ctx.font = 'bold 7px monospace';
+    ctx.fillText('z', px+40, py-16);
+  }
+
+  if (player.caffeine > 60) {
+    ctx.strokeStyle = PAL.yellow;
+    ctx.globalAlpha = 0.3 + Math.sin(Date.now()/100)*0.2;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(px+player.w/2, py+player.h/2, 25 + Math.sin(Date.now()/150)*3, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+}
+
+// ============ MONSTRO PÍLULA QUADRÚPEDE ============
+function drawMonster(m) {
+  const px = m.x - camX, py = m.y;
+  const dir = m.vx > 0 ? 1 : -1;
+  const walkPhase = Math.sin(m.anim);
+  const walkPhase2 = Math.sin(m.anim + Math.PI);
+
+  // sombra
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  ctx.beginPath();
+  ctx.ellipse(px + m.w/2, py + m.h + 2, m.w/2, 3, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // glow
+  ctx.shadowColor = PAL.magenta;
+  ctx.shadowBlur = 10;
+
+  // corpo em formato de cápsula (deitado, estilo pílula)
+  // metade esquerda (magenta)
+  ctx.fillStyle = PAL.magenta;
+  ctx.beginPath();
+  ctx.ellipse(px + m.w*0.3, py + m.h*0.45, m.w*0.3, m.h*0.45, 0, Math.PI/2, Math.PI*1.5);
+  ctx.fill();
+  ctx.fillRect(px + m.w*0.3, py, m.w*0.4, m.h*0.9);
+
+  // metade direita (branca)
+  ctx.fillStyle = PAL.white;
+  ctx.fillRect(px + m.w*0.5, py, m.w*0.2, m.h*0.9);
+  ctx.beginPath();
+  ctx.ellipse(px + m.w*0.7, py + m.h*0.45, m.w*0.3, m.h*0.45, 0, -Math.PI/2, Math.PI/2);
+  ctx.fill();
+
+  ctx.shadowBlur = 0;
+
+  // linha divisória vertical
+  ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(px + m.w*0.5, py);
+  ctx.lineTo(px + m.w*0.5, py + m.h*0.9);
+  ctx.stroke();
+
+  // brilho no corpo
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.beginPath();
+  ctx.ellipse(px + m.w*0.35, py + m.h*0.25, 4, 2, -0.3, 0, Math.PI*2);
+  ctx.fill();
+
+  // 4 pernas (animadas)
+  ctx.fillStyle = PAL.magentaDark;
+  const legH = 8 + walkPhase*2;
+  const legH2 = 8 + walkPhase2*2;
+  // pernas traseiras (esquerda)
+  ctx.fillRect(px + 4, py + m.h*0.8, 4, legH);
+  ctx.fillRect(px + 10, py + m.h*0.8, 4, legH2);
+  // pernas dianteiras (direita)
+  ctx.fillRect(px + m.w - 14, py + m.h*0.8, 4, legH2);
+  ctx.fillRect(px + m.w - 8, py + m.h*0.8, 4, legH);
+
+  // pés (bolinhas)
+  ctx.fillStyle = '#3a1a2a';
+  ctx.beginPath();
+  ctx.arc(px + 6, py + m.h*0.8 + legH, 2.5, 0, Math.PI*2);
+  ctx.arc(px + 12, py + m.h*0.8 + legH2, 2.5, 0, Math.PI*2);
+  ctx.arc(px + m.w - 12, py + m.h*0.8 + legH2, 2.5, 0, Math.PI*2);
+  ctx.arc(px + m.w - 6, py + m.h*0.8 + legH, 2.5, 0, Math.PI*2);
+  ctx.fill();
+
+  // olhos (na metade branca, lado direito)
+  const eyeX = px + m.w*0.65;
+  const eyeY = py + m.h*0.35;
+  // branco dos olhos
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(eyeX - 3, eyeY, 3, 0, Math.PI*2);
+  ctx.arc(eyeX + 3, eyeY, 3, 0, Math.PI*2);
+  ctx.fill();
+  // pupilas (olham na direção do movimento)
+  ctx.fillStyle = '#000';
+  if (m.blink) {
+    // piscando
+    ctx.fillRect(eyeX - 5, eyeY, 4, 1);
+    ctx.fillRect(eyeX + 1, eyeY, 4, 1);
+  } else {
+    ctx.beginPath();
+    ctx.arc(eyeX - 3 + dir*1, eyeY, 1.5, 0, Math.PI*2);
+    ctx.arc(eyeX + 3 + dir*1, eyeY, 1.5, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  // boquinha fofa (mas sinistra)
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(eyeX, eyeY + 6, 2.5, 0, Math.PI);
+  ctx.stroke();
+
+  // texto CLZ na metade magenta
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 6px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('CLZ', px + m.w*0.25, py + m.h*0.5);
+  ctx.textAlign = 'left';
+}
+
+// ============ MINA DE CAFÉ ============
+function drawMine(m) {
+  if (!m.active && m.exploding === 0) return;
+  const px = m.x - camX, py = m.y;
+
+  if (m.exploding > 0) {
+    // explosão!
+    const t = m.exploding / 20;
+    ctx.globalAlpha = t;
+    ctx.fillStyle = PAL.coffee;
+    ctx.beginPath();
+    ctx.arc(px + m.w/2, py + m.h/2, (1-t)*30 + 5, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = PAL.coffeeLight;
+    ctx.beginPath();
+    ctx.arc(px + m.w/2, py + m.h/2, (1-t)*20 + 3, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = PAL.yellow;
+    ctx.font = 'bold 14px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('BOOM!', px + m.w/2, py - 10 - (1-t)*20);
+    ctx.textAlign = 'left';
+    ctx.globalAlpha = 1;
+    return;
+  }
+
+  // sombra
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(px + m.w/2, py + m.h + 1, m.w/2, 2, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // glow âmbar pulsante
+  const pulse = 0.5 + Math.sin(Date.now()/200)*0.3;
+  ctx.shadowColor = PAL.coffeeLight;
+  ctx.shadowBlur = 8 * pulse;
+
+  // corpinho da mina (esfera de café)
+  ctx.fillStyle = PAL.coffee;
+  ctx.beginPath();
+  ctx.arc(px + m.w/2, py + m.h/2 + 2, m.w/2 - 1, 0, Math.PI*2);
+  ctx.fill();
+
+  // detalhe superior (tampa)
+  ctx.fillStyle = PAL.steelDark;
+  ctx.fillRect(px + m.w/2 - 3, py + 2, 6, 3);
+
+  // pavio
+  ctx.strokeStyle = '#444';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(px + m.w/2, py + 2);
+  ctx.quadraticCurveTo(px + m.w/2 + 3, py - 3, px + m.w/2 + 5, py - 5);
+  ctx.stroke();
+
+  // faísca no pavio
+  ctx.fillStyle = PAL.yellow;
+  ctx.beginPath();
+  ctx.arc(px + m.w/2 + 5, py - 5, 2 + pulse, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = PAL.red;
+  ctx.beginPath();
+  ctx.arc(px + m.w/2 + 5, py - 5, 1, 0, Math.PI*2);
+  ctx.fill();
+
+  ctx.shadowBlur = 0;
+
+  // brilho
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.beginPath();
+  ctx.arc(px + m.w/3, py + m.h/3, 2, 0, Math.PI*2);
+  ctx.fill();
+
+  // símbolo ☕ pequeno
+  ctx.fillStyle = PAL.coffeeLight;
+  ctx.font = 'bold 7px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('☕', px + m.w/2, py + m.h/2 + 5);
+  ctx.textAlign = 'left';
+}
+
+function drawCoffee(c) {
+  if (c.taken) return;
+  const px = c.x - camX, py = c.y;
+  const t = Date.now()/200;
+
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(px + c.w/2, py + c.h + 2, c.w/2, 2, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  ctx.shadowColor = PAL.yellow;
+  ctx.shadowBlur = 8;
+
+  ctx.fillStyle = PAL.white;
+  ctx.fillRect(px+2, py+8, 18, 16);
+  ctx.fillStyle = '#4a2510';
+  ctx.fillRect(px+4, py+10, 14, 12);
+  ctx.fillStyle = '#8b5a2b';
+  ctx.fillRect(px+4, py+10, 14, 2);
+  ctx.strokeStyle = PAL.white;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.arc(px+20, py+16, 4, -Math.PI/2, Math.PI/2);
+  ctx.stroke();
+
+  ctx.shadowBlur = 0;
+
+  ctx.strokeStyle = 'rgba(255, 238, 0, 0.6)';
+  ctx.lineWidth = 1.5;
+  for (let i=0;i<3;i++) {
+    ctx.beginPath();
+    const sx = px+5+i*5;
+    ctx.moveTo(sx, py+7);
+    ctx.quadraticCurveTo(sx+Math.sin(t+i)*3, py, sx, py-6);
+    ctx.quadraticCurveTo(sx-Math.sin(t+i+1)*3, py-12, sx, py-16);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = PAL.yellow;
+  ctx.font = 'bold 8px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('☕', px+c.w/2, py+20);
+  ctx.textAlign = 'left';
+}
+
+function drawBoss() {
+  if (!boss.active) return;
+  const px = boss.x - camX, py = boss.y;
+  const flash = boss.flash > 0 && Math.floor(boss.flash/3)%2===0;
+  const pulse = Math.sin(boss.pulse)*0.1 + 1;
+
+  ctx.save();
+  ctx.translate(px + boss.w/2, py + boss.h/2);
+  ctx.scale(pulse, pulse);
+  ctx.translate(-boss.w/2, -boss.h/2);
+
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.beginPath();
+  ctx.ellipse(boss.w/2, boss.h + 10, 60, 8, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  ctx.shadowColor = flash ? '#fff' : PAL.magenta;
+  ctx.shadowBlur = 30;
+
+  ctx.fillStyle = flash ? '#ffffff' : PAL.magenta;
+  ctx.beginPath();
+  ctx.ellipse(boss.w/2, boss.h/4, boss.w/2, boss.h/4, 0, Math.PI, 0);
+  ctx.fill();
+  ctx.fillRect(0, boss.h/4, boss.w, boss.h/4);
+
+  ctx.fillStyle = flash ? '#ffdddd' : PAL.white;
+  ctx.fillRect(0, boss.h/2, boss.w, boss.h/4);
+  ctx.beginPath();
+  ctx.ellipse(boss.w/2, boss.h*3/4, boss.w/2, boss.h/4, 0, 0, Math.PI);
+  ctx.fill();
+
+  ctx.shadowBlur = 0;
+
+  ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, boss.h/2);
+  ctx.lineTo(boss.w, boss.h/2);
+  ctx.stroke();
+
+  ctx.fillStyle = '#000';
+  ctx.fillRect(25, 30, 25, 10);
+  ctx.fillRect(90, 30, 25, 10);
+  ctx.fillStyle = PAL.red;
+  ctx.fillRect(32, 33, 12, 5);
+  ctx.fillRect(97, 33, 12, 5);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(34, 34, 3, 2);
+  ctx.fillRect(99, 34, 3, 2);
+
+  ctx.fillStyle = '#000';
+  ctx.fillRect(35, 75, 70, 15);
+  ctx.fillStyle = PAL.white;
+  for (let i=0;i<6;i++) {
+    ctx.beginPath();
+    ctx.moveTo(38+i*11, 75);
+    ctx.lineTo(43+i*11, 85);
+    ctx.lineTo(48+i*11, 75);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  ctx.fillStyle = '#000';
+  ctx.font = 'bold 12px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('CLONEZEPAM', boss.w/2, boss.h/2 - 5);
+  ctx.textAlign = 'left';
+
+  ctx.restore();
+
+  const barW = 340, barH = 24;
+  const barX = W/2 - barW/2, barY = 20;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(barX-3, barY-3, barW+6, barH+6);
+  ctx.fillStyle = '#1a1a2a';
+  ctx.fillRect(barX, barY, barW, barH);
+  const hpGrad = ctx.createLinearGradient(barX, 0, barX+barW, 0);
+  hpGrad.addColorStop(0, PAL.magenta);
+  hpGrad.addColorStop(1, PAL.red);
+  ctx.fillStyle = hpGrad;
+  ctx.fillRect(barX+2, barY+2, (barW-4)*(boss.hp/boss.maxHp), barH-4);
+  ctx.strokeStyle = PAL.cyan;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(barX, barY, barW, barH);
+  ctx.fillStyle = PAL.white;
+  ctx.font = 'bold 13px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('⚗ DR. CLONEZEPAM ⚗', W/2, barY - 6);
+  ctx.textAlign = 'left';
+}
+
+function drawHUD() {
+  ctx.fillStyle = 'rgba(10, 25, 41, 0.85)';
+  ctx.fillRect(15, 15, 220, 70);
+  ctx.strokeStyle = PAL.cyan;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(15, 15, 220, 70);
+
+  ctx.fillStyle = '#000';
+  ctx.fillRect(25, 25, 200, 18);
+  const sleepColor = player.sleep > 50 ? PAL.cyan : player.sleep > 25 ? PAL.yellow : PAL.red;
+  ctx.fillStyle = sleepColor;
+  ctx.fillRect(26, 26, 198*(player.sleep/100), 16);
+  ctx.strokeStyle = PAL.white;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(25, 25, 200, 18);
+  ctx.fillStyle = PAL.white;
+  ctx.font = 'bold 11px monospace';
+  ctx.fillText('🧠 SONO: ' + Math.ceil(player.sleep) + '%', 30, 38);
+
+  ctx.fillStyle = '#000';
+  ctx.fillRect(25, 50, 200, 18);
+  const cafColor = player.caffeine < 50 ? '#8b5a2b' : player.caffeine < 80 ? '#ff8800' : PAL.red;
+  ctx.fillStyle = cafColor;
+  ctx.fillRect(26, 51, 198*(player.caffeine/100), 16);
+  ctx.strokeStyle = PAL.white;
+  ctx.strokeRect(25, 50, 200, 18);
+  ctx.fillStyle = PAL.white;
+  ctx.fillText('☕ CAFEÍNA: ' + Math.ceil(player.caffeine) + '%', 30, 63);
+  if (player.caffeine > 75) {
+    ctx.fillStyle = PAL.red;
+    ctx.font = 'bold 10px monospace';
+    const blink = Math.sin(Date.now()/100) > 0;
+    if (blink) ctx.fillText('⚠ PERIGO!', 170, 63);
+  }
+
+  ctx.fillStyle = 'rgba(10, 25, 41, 0.85)';
+  ctx.fillRect(W-230, 15, 215, 35);
+  ctx.strokeStyle = PAL.cyan;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(W-230, 15, 215, 35);
+  const scale = 205/LEVEL_W;
+  ctx.fillStyle = PAL.steel;
+  for (const p of platforms) {
+    ctx.fillRect(W-225 + p.x*scale, 25 + (p.y/H)*20, Math.max(1, p.w*scale), 2);
+  }
+  if (boss.active) {
+    ctx.fillStyle = PAL.magenta;
+    ctx.fillRect(W-225 + boss.x*scale, 25, 6, 20);
+  }
+  ctx.fillStyle = PAL.green;
+  ctx.fillRect(W-225 + player.x*scale, 30, 4, 10);
+}
+
+function drawMenu() {
+  drawLabBackground();
+  ctx.fillStyle = 'rgba(0,0,0,0.75)';
+  ctx.fillRect(0,0,W,H);
+
+  ctx.textAlign = 'center';
+  ctx.shadowColor = PAL.magenta;
+  ctx.shadowBlur = 20;
+  ctx.fillStyle = PAL.magenta;
+  ctx.font = 'bold 56px monospace';
+  ctx.fillText('CLONEZEPAM', W/2, 130);
+  ctx.shadowColor = PAL.cyan;
+  ctx.fillStyle = PAL.cyan;
+  ctx.font = 'bold 22px monospace';
+  ctx.fillText('2.5D — LABORATÓRIO', W/2, 165);
+  ctx.shadowBlur = 0;
+
+  ctx.fillStyle = PAL.white;
+  ctx.font = '14px monospace';
+  const lines = [
+    'Você é um cientista de cabelo azul sedado com Clonezepam!',
+    '👾 Cuidado com os Monstros-Pílula que patrulham as plataformas!',
+    '💣 Evite as MINAS DE CAFÉ no chão — explosões dão MUITA cafeína!',
+    '☕ Beba café com moderação para se manter acordado.',
+    '💔 Cafeína demais = ataque cardíaco!',
+    '🎯 Derrote o Dr. Clonezepam no final da fase!',
+  ];
+  lines.forEach((l,i) => ctx.fillText(l, W/2, 220 + i*25));
+
+  ctx.fillStyle = PAL.yellow;
+  ctx.font = 'bold 14px monospace';
+  ctx.fillText('CONTROLES: ← → / A D = mover  |  ESPAÇO / W / ↑ = pular', W/2, 400);
+
+  const blink = Math.sin(Date.now()/300) > 0;
+  ctx.fillStyle = blink ? PAL.green : PAL.cyan;
+  ctx.font = 'bold 20px monospace';
+  ctx.fillText('[ PRESSIONE ESPAÇO PARA COMEÇAR ]', W/2, 450);
+  ctx.textAlign = 'left';
+}
+
+function drawEnd(title, subtitle, color) {
+  ctx.fillStyle = 'rgba(0,0,0,0.8)';
+  ctx.fillRect(0,0,W,H);
+  ctx.textAlign = 'center';
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 25;
+  ctx.fillStyle = color;
+  ctx.font = 'bold 52px monospace';
+  ctx.fillText(title, W/2, H/2 - 20);
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = PAL.white;
+  ctx.font = '18px monospace';
+  ctx.fillText(subtitle, W/2, H/2 + 20);
+  ctx.font = '14px monospace';
+  ctx.fillText('Pressione R para voltar ao menu', W/2, H/2 + 60);
+  ctx.textAlign = 'left';
+}
+
+function render() {
+  ctx.clearRect(0,0,W,H);
+  drawLabBackground();
+
+  if (state === 'menu') { drawMenu(); return; }
+
+  for (const p of platforms) {
+    const px = p.x - camX;
+    if (px+p.w+20 < 0 || px > W) continue;
+    const depth = Math.min(18, p.h * 0.6);
+    drawBlock3D(px, p.y, p.w, p.h, depth, PAL.cyan, PAL.cyanDark, '#005577', PAL.cyan);
+    ctx.strokeStyle = 'rgba(0, 255, 204, 0.3)';
+    ctx.lineWidth = 1;
+    for (let i=1;i<Math.floor(p.w/40);i++) {
+      ctx.beginPath();
+      ctx.moveTo(px + i*40, p.y+2);
+      ctx.lineTo(px + i*40, p.y + p.h-2);
+      ctx.stroke();
+    }
+  }
+
+  for (const m of mines) drawMine(m);
+  for (const c of coffees) drawCoffee(c);
+  for (const m of monsters) drawMonster(m);
+  drawBoss();
+
+  for (const b of bossBullets) {
+    const px = b.x - camX;
+    ctx.shadowColor = PAL.magenta;
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = PAL.magenta;
+    ctx.beginPath();
+    ctx.ellipse(px + b.w/2, b.y + b.h/4, b.w/2, b.h/4, 0, Math.PI, 0);
+    ctx.fill();
+    ctx.fillRect(px, b.y + b.h/4, b.w, b.h/4);
+    ctx.fillStyle = PAL.white;
+    ctx.fillRect(px, b.y + b.h/2, b.w, b.h/4);
+    ctx.beginPath();
+    ctx.ellipse(px + b.w/2, b.y + b.h*3/4, b.w/2, b.h/4, 0, 0, Math.PI);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  drawScientist();
+
+  for (const p of particles) {
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = p.life/30;
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(p.x - camX, p.y, p.size, 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
+
+  drawHUD();
+
+  if (state === 'lose') drawEnd('VOCÊ DORMIU...', 'O Clonezepam venceu. 💤', '#6699ff');
+  if (state === 'cardiac') drawEnd('ATAQUE CARDÍACO!', 'Cafeína demais! ☕💔', PAL.red);
+  if (state === 'win') drawEnd('VOCÊ VENCEU!', 'Derrotou o Dr. Clonezepam! ☕✨', PAL.green);
+}
+
+function loop() {
+  update();
+  render();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caça-Palavras: Alendronato</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f0f4f8;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        h1 {
+            color: #0056b3;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        p.subtitle {
+            color: #666;
+            margin-top: 0;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+            max-width: 950px;
+            width: 100%;
+        }
+
+        /* Grid do Caça-Palavras */
+        #wordsearch-grid {
+            display: grid;
+            grid-template-columns: repeat(14, 32px);
+            grid-template-rows: repeat(14, 32px);
+            gap: 3px;
+            background-color: #0056b3;
+            padding: 8px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            user-select: none;
+        }
+
+        .cell {
+            background-color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 15px;
+            color: #333;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .cell:hover {
+            background-color: #e0e0e0;
+        }
+
+        .cell.selected {
+            background-color: #ffca28;
+            color: #000;
+        }
+
+        .cell.found {
+            background-color: #4caf50 !important;
+            color: #fff !important;
+        }
+
+        /* Painel Lateral de Palavras */
+        .words-panel {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            min-width: 250px;
+            flex: 1;
+            max-width: 300px;
+        }
+
+        .words-panel h3 {
+            margin-top: 0;
+            color: #0056b3;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 8px;
+        }
+
+        .word-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .word-list li {
+            padding: 6px 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 13px;
+            color: #555;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .word-list li.found {
+            background-color: #d4edda;
+            color: #155724;
+            text-decoration: line-through;
+        }
+
+        .actions {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+        }
+
+        button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #bd2130;
+        }
+
+        .info-box {
+            margin-top: 20px;
+            background-color: #e3f2fd;
+            border-left: 5px solid #0056b3;
+            padding: 15px;
+            border-radius: 4px;
+            max-width: 950px;
+            width: 100%;
+        }
+
+        .info-box h4 {
+            margin: 0 0 8px 0;
+            color: #0056b3;
+        }
+
+        .info-box p {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Caça-Palavras: Uso do Alendronato</h1>
+    <p class="subtitle">As palavras estão na horizontal (deitada), vertical (em pé) e diagonal!</p>
+
+    <div class="container">
+        <div id="wordsearch-grid"></div>
+
+        <div class="words-panel">
+            <h3>Palavras (10):</h3>
+            <ul class="word-list" id="word-list">
+                <li data-word="ALENDRONATO">ALENDRONATO</li>
+                <li data-word="JEJUM">JEJUM</li>
+                <li data-word="AGUA">AGUA</li>
+                <li data-word="ESOFAGO">ESOFAGO</li>
+                <li data-word="CALCIO">CALCIO</li>
+                <li data-word="LEITE">LEITE</li>
+                <li data-word="CAFE">CAFE</li>
+                <li data-word="SUCO">SUCO</li>
+                <li data-word="FERRO">FERRO</li>
+                <li data-word="OSTEOPOROSE">OSTEOPOROSE</li>
+            </ul>
+            <div class="actions">
+                <button onclick="clearSelection()">Limpar Seleção</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-box">
+        <h4>💡 Lembrete de Uso:</h4>
+        <p>O <strong>Alendronato</strong> é indicado para a <strong>osteoporose</strong> e deve ser tomado em <strong>jejum</strong> apenas com <strong>água</strong>. Evite <strong>leite</strong>, <strong>café</strong>, <strong>suco</strong>, suplementos de <strong>cálcio</strong> ou <strong>ferro</strong> no mesmo horário e permaneça ereto para não prejudicar o <strong>esôfago</strong>!</p>
+    </div>
+
+    <script>
+        // Matriz 14x14 com LEITE reposicionado
+        const gridLayout = [
+            ['A', 'L', 'E', 'N', 'D', 'R', 'O', 'N', 'A', 'T', 'O', 'X', 'Y', 'Z'], // [0] ALENDRONATO (H)
+            ['C', 'F', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'Y', 'A', 'B'], // [1]
+            ['A', 'Z', 'J', 'E', 'J', 'U', 'M', 'A', 'B', 'C', 'D', 'E', 'F', 'G'], // [2] JEJUM (H)
+            ['L', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R'], // [3]
+            ['C', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'A', 'B', 'C'], // [4]
+            ['I', 'B', 'E', 'S', 'O', 'F', 'A', 'G', 'O', 'J', 'K', 'L', 'M', 'N'], // [5] ESOFAGO (H)
+            ['O', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'A', 'B', 'C'], // [6] CALCIO (V na Col 0)
+            ['H', 'A', 'G', 'U', 'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'], // [7] AGUA (H) / C do CAFE
+            ['S', 'K', 'L', 'M', 'N', 'P', 'A', 'R', 'S', 'T', 'U', 'V', 'W', 'X'], // [8] A do CAFE
+            ['U', 'X', 'Y', 'Z', 'A', 'B', 'C', 'F', 'L', 'E', 'I', 'T', 'E', 'I'], // [9] LEITE (H nas Cols 8-12) / F do CAFE
+            ['C', 'E', 'R', 'R', 'O', 'P', 'Q', 'E', 'E', 'K', 'L', 'M', 'N', 'O'], // [10] E do CAFE
+            ['O', 'F', 'E', 'R', 'R', 'O', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'], // [11] FERRO (H)
+            ['X', 'Y', 'Z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'], // [12] SUCO (V na Col 0)
+            ['O', 'S', 'T', 'E', 'O', 'P', 'O', 'R', 'O', 'S', 'E', 'A', 'B', 'C']  // [13] OSTEOPOROSE (H)
+        ];
+
+        // Mapeamento atualizado das posições [linha, coluna]
+        const targetWords = {
+            "ALENDRONATO": [[0,0], [0,1], [0,2], [0,3], [0,4], [0,5], [0,6], [0,7], [0,8], [0,9], [0,10]],
+            "JEJUM": [[2,2], [2,3], [2,4], [2,5], [2,6]],
+            "AGUA": [[7,1], [7,2], [7,3], [7,4]],
+            "ESOFAGO": [[5,2], [5,3], [5,4], [5,5], [5,6], [5,7], [5,8]],
+            "CALCIO": [[1,0], [2,0], [3,0], [4,0], [5,0], [6,0]], 
+            "LEITE": [[9,8], [9,9], [9,10], [9,11], [9,12]], // Nova posição para LEITE
+            "CAFE": [[7,5], [8,6], [9,7], [10,8]], 
+            "SUCO": [[8,0], [9,0], [10,0], [11,0]], 
+            "FERRO": [[11,1], [11,2], [11,3], [11,4], [11,5]],
+            "OSTEOPOROSE": [[13,0], [13,1], [13,2], [13,3], [13,4], [13,5], [13,6], [13,7], [13,8], [13,9], [13,10]]
+        };
+
+        let selectedCells = [];
+        const foundWords = new Set();
+
+        const gridElement = document.getElementById('wordsearch-grid');
+
+        function createGrid() {
+            gridElement.innerHTML = '';
+            for (let r = 0; r < 14; r++) {
+                for (let c = 0; c < 14; c++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.innerText = gridLayout[r][c];
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    
+                    cell.addEventListener('click', () => handleCellClick(r, c, cell));
+                    gridElement.appendChild(cell);
+                }
+            }
+        }
+
+        function handleCellClick(row, col, element) {
+            const index = selectedCells.findIndex(c => c.r === row && c.c === col);
+
+            if (index > -1) {
+                selectedCells.splice(index, 1);
+                element.classList.remove('selected');
+            } else {
+                selectedCells.push({ r: row, c: col, el: element });
+                element.classList.add('selected');
+            }
+
+            checkSelectedWord();
+        }
+
+        function clearSelection() {
+            selectedCells.forEach(cell => {
+                if (!cell.el.classList.contains('found')) {
+                    cell.el.classList.remove('selected');
+                }
+            });
+            selectedCells = [];
+        }
+
+        function checkSelectedWord() {
+            for (const [word, coords] of Object.entries(targetWords)) {
+                if (foundWords.has(word)) continue;
+
+                if (coords.length === selectedCells.length) {
+                    const isMatch = coords.every(coord => 
+                        selectedCells.some(cell => cell.r === coord[0] && cell.c === coord[1])
+                    );
+
+                    if (isMatch) {
+                        markWordAsFound(word, coords);
+                        break;
+                    }
+                }
+            }
+        }
+
+        function markWordAsFound(word, coords) {
+            foundWords.add(word);
+
+            coords.forEach(coord => {
+                const cellEl = document.querySelector(`[data-row='${coord[0]}'][data-col='${coord[1]}']`);
+                if (cellEl) {
+                    cellEl.classList.remove('selected');
+                    cellEl.classList.add('found');
+                }
+            });
+
+            const wordLi = document.querySelector(`[data-word='${word}']`);
+            if (wordLi) {
+                wordLi.classList.add('found');
+            }
+
+            selectedCells = [];
+
+            if (foundWords.size === Object.keys(targetWords).length) {
+                setTimeout(() => {
+                    alert('Parabéns! Encontraste todas as 10 palavras!');
+                }, 200);
+            }
+        }
+
+        createGrid();
+    </script>
+</body>
+</html>

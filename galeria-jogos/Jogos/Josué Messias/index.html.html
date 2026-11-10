@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab: Interações Perigosas</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome para Ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        medical: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            700: '#15803d',
+                            900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Estilos CSS Customizados (Você pode mover para um style.css) */
+        body {
+            background-color: #0f172a; /* slate-900 */
+            color: #f8fafc; /* slate-50 */
+        }
+        
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .item-card {
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+
+        .item-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .item-card.selected {
+            border-color: #3b82f6; /* blue-500 */
+            background-color: rgba(59, 130, 246, 0.2);
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans p-4 md:p-8">
+
+    <header class="max-w-6xl mx-auto w-full flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+        <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-xl shadow-lg shadow-blue-500/30">
+                <i class="fa-solid fa-flask text-white"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-white tracking-tight">Lab de Análises</h1>
+                <p class="text-slate-400 text-sm">Interações Fármaco-Fármaco e Alimento-Fármaco</p>
+            </div>
+        </div>
+
+        <div class="glass-panel px-6 py-3 rounded-2xl flex items-center gap-4 border border-blue-500/30">
+            <div class="text-right">
+                <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Interações Descobertas</p>
+                <p class="text-2xl font-bold text-blue-400" id="score-display">0 / 10</p>
+            </div>
+            <i class="fa-solid fa-trophy text-amber-400 text-2xl"></i>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1">
+        
+        <!-- Área de Seleção (Esquerda) -->
+        <section class="flex flex-col gap-6">
+            <div class="glass-panel p-6 rounded-3xl">
+                <h2 class="text-lg font-semibold mb-4 border-b border-slate-700 pb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-hand-pointer text-blue-400"></i> Selecione 2 elementos
+                </h2>
+                
+                <!-- Grid de Itens será renderizado aqui -->
+                <div id="items-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <!-- Itens via JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Área de Análise (Direita) -->
+        <section class="flex flex-col gap-6">
+            <div class="glass-panel p-6 rounded-3xl flex-1 flex flex-col">
+                <h2 class="text-lg font-semibold mb-4 border-b border-slate-700 pb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-microscope text-purple-400"></i> Máquina de Análise
+                </h2>
+
+                <!-- Slots de Seleção -->
+                <div class="flex justify-center items-center gap-4 mb-6 mt-4">
+                    <div id="slot-1" class="w-32 h-32 rounded-2xl border-2 border-dashed border-slate-600 flex flex-col items-center justify-center text-slate-500 bg-slate-800/50">
+                        <i class="fa-solid fa-plus text-2xl mb-2"></i>
+                        <span class="text-xs text-center px-2">Slot 1</span>
+                    </div>
+                    
+                    <div class="text-2xl text-slate-600"><i class="fa-solid fa-xmark"></i></div>
+                    
+                    <div id="slot-2" class="w-32 h-32 rounded-2xl border-2 border-dashed border-slate-600 flex flex-col items-center justify-center text-slate-500 bg-slate-800/50">
+                        <i class="fa-solid fa-plus text-2xl mb-2"></i>
+                        <span class="text-xs text-center px-2">Slot 2</span>
+                    </div>
+                </div>
+
+                <!-- Botão de Ação -->
+                <button id="btn-analyze" onclick="analyzeInteraction()" class="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-lg transition-colors shadow-lg shadow-blue-900/50 disabled:opacity-50 disabled:cursor-not-allowed mb-6" disabled>
+                    Analisar Interação
+                </button>
+
+                <!-- Painel de Resultado -->
+                <div id="result-panel" class="hidden flex-1 rounded-2xl p-6 border-2 flex flex-col justify-center items-center text-center fade-in">
+                    <!-- Conteúdo do resultado gerado via JS -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Você pode mover este código para um arquivo main.js
+
+        // Base de Dados dos Elementos
+        const database = [
+            { id: 'levotiroxina', name: 'Levotiroxina', type: 'remedio', icon: 'fa-capsules', color: 'text-purple-400' },
+            { id: 'cafe', name: 'Café', type: 'alimento', icon: 'fa-mug-hot', color: 'text-amber-600' },
+            { id: 'clonazepam', name: 'Clonazepam', type: 'remedio', icon: 'fa-pills', color: 'text-indigo-400' },
+            { id: 'alendronato', name: 'Alendronato 70mg', type: 'remedio', icon: 'fa-bone', color: 'text-gray-300' },
+            { id: 'alimento', name: 'Alimento (Geral)', type: 'alimento', icon: 'fa-utensils', color: 'text-green-500' },
+            { id: 'leite', name: 'Leite', type: 'alimento', icon: 'fa-glass-water', color: 'text-white' },
+            { id: 'tetraciclina', name: 'Tetraciclina', type: 'remedio', icon: 'fa-prescription-bottle-medical', color: 'text-yellow-400' },
+            { id: 'varfarina', name: 'Varfarina', type: 'remedio', icon: 'fa-droplet', color: 'text-red-500' },
+            { id: 'amoxicilina', name: 'Amoxicilina', type: 'remedio', icon: 'fa-tablets', color: 'text-pink-400' },
+            { id: 'alprazolam', name: 'Alprazolam', type: 'remedio', icon: 'fa-pills', color: 'text-indigo-300' },
+            { id: 'omeprazol', name: 'Omeprazol', type: 'remedio', icon: 'fa-capsules', color: 'text-orange-400' },
+            { id: 'ranitidina', name: 'Ranitidina', type: 'remedio', icon: 'fa-capsules', color: 'text-orange-300' },
+            { id: 'cetoprofeno', name: 'Cetoprofeno', type: 'remedio', icon: 'fa-briefcase-medical', color: 'text-teal-400' },
+            { id: 'aspirina', name: 'Aspirina', type: 'remedio', icon: 'fa-tablets', color: 'text-teal-300' }
+        ];
+
+        // Estado do Jogo
+        let selectedItems = [];
+        let discoveredInteractions = new Set();
+        const MAX_SCORE = 10;
+
+        function init() {
+            renderGrid();
+            updateUI();
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('items-grid');
+            grid.innerHTML = '';
+            
+            database.forEach(item => {
+                const isSelected = selectedItems.includes(item.id);
+                const typeClass = item.type === 'remedio' ? 'bg-slate-800 border-slate-700' : 'bg-slate-700/50 border-slate-600';
+                
+                const div = document.createElement('div');
+                div.className = `item-card p-3 rounded-xl border flex flex-col items-center justify-center text-center gap-2 ${typeClass} ${isSelected ? 'selected' : ''}`;
+                div.onclick = () => toggleSelection(item.id);
+                
+                div.innerHTML = `
+                    <i class="fa-solid ${item.icon} text-2xl ${item.color}"></i>
+                    <span class="text-xs font-semibold text-slate-200">${item.name}</span>
+                    <span class="text-[10px] uppercase tracking-wide text-slate-400">${item.type}</span>
+                `;
+                
+                grid.appendChild(div);
+            });
+        }
+
+        function toggleSelection(id) {
+            if (selectedItems.includes(id)) {
+                selectedItems = selectedItems.filter(itemId => itemId !== id);
+            } else {
+                if (selectedItems.length < 2) {
+                    selectedItems.push(id);
+                } else {
+                    // Substitui o último se já tiver 2
+                    selectedItems[1] = id;
+                }
+            }
+            
+            // Oculta painel de resultado se a seleção mudar
+            document.getElementById('result-panel').classList.add('hidden');
+            
+            renderGrid();
+            updateSlots();
+        }
+
+        function updateSlots() {
+            const slot1 = document.getElementById('slot-1');
+            const slot2 = document.getElementById('slot-2');
+            const btnAnalyze = document.getElementById('btn-analyze');
+
+            const renderSlot = (slotEl, itemObj) => {
+                if (itemObj) {
+                    slotEl.className = 'w-32 h-32 rounded-2xl border border-blue-500 bg-blue-500/10 flex flex-col items-center justify-center';
+                    slotEl.innerHTML = `
+                        <i class="fa-solid ${itemObj.icon} text-3xl ${itemObj.color} mb-2"></i>
+                        <span class="text-sm font-bold text-slate-200 text-center px-1">${itemObj.name}</span>
+                    `;
+                } else {
+                    slotEl.className = 'w-32 h-32 rounded-2xl border-2 border-dashed border-slate-600 flex flex-col items-center justify-center text-slate-500 bg-slate-800/50';
+                    slotEl.innerHTML = `
+                        <i class="fa-solid fa-plus text-2xl mb-2"></i>
+                        <span class="text-xs text-center px-2">Vazio</span>
+                    `;
+                }
+            };
+
+            const item1 = database.find(i => i.id === selectedItems[0]);
+            const item2 = database.find(i => i.id === selectedItems[1]);
+
+            renderSlot(slot1, item1);
+            renderSlot(slot2, item2);
+
+            // Habilita botão se 2 itens estiverem selecionados
+            btnAnalyze.disabled = selectedItems.length !== 2;
+        }
+
+        function checkInteractionLogic(idA, idB) {
+            const has = (a, b) => (idA === a && idB === b) || (idA === b && idB === a);
+            const isAnyRemedioExcept = (idTarget, excludeIds) => {
+                if (idA === idTarget) {
+                    const itemB = database.find(i => i.id === idB);
+                    return itemB.type === 'remedio' && !excludeIds.includes(idB);
+                }
+                if (idB === idTarget) {
+                    const itemA = database.find(i => i.id === idA);
+                    return itemA.type === 'remedio' && !excludeIds.includes(idA);
+                }
+                return false;
+            };
+
+            // Regra 1
+            if (has('levotiroxina', 'cafe')) return { 
+                ruleId: 1, 
+                severity: 'danger', 
+                title: 'Interação Grave (Alimento-Fármaco)',
+                desc: 'O café causa redução drástica na absorção da Levotiroxina (hormônio). A Levotiroxina deve ser tomada em jejum estrito.' 
+            };
+            
+            // Regra 2
+            if (has('cafe', 'clonazepam')) return { 
+                ruleId: 2, 
+                severity: 'warning', 
+                title: 'Antagonismo de Efeitos',
+                desc: 'A cafeína (estimulante do SNC) antagoniza e "corta" o efeito ansiolítico e sedativo do Clonazepam (depressor do SNC).' 
+            };
+            
+            // Regra 3
+            if (has('alendronato', 'alimento')) return { 
+                ruleId: 3, 
+                severity: 'danger', 
+                title: 'Bloqueio de Absorção',
+                desc: 'O alimento bloqueia quase 100% da absorção do Alendronato. Este medicamento exige jejum absoluto e posição ereta após ingestão.' 
+            };
+            
+            // Regra 4
+            if (has('tetraciclina', 'leite')) return { 
+                ruleId: 4, 
+                severity: 'danger', 
+                title: 'Quelação Fármaco-Nutriente',
+                desc: 'O cálcio do leite liga-se à Tetraciclina formando quelatos insolúveis, inativando completamente o antibiótico no trato gastrointestinal.' 
+            };
+            
+            // Regra 5
+            if (has('varfarina', 'amoxicilina')) return { 
+                ruleId: 5, 
+                severity: 'danger', 
+                title: 'Risco Elevado de Hemorragia',
+                desc: 'A Amoxicilina destrói a flora intestinal produtora de Vitamina K. Com menos Vitamina K, o efeito da Varfarina é potencializado, causando sangramentos.' 
+            };
+            
+            // Regra 6
+            if (has('alprazolam', 'clonazepam')) return { 
+                ruleId: 6, 
+                severity: 'danger', 
+                title: 'Duplicação Terapêutica Perigosa',
+                desc: 'Associação de dois Benzodiazepínicos. Causa depressão respiratória severa, sedação extrema e risco de coma.' 
+            };
+            
+            // Regras 7 e 8 (Omeprazol / Ranitidina + Qualquer Remédio)
+            if (isAnyRemedioExcept('omeprazol', ['omeprazol', 'ranitidina'])) return { 
+                ruleId: 7, 
+                severity: 'warning', 
+                title: 'Alteração de pH Gástrico',
+                desc: 'O Omeprazol altera a acidez do estômago, o que prejudica a dissolução e absorção de vários fármacos que dependem do pH ácido para funcionar.' 
+            };
+            
+            if (isAnyRemedioExcept('ranitidina', ['omeprazol', 'ranitidina'])) return { 
+                ruleId: 8, 
+                severity: 'warning', 
+                title: 'Alteração de pH Gástrico',
+                desc: 'A Ranitidina modifica o pH do estômago, prejudicando e alterando o perfil de absorção de outros fármacos administrados concomitantemente.' 
+            };
+            
+            // Regra 9
+            if (has('varfarina', 'cetoprofeno') || has('varfarina', 'aspirina')) return { 
+                ruleId: 9, 
+                severity: 'danger', 
+                title: 'Risco Hemorrágico Extremo',
+                desc: 'Associação de Anticoagulante (Varfarina) com AINEs. Altíssimo risco de hemorragia grave e sangramento gastrointestinal severo.' 
+            };
+            
+            // Regra 10
+            if (has('cetoprofeno', 'aspirina')) return { 
+                ruleId: 10, 
+                severity: 'danger', 
+                title: 'Toxicidade Gastrointestinal e Renal',
+                desc: 'Associação de dois AINEs. Não há ganho terapêutico (não alivia mais a dor), mas multiplica o risco de úlceras gástricas e falência renal.' 
+            };
+
+            // Sem Interação
+            return null;
+        }
+
+        function analyzeInteraction() {
+            if (selectedItems.length !== 2) return;
+            
+            const resultPanel = document.getElementById('result-panel');
+            const result = checkInteractionLogic(selectedItems[0], selectedItems[1]);
+            
+            // Reinicia animação CSS
+            resultPanel.classList.remove('fade-in');
+            void resultPanel.offsetWidth; // trigger reflow
+            resultPanel.classList.add('fade-in');
+            resultPanel.classList.remove('hidden');
+
+            if (result) {
+                // Interação encontrada
+                let colorBorder, colorIcon, colorBg, iconClass;
+                
+                if (result.severity === 'danger') {
+                    colorBorder = 'border-red-500';
+                    colorBg = 'bg-red-900/20';
+                    colorIcon = 'text-red-500';
+                    iconClass = 'fa-skull-crossbones';
+                } else {
+                    colorBorder = 'border-amber-500';
+                    colorBg = 'bg-amber-900/20';
+                    colorIcon = 'text-amber-500';
+                    iconClass = 'fa-triangle-exclamation';
+                }
+
+                resultPanel.className = `flex-1 rounded-2xl p-6 border-2 flex flex-col justify-center items-center text-center fade-in ${colorBorder} ${colorBg}`;
+                resultPanel.innerHTML = `
+                    <div class="w-16 h-16 rounded-full flex items-center justify-center bg-slate-900 border ${colorBorder} mb-4">
+                        <i class="fa-solid ${iconClass} text-3xl ${colorIcon}"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">${result.title}</h3>
+                    <p class="text-slate-300 text-sm leading-relaxed max-w-md">${result.desc}</p>
+                `;
+
+                // Pontuação
+                if (!discoveredInteractions.has(result.ruleId)) {
+                    discoveredInteractions.add(result.ruleId);
+                    document.getElementById('score-display').innerText = `${discoveredInteractions.size} / ${MAX_SCORE}`;
+                }
+
+            } else {
+                // Sem interação
+                resultPanel.className = `flex-1 rounded-2xl p-6 border-2 flex flex-col justify-center items-center text-center fade-in border-green-500 bg-green-900/20`;
+                resultPanel.innerHTML = `
+                    <div class="w-16 h-16 rounded-full flex items-center justify-center bg-slate-900 border border-green-500 mb-4">
+                        <i class="fa-solid fa-check text-3xl text-green-500"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">Sem Interação Grave Cadastrada</h3>
+                    <p class="text-slate-300 text-sm leading-relaxed">Não há registro de perigo imediato ou grave entre essas duas substâncias na nossa base atual.</p>
+                `;
+            }
+        }
+
+        // Inicializa a aplicação ao carregar
+        window.onload = init;
+    </script>
+</body>
+</html>

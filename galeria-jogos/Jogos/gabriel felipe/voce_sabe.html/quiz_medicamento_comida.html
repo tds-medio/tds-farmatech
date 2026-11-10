@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz: Remédio x Comida</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2b6cb0;
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .placar {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #2b6cb0;
+            background: #ebf8ff;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border: 1px solid #bee3f8;
+            position: sticky;
+            top: 10px;
+            z-index: 1000;
+        }
+        .card-pergunta {
+            background: #fafafa;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        .tag-topico {
+            background: #e2e8f0;
+            color: #4a5568;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            border-radius: 4px;
+        }
+        .pergunta-texto {
+            font-size: 16px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .opcao-bloco {
+            margin-bottom: 10px;
+        }
+        .opcao-bloco label {
+            display: block;
+            background: #ffffff;
+            border: 1px solid #cbd5e0;
+            padding: 12px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        .opcao-bloco label:hover {
+            background: #ebf8ff;
+        }
+        .opcao-bloco input[type="radio"] {
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        .feedback {
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            display: none; 
+        }
+        .certo {
+            background-color: #c6f6d5;
+            color: #22543d;
+            border-left: 5px solid #38a169;
+            display: block;
+        }
+        .errado {
+            background-color: #fed7d7;
+            color: #742a2a;
+            border-left: 5px solid #e53e3e;
+            display: block;
+        }
+        .btn-verificar, .btn-reiniciar {
+            background: #2b6cb0;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .btn-verificar:hover, .btn-reiniciar:hover {
+            background: #1a528d;
+        }
+        .btn-verificar:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+        }
+        .resultado-final {
+            display: none;
+            background: #f7fafc;
+            border: 2px dashed #4a5568;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Medicamento x Alimento: O Jogo</h1>
+    <div class="placar">Pontuação: <span id="pontos">0</span> / <span id="total-perguntas">10</span></div>
+
+    <!-- PERGUNTA 1 -->
+    <div class="card-pergunta" data-correta="A">
+        <span class="tag-topico">Frutas Cítricas e Estatinas</span>
+        <p class="pergunta-texto">Qual é o principal efeito de consumir suco de toranja (grapefruit) ao utilizar medicamentos da classe das estatinas, como a sinvastatina?</p>
+        <div class="opcao-bloco"><label><input type="radio" name="p1" value="A"> A) Aumenta a concentração do medicamento no sangue, elevando o risco de efeitos colaterais graves, como dores musculares.</label></div>
+        <div class="opcao-bloco"><label><input type="radio" name="p1" value="B"> B) Anula completamente o efeito do medicamento, tornando o tratamento ineficaz.</label></div>
+        <div class="opcao-bloco"><label><input type="radio" name="p1" value="C"> C) Acelera a eliminação do princípio ativo pelos rins.</label></div>
+        <button class="btn-verificar">Verificar Resposta</button>
+        <div class="feedback"></div>
+    </div>
+
+    <!-- PERGUNTA 2 -->
+    <div class="card-pergunta" data-correta="B">
+        <span class="tag-topico">Vegetais Verdes e Anticoagulantes</span>
+        <p class="pergunta-texto">Por que pacientes que fazem uso de anticoagulantes como a varfarina devem manter um consumo estável e moderado de vegetais verde-escuros (como brócolis e espinafre)?</p>
+        <div class="opcao-bloco"><label><input type="radio" name="p2" value="A"> A) Porque esses vegetais destroem quimicamente a molécula do anticoagulante no estômago.</label></div>
+        <div class="opcao-bloco"><label><input type="radio" name="p2" value="B"> B) Eles são ricos em vitamina K, que antagoniza o efeito anticoagulante; variações drásticas alteram a coagulação.</label></div>
+        <div class="opcao-bloco"><label><input type="radio" name="p2" value="C"> C) Eles reduzem a absorção de água, causando constipação severa.</label></div>
+        <button class="btn-verificar">Verificar Resposta</button>
+        <div class="feedback"></div>
+    </div>
+
+    <!-- PERGUNTA 3 -->
+    <div class="card-pergunta" data-correta="C">
+        <span class="tag-topico">Laticínios e Antibióticos</span>
+        <p class="pergunta-texto">Qual é a orientação geral ao administrar antibióticos do grupo das tetraciclinas em relação ao consumo de leite e derivados?</p>
+        <div class="opcao-bloco"><label><input type="radio" name="p3" value="A"> A) Devem ser ingeridos juntos obrigatoriamente para proteger o estômago da acidez do remédio.</label></div>
+        <div class="opcao-bloco"><label><input type="radio" name="p3" value="B"> B) Não há nenhuma restrição; o leite potencializa a ação bactericida.</label></div>
+        <div class="opcao-bloco"><label><input type="radio" name="p3" value="C"> C) Evitar o consumo simultâneo, pois o cálcio forma complexos insolúveis com o antibiótico, reduzindo sua eficácia.</label></div>
+        <button class="btn-verificar">Verificar Resposta</button>
+        <div class="feedback"></div>
+    </div>
+
+    <!-- PERGUNTA 4 -->
+    <div class="card-pergunta" data-correta="A">
+        <span class="tag-topico">Alimentos Fermentados e Antidepressivos</span>
+        <p class="pergunta-texto">Queijos envelhecidos, embutidos curados e vinhos tintos devem ser rigorosamente evitados por pacientes que utilizam qual classe de medicamentos?</p>
+        <div class="opcao-bloco"><label><input type="radio" name="p4" value="A"> A) Inibidores da Monoaminoxidase (IMAO).</label></div>
+        <div class="opcao-bloco"><label><input type="radio" name="p4" value="B"> B) Anti-inflamatórios não esteroides (AINEs).</label></div>
+        <div class="opcao-bloco"><label><input type="radio" name="p4" value="C"> C) Anti-hipertensivos do tipo beta-bloqueadores.</label></div>
+        <button class="btn-verificar">Verificar Resposta</button>
+        <div class="feedback"></div>
+    </div>
+
+    <!-- PERGUNTA 5 -->
+    <div class="card-pergunta" data-correta="B">
+        <span class="tag-topico">Jejum e Bisfosfonatos</span>
+        <p class="pergunta-texto">O alendronato de sódio, utilizado no tratamento da osteoporose, deve ser tomado em jejum estrito com água pura, aguardando cerca de 30 minutos antes de comer. Por quê?</p>
+        <div class="opcao-bloco"><label><input type="radio" name="p5" value="A"> A) O alimento aumenta o pH gástrico a ponto de explodir a cápsula do comprimido.</label></div>
+        <div class="opcao-bloco"><label><input type="radio" name="p5" value="B"> B) A presença de qualquer alimento ou bebida (exceto água) diminui drasticamente a absorção intestinal do fármaco.</label></div>
+        <div class="opcao-bloco"><label><input type="radio" name="p5" value="C"> C) O alimento faz com que o remédio se desloque para os pulmões.</label></div>
+        <button class="btn-verificar">Verificar Resposta</button>
+        <div class="feedback"></div>
+    </div>
+
+    <!-- PERGUNTA 6 -->
+    <div class="card-pergunta" data-correta="C">
+        <span class="tag-topico">Fitoterápicos e Coagulação</span>
+        <p class="pergunta-texto">O consumo excessivo de alho cru pode interagir de forma sinérgica e perigosa com qual grupo de medicamentos?</p>
+        <div class="opcao-bloco"><label><input type="radio" name="p6" value="A"> A) Insulina e antidiabéticos orais.</label></div>
+        <div class="opcao-bloco"><label><input type="radio" name="p6" value="B"> B) Antibióticos de largo espectro.</label></div>
+        <div class="opcao-bloco"><label><input type="radio" name="p6" value="C"> C) Anticoagulantes e antiplaquetários, aumentando o risco de sangramentos.</label></div>
+        <button class="btn-verificar">Verificar Resposta</button>
+        <div class="feedback"></div>
+    </div>
+
+    <!-- PERGUNTA 7 -->
+    <div class="card-pergunta" data-correta="A">
+        <span class="tag-topico">Sucos e Antialérgicos</span>
+        <p class="pergunta-texto">O consumo de sucos de frutas como toranja, maçã ou laranja junto com o anti-histamínico fexofenadina pode causar qual consequência?</p>
+        <div class="opcao-bloco"><label><input type="radio" name="p7" value="A"> A) Redução da absorção e eficácia do antialérgico devido à inibição de transportadores intestinais.</label></div>
+        <div class="opcao-bloco"><label><input type="radio" name="p7" value="B"> B) Aumento tóxico do sono e sedação extrema no paciente.</label></div>
+        <div class="opcao-bloco"><label><input type="radio" name="p7" value="C"> C) Transformação instantânea do medicamento em açúcar no estômago.</label></div>
+        <button class="btn-verificar">Verificar Resposta</button>
+        <div class="feedback"></div>
+    </div>
+
+    <!-- PERGUNTA 8 -->
+    <div class="card-pergunta" data-correta="B">
+        <span class="tag-topico">Potássio e Diuréticos</span>
+        <p class="pergunta-texto">A ingestão excessiva de suplementos de sal ricos em potássio ou bananas em grande quantidade, combinada com espironolactona (um diurético poupador de potássio), pode provocar:</p>
+        <div class="opcao-bloco"><label><input type="radio" name="p8" value="A"> A) Hipocalemia severa (falta de potássio).</label></div>
+        <div class="opcao-bloco"><label><input type="radio" name="p8" value="B"> B) Hipercalemia (excesso de potássio), que pode resultar em arritmias cardíacas graves.</label></div>
+        <div class="opcao-bloco"><label><input type="radio" name="p8" value="C"> C) Parada total do funcionamento dos rims por desidratação.</label></div>
+        <button class="btn-verificar">Verificar Resposta</button>
+        <div class="feedback"></div>
+    </div>
+
+    <!-- PERGUNTA 9 -->
+    <div class="card-pergunta" data-correta="C">
+        <span class="tag-topico">Gordura e Absorção de Fármacos</span>
+        <p class="pergunta-texto">Por que alguns medicamentos antifúngicos (como a griseofulvina) devem ser ingeridos acompanhados de uma refeição rica em gordura?</p>
+        <div class="opcao-bloco"><label><input type="radio" name="p9" value="A"> A) Para evitar que o paciente sinta náuseas fortes durante a digestão da cápsula.</label></div>
+        <div class="opcao-bloco"><label><input type="radio" name="p9" value="B"> B) Para desacelerar o trânsito intestinal e fazer o remédio durar mais dias no corpo.</label></div>
+        <div class="opcao-bloco"><label><input type="radio" name="p9" value="C"> C) A gordura estimula a bile, o que melhora significativamente a dissolução e absorção de fármacos lipossolúveis.</label></div>
+        <button class="btn-verificar">Verificar Resposta</button>
+        <div class="feedback"></div>
+    </div>
+
+    <!-- PERGUNTA 10 -->
+    <div class="card-pergunta" data-correta="A">
+        <span class="tag-topico">Cafeína e Broncodilatadores</span>
+        <p class="pergunta-texto">O consumo excessivo de café ou energéticos por um paciente em tratamento com teofilina (broncodilatador) pode acarretar qual efeito indesejado?</p>
+        <div class="opcao-bloco"><label><input type="radio" name="p10" value="A"> A) Aumento de efeitos colaterais estimulantes, como insônia, taquicardia e nervosismo.</label></div>
+        <div class="opcao-bloco"><label><input type="radio" name="p10" value="B"> B) Bloqueio completo da respiração por inativação do fármaco.</label></div>
+        <div class="opcao-bloco"><label><input type="radio" name="p10" value="C"> C) Sonolência profunda e letargia no paciente.</label></div>
+        <button class="btn-verificar">Verificar Resposta</button>
+        <div class="feedback"></div>
+    </div>
+
+    <div id="resultado" class="resultado-final">
+        <h2>Quiz Concluído!</h2>
+        <p id="mensagem-final"></p>
+        <button class="btn-reiniciar" onclick="reiniciarQuiz()">Jogar Novamente</button>
+    </div>
+</div>
+
+<script>
+    const cards = document.querySelectorAll('.card-pergunta');
+    const campoPontos = document.getElementById('pontos');
+    const campoTotal = document.getElementById('total-perguntas');
+    const painelResultado = document.getElementById('resultado');
+    const mensagemFinal = document.getElementById('mensagem-final');
+
+    let pontuacao = 0;
+    let perguntasRespondidas = 0;
+
+    campoTotal.textContent = cards.length;
+
+    cards.forEach(card => {
+        const btn = card.querySelector('.btn-verificar');
+        const feedback = card.querySelector('.feedback');
+        const alternativas = card.querySelectorAll('input[type="radio"]');
+
+        btn.addEventListener('click', () => {
+            const selecionada = card.querySelector('input[type="radio"]:checked');
+
+            if (!selecionada) {
+                alert('Por favor, selecione uma opção antes de verificar!');
+                return;
+            }
+
+            const respostaUsuario = selecionada.value;
+            const respostaCorreta = card.getAttribute('data-correta');
+
+            alternativas.forEach(radio => radio.disabled = true);
+            btn.disabled = true;
+
+            if (respostaUsuario === respostaCorreta) {
+                pontuacao++;
+                campoPontos.textContent = pontuacao;
+                feedback.textContent = "✅ Correto! Excelente escolha.";
+                feedback.className = "feedback certo";
+            } else {
+                feedback.textContent = `❌ Errado. A resposta correta era a Alternativa ${respostaCorreta}.`;
+                feedback.className = "feedback usado errado";
+            }
+
+            perguntasRespondidas++;
+
+            if (perguntasRespondidas === cards.length) {
+                mostrarResultadoFinal();
+            }
+        });
+    });
+
+    function mostrarResultadoFinal() {
+        painelResultado.style.display = 'block';
+        const aproveitamento = (pontuacao / cards.length) * 100;
+        
+        if (aproveitamento === 100) {
+            mensagemFinal.textContent = `Perfeito! Você acertou as ${cards.length} questões. É um mestre na interação entre remédios e alimentos! 🌟`;
+        } else if (aproveitamento >= 70) {
+            mensagemFinal.textContent = `Muito bom! Você acertou ${pontuacao} de ${cards.length}. Tem ótimos conhecimentos sobre saúde! 🧠`;
+        } else {
+            mensagemFinal.textContent = `Você acertou ${pontuacao} de ${cards.length}. Vale a pena revisar as dicas para garantir sua segurança e eficácia nos tratamentos! 🩺`;
+        }
+        
+        painelResultado.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function reiniciarQuiz() {
+        pontuacao = 0;
+        perguntasRespondidas = 0;
+        campoPontos.textContent = "0";
+        painelResultado.style.display = 'none';
+
+        cards.forEach(card => {
+            const btn = card.querySelector('.btn-verificar');
+            const feedback = card.querySelector('.feedback');
+            const alternativas = card.querySelectorAll('input[type="radio"]');
+
+            feedback.style.display = 'none';
+            feedback.textContent = '';
+            feedback.className = 'feedback';
+            btn.disabled = false;
+
+            alternativas.forEach(radio => {
+                radio.disabled = false;
+                radio.checked = false;
+            });
+        });
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+</script>
+
+</body>
+</html>

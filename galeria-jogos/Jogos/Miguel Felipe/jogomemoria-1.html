@@ -1,0 +1,546 @@
+<!DOCTYPE html> 
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo da Memória: Ranitidina</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Fredoka', 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background-color: #e0f2fe;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        /* Container Principal */
+        .container {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 24px;
+            box-shadow: 0 10px 25px rgba(186, 230, 253, 0.5);
+            text-align: center;
+            max-width: 1000px;
+            width: 100%;
+            border: 4px solid #bae6fd;
+            position: relative;
+        }
+
+        /* Tela Inicial */
+        .welcome-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 400px;
+            gap: 20px;
+        }
+
+        .welcome-screen h1 {
+            color: #0284c7;
+            font-size: 32px;
+            text-shadow: 2px 2px 0px #e0f2fe;
+        }
+
+        .welcome-screen p {
+            color: #0369a1;
+            font-size: 18px;
+            max-width: 500px;
+            font-weight: 600;
+        }
+
+        /* Painel Superior do Jogo */
+        .game-header {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .title {
+            color: #0284c7;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .badge {
+            font-size: 16px;
+            font-weight: bold;
+            color: #0369a1;
+            background: #f0f9ff;
+            padding: 8px 18px;
+            border-radius: 20px;
+            border: 2px solid #bae6fd;
+        }
+
+        .timer-badge {
+            color: #d97706;
+            background: #fef3c7;
+            border-color: #fcd34d;
+        }
+
+        /* Área do Jogo */
+        .game-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        /* Tabuleiro da Memória (5 colunas x 4 linhas = 20 cartas) */
+        .memory-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 80px);
+            gap: 10px;
+            background-color: #f0f9ff;
+            padding: 15px;
+            border-radius: 20px;
+            border: 3px solid #bae6fd;
+            user-select: none;
+        }
+
+        /* Cartas de Memória */
+        .card {
+            width: 80px;
+            height: 80px;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+
+        .card-inner {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.5s ease;
+            border-radius: 14px;
+        }
+
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 14px;
+            padding: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            text-align: center;
+            word-break: break-word;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.08);
+        }
+
+        /* Verso da carta (fechada) */
+        .card-front {
+            background-color: #bae6fd;
+            color: #0284c7;
+            border: 2px solid #7dd3fc;
+            font-size: 20px;
+        }
+
+        /* Frente da carta (revelada com a resposta) */
+        .card-back {
+            background-color: #ffffff;
+            color: #0369a1;
+            border: 2px solid #38bdf8;
+            transform: rotateY(180deg);
+        }
+
+        .card.matched .card-back {
+            background-color: #a7f3d0;
+            color: #064e3b;
+            border-color: #34d399;
+        }
+
+        /* Lista de Perguntas */
+        .questions-container {
+            text-align: left;
+            flex: 1;
+            min-width: 280px;
+            max-width: 420px;
+        }
+
+        .questions-container h3 {
+            color: #0284c7;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        #questions-list {
+            list-style: none;
+            max-height: 380px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        #questions-list li {
+            font-size: 13px;
+            line-height: 1.4;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 10px;
+            background-color: #f0f9ff;
+            color: #334155;
+            border-left: 4px solid #bae6fd;
+            transition: all 0.3s;
+        }
+
+        /* Pergunta grifada quando o par é encontrado */
+        #questions-list li.highlighted {
+            background-color: #a7f3d0 !important;
+            color: #064e3b !important;
+            border-left: 5px solid #10b981 !important;
+            font-weight: 700;
+        }
+
+        /* Botões */
+        button {
+            background-color: #38bdf8;
+            color: white;
+            border: 3px solid #0284c7;
+            padding: 12px 28px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.4);
+            margin-top: 15px;
+        }
+
+        button:hover {
+            background-color: #0284c7;
+            transform: scale(1.05);
+        }
+
+        /* Pop-up Tela Final */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background: #ffffff;
+            padding: 35px 25px;
+            border-radius: 25px;
+            border: 5px solid #38bdf8;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(56, 189, 248, 0.4);
+            transform: scale(0.8);
+            transition: transform 0.4s ease;
+        }
+
+        .modal-overlay.active .modal-card {
+            transform: scale(1);
+        }
+
+        .modal-card h2 {
+            color: #0284c7;
+            font-size: 22px;
+            margin-bottom: 12px;
+        }
+
+        .modal-card p {
+            color: #334155;
+            font-size: 16px;
+            margin-bottom: 18px;
+            font-weight: 600;
+        }
+
+        .modal-card .final-score {
+            font-size: 20px;
+            color: #059669;
+            background: #e6f4ea;
+            padding: 10px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- TELA INICIAL -->
+        <div id="welcome-screen" class="welcome-screen">
+            <h1>JOGO DA MEMÓRIA</h1>
+            <p>Aprenda tudo sobre o medicamento <strong>Ranitidina</strong> neste jogo!</p>
+            <button id="btn-jogar">JOGAR</button>
+        </div>
+
+        <!-- TELA DO JOGO (Escondida inicialmente) -->
+        <div id="game-screen" class="hidden">
+            <div class="game-header">
+                <div class="title">Ranitidina</div>
+                <div id="timer-box" class="badge timer-badge">Memorize! 🕒 <span id="timer">10</span>s</div>
+                <div class="badge">Pontuação: <span id="score">0.0</span> pts</div>
+            </div>
+
+            <div class="game-area">
+                <div id="memory-grid" class="memory-grid"></div>
+
+                <div class="questions-container">
+                    <h3>Perguntas (10):</h3>
+                    <ol id="questions-list"></ol>
+                </div>
+            </div>
+
+            <button id="btn-reiniciar">Reiniciar Jogo</button>
+        </div>
+    </div>
+
+    <!-- MODAL TELA FINAL -->
+    <div id="final-modal" class="modal-overlay">
+        <div class="modal-card">
+            <h2>PARABÉNS PELO ESFORÇO!</h2>
+            <p>Obrigada e até a próxima!</p>
+            <div class="final-score">Pontuação Final: <span id="modal-score">0.0</span> pts</div>
+            <button id="btn-jogar-novamente">Jogar Novamente</button>
+        </div>
+    </div>
+
+    <script>
+        // Lista reduzida para 10 perguntas essenciais
+        const DESAFIOS = [
+            { id: 0, pergunta: "Classe terapêutica principal:", resposta: "ANTAGONISTA H2" },
+            { id: 1, pergunta: "Indicação para dor no estômago:", resposta: "GASTRITE" },
+            { id: 2, pergunta: "Ferida na mucosa gástrica tratada:", resposta: "ULCERA" },
+            { id: 3, pergunta: "Retorno do ácido ao esófago:", resposta: "REFLUXO" },
+            { id: 4, pergunta: "Órgão onde atua primariamente:", resposta: "ESTOMAGO" },
+            { id: 5, pergunta: "Sintoma de queimação aliviado:", resposta: "AZIA" },
+            { id: 6, pergunta: "Forma farmacêutica mais comum:", resposta: "COMPRIMIDO" },
+            { id: 7, pergunta: "Profissional que deve prescrever:", resposta: "MEDICO" },
+            { id: 8, pergunta: "Orientação para ingestão líquida:", resposta: "AGUA" },
+            { id: 9, pergunta: "Compromisso diário com a medicação:", resposta: "ROTINA" }
+        ];
+
+        let primeiraCarta = null;
+        let segundaCarta = null;
+        let bloqTabuleiro = true;
+        let pontuacao = 0;
+        let paresEncontrados = 0;
+        let tentativasPorPar = {};
+        let tempoPreVisualizacao = 10;
+        let timerInterval = null;
+
+        let welcomeScreen, gameScreen, memoryGrid, questionsList, scoreElement, timerElement, timerBox, finalModal, modalScore;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            welcomeScreen = document.getElementById("welcome-screen");
+            gameScreen = document.getElementById("game-screen");
+            memoryGrid = document.getElementById("memory-grid");
+            questionsList = document.getElementById("questions-list");
+            scoreElement = document.getElementById("score");
+            timerElement = document.getElementById("timer");
+            timerBox = document.getElementById("timer-box");
+            finalModal = document.getElementById("final-modal");
+            modalScore = document.getElementById("modal-score");
+
+            document.getElementById("btn-jogar").addEventListener("click", iniciarJogo);
+            document.getElementById("btn-reiniciar").addEventListener("click", reiniciarJogo);
+            document.getElementById("btn-jogar-novamente").addEventListener("click", reiniciarJogo);
+        });
+
+        function atualizarPontuacao(valor) {
+            pontuacao += valor;
+            scoreElement.textContent = pontuacao.toFixed(1);
+        }
+
+        function iniciarJogo() {
+            welcomeScreen.classList.add("hidden");
+            gameScreen.classList.remove("hidden");
+            finalModal.classList.remove("active");
+
+            pontuacao = 0;
+            paresEncontrados = 0;
+            tentativasPorPar = {};
+            scoreElement.textContent = "0.0";
+            
+            DESAFIOS.forEach(item => tentativasPorPar[item.id] = 0);
+
+            gerarPerguntas();
+            gerarCartas();
+            iniciarContagem10s();
+        }
+
+        function reiniciarJogo() {
+            if (timerInterval) clearInterval(timerInterval);
+            iniciarJogo();
+        }
+
+        function gerarPerguntas() {
+            questionsList.innerHTML = "";
+            DESAFIOS.forEach((item, index) => {
+                const li = document.createElement("li");
+                li.id = `q-${item.id}`;
+                li.innerHTML = `<strong>${index + 1}.</strong> ${item.pergunta} <span id="ans-${item.id}"></span>`;
+                questionsList.appendChild(li);
+            });
+        }
+
+        function gerarCartas() {
+            memoryGrid.innerHTML = "";
+            
+            let baralho = [];
+            DESAFIOS.forEach(item => {
+                baralho.push({ idPair: item.id, texto: item.resposta });
+                baralho.push({ idPair: item.id, texto: item.resposta });
+            });
+
+            baralho.sort(() => Math.random() - 0.5);
+
+            baralho.forEach((item) => {
+                const card = document.createElement("div");
+                card.classList.add("card", "flipped");
+                card.dataset.idPair = item.idPair;
+
+                card.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-front">?</div>
+                        <div class="card-back">${item.texto}</div>
+                    </div>
+                `;
+
+                card.addEventListener("click", () => virarCarta(card));
+                memoryGrid.appendChild(card);
+            });
+        }
+
+        function iniciarContagem10s() {
+            bloqTabuleiro = true;
+            tempoPreVisualizacao = 10;
+            timerElement.textContent = tempoPreVisualizacao;
+            timerBox.classList.remove("hidden");
+
+            if (timerInterval) clearInterval(timerInterval);
+
+            timerInterval = setInterval(() => {
+                tempoPreVisualizacao--;
+                timerElement.textContent = tempoPreVisualizacao;
+
+                if (tempoPreVisualizacao <= 0) {
+                    clearInterval(timerInterval);
+                    timerBox.classList.add("hidden");
+                    desvirarTodasCartas();
+                }
+            }, 1000);
+        }
+
+        function desvirarTodasCartas() {
+            const todasCartas = document.querySelectorAll(".card");
+            todasCartas.forEach(card => card.classList.remove("flipped"));
+            bloqTabuleiro = false;
+        }
+
+        function virarCarta(card) {
+            if (bloqTabuleiro) return;
+            if (card === primeiraCarta) return;
+            if (card.classList.contains("matched")) return;
+
+            card.classList.add("flipped");
+
+            if (!primeiraCarta) {
+                primeiraCarta = card;
+                return;
+            }
+
+            segundaCarta = card;
+            verificarPar();
+        }
+
+        function verificarPar() {
+            bloqTabuleiro = true;
+            const idPar = parseInt(primeiraCarta.dataset.idPair);
+            const eIgual = primeiraCarta.dataset.idPair === segundaCarta.dataset.idPair;
+
+            tentativasPorPar[idPar]++;
+
+            if (eIgual) {
+                if (tentativasPorPar[idPar] === 1) {
+                    atualizarPontuacao(2.0);
+                } else {
+                    atualizarPontuacao(1.5);
+                }
+
+                primeiraCarta.classList.add("matched");
+                segundaCarta.classList.add("matched");
+
+                const qElement = document.getElementById(`q-${idPar}`);
+                const ansElement = document.getElementById(`ans-${idPar}`);
+                if (qElement) {
+                    qElement.classList.add("highlighted");
+                    ansElement.textContent = `✔ [ ${DESAFIOS.find(d => d.id === idPar).resposta} ]`;
+                }
+
+                paresEncontrados++;
+                resetarSelecao();
+
+                if (paresEncontrados === DESAFIOS.length) {
+                    setTimeout(exibirTelaFinal, 500);
+                }
+            } else {
+                atualizarPontuacao(-1.0);
+
+                setTimeout(() => {
+                    primeiraCarta.classList.remove("flipped");
+                    segundaCarta.classList.remove("flipped");
+                    resetarSelecao();
+                }, 1000);
+            }
+        }
+
+        function resetarSelecao() {
+            primeiraCarta = null;
+            segundaCarta = null;
+            bloqTabuleiro = false;
+        }
+
+        function exibirTelaFinal() {
+            modalScore.textContent = pontuacao.toFixed(1);
+            finalModal.classList.add("active");
+        }
+    </script>
+</body>
+</html>

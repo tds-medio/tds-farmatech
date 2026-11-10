@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Caça-Palavras: Levotiroxina</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f0f4f8; color: #333; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        h1 { color: #2c3e50; margin-bottom: 5px; }
+        p { color: #666; margin-top: 0; }
+        .regras-pontos { background: #fff; padding: 15px 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px; text-align: center; }
+        .regras-pontos span { margin: 0 10px; font-weight: bold; }
+        .ganho { color: #27ae60; }
+        .perda { color: #c0392b; }
+        .painel-jogo { display: flex; gap: 20px; align-items: center; margin-bottom: 20px; background: #fff; padding: 10px 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .status-info { font-size: 16px; font-weight: bold; }
+        .btn { background-color: #27ae60; color: white; border: none; padding: 10px 18px; font-size: 15px; font-weight: bold; border-radius: 5px; cursor: pointer; transition: background 0.2s; }
+        .btn:hover { background-color: #219150; }
+        .btn:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+        .btn-confirmar { background-color: #2980b9; }
+        .btn-confirmar:hover { background-color: #1f6391; }
+        .container { display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; }
+        
+        /* Grade 16x16 */
+        .grid { display: grid; grid-template-columns: repeat(16, 32px); grid-template-rows: repeat(16, 32px); gap: 3px; background-color: #bdc3c7; padding: 8px; border-radius: 8px; pointer-events: none; opacity: 0.5; }
+        .grid.ativo { pointer-events: auto; opacity: 1; }
+        .grid input[type="checkbox"] { display: none; }
+        .grid label { background-color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: bold; cursor: pointer; border-radius: 4px; user-select: none; }
+        .grid label:hover { background-color: #e8f4f8; }
+        .grid input[type="checkbox"]:checked + label { background-color: #f1c40f; color: #000; }
+        .grid label.encontrada { background-color: #2ecc71 !important; color: #fff !important; cursor: default; }
+        
+        .lista-palavras { background: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); max-width: 280px; }
+        .lista-palavras h3 { margin-top: 0; border-bottom: 2px solid #ecf0f1; padding-bottom: 8px; }
+        .lista-palavras ol { padding-left: 20px; line-height: 1.8; }
+        .lista-palavras li.achou { text-decoration: line-through; color: #27ae60; font-weight: bold; }
+
+        /* Estilos dos Modais Personalizados */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        .modal-overlay.visivel { opacity: 1; pointer-events: auto; }
+        .modal-card { background: #fff; padding: 30px; border-radius: 12px; text-align: center; max-width: 320px; width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.2); transform: scale(0.8); transition: transform 0.3s ease; }
+        .modal-overlay.visivel .modal-card { transform: scale(1); }
+        .modal-icone { font-size: 48px; margin-bottom: 10px; }
+        .modal-titulo { font-size: 20px; font-weight: bold; margin-bottom: 10px; }
+        .modal-mensagem { font-size: 15px; color: #555; margin-bottom: 20px; }
+        
+        /* Modal de Acerto */
+        .modal-acerto .modal-titulo { color: #27ae60; }
+        .btn-modal-acerto { background-color: #27ae60; color: white; border: none; padding: 10px 20px; font-size: 15px; font-weight: bold; border-radius: 6px; cursor: pointer; }
+        .btn-modal-acerto:hover { background-color: #219150; }
+
+        /* Modal de Erro */
+        .modal-erro .modal-titulo { color: #c0392b; }
+        .btn-modal-erro { background-color: #c0392b; color: white; border: none; padding: 10px 20px; font-size: 15px; font-weight: bold; border-radius: 6px; cursor: pointer; }
+        .btn-modal-erro:hover { background-color: #a93226; }
+    </style>
+</head>
+<body>
+    <h1>Caça-Palavras: Levotiroxina</h1>
+    <p>Encontre as 12 características e conceitos sobre o medicamento!</p>
+    <div class="regras-pontos">
+        <span class="ganho">Acerto de Palavra: +30 pts</span> | 
+        <span class="perda">Erro de Seleção: -15 pts</span> | 
+        <span class="perda">Tempo Decorrido (>2 min): -20 pts</span>
+    </div>
+    <div class="painel-jogo">
+        <button id="btn-iniciar" class="btn" onclick="iniciarJogo()">Começar Jogo</button>
+        <button id="btn-confirmar" class="btn btn-confirmar" onclick="confirmarPalavra()" disabled>Confirmar Palavra</button>
+        <div class="status-info">Pontos: <span id="pontuacao">0</span> | Tempo: <span id="tempo">02:00</span></div>
+    </div>
+    <div class="container">
+        <div class="grid" id="grid"></div>
+        <div class="lista-palavras">
+            <h3>Palavras a Encontrar</h3>
+            <ol>
+                <li id="p-HORMÔNIO">HORMÔNIO</li><li id="p-ABSORÇÃO">ABSORÇÃO</li><li id="p-CAFÉ">CAFÉ</li><li id="p-JEJUM">JEJUM</li>
+                <li id="p-TIREÓIDE">TIREÓIDE</li><li id="p-MÉDICO">MÉDICO</li><li id="p-LEITE">LEITE</li><li id="p-SOJA">SOJA</li>
+                <li id="p-REMÉDIO">REMÉDIO</li><li id="p-FIBRAS">FIBRAS</li><li id="p-ÁGUA">ÁGUA</li><li id="p-HIPOTIREOIDISMO">HIPOTIREOIDISMO</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- Modal Personalizado -->
+    <div class="modal-overlay" id="modal-feedback">
+        <div class="modal-card" id="modal-card">
+            <div class="modal-icone" id="modal-icone"></div>
+            <div class="modal-titulo" id="modal-titulo"></div>
+            <div class="modal-mensagem" id="modal-mensagem"></div>
+            <button id="modal-btn" onclick="fecharModal()">Continuar</button>
+        </div>
+    </div>
+
+    <script>
+        const mapaLetras = [
+            ["H","I","P","O","T","I","R","E","O","I","D","I","S","M","O","X"],
+            ["O","X","A","B","S","O","R","Ç","Ã","O","W","K","P","L","O","A"],
+            ["R","Q","M","E","D","I","C","O","C","A","F","É","A","U","S","B"],
+            ["M","Z","I","T","I","R","E","Ó","I","D","E","B","O","T","A","S"],
+            ["Ô","L","E","I","T","E","M","X","F","I","B","R","A","S","R","O"],
+            ["N","V","U","J","E","J","U","M","Q","W","A","A","P","O","C","J"],
+            ["I","B","A","S","O","J","A","R","P","U","S","F","T","I","O","A"],
+            ["O","N","M","R","E","M","É","D","I","O","O","É","R","M","A","M"],
+            ["C","A","F","É","F","I","B","R","A","S","B","X","T","S","L","K"],
+            ["M","É","D","I","C","O","L","T","M","K","P","U","G","A","E","I"],
+            ["O","O","E","S","A","R","B","I","F","S","R","P","U","X","I","P"],
+            ["D","X","O","V","B","N","M","Q","Á","G","U","A","I","O","T","E"],
+            ["P","L","K","J","H","G","F","D","S","A","P","O","I","U","E","Y"],
+            ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P"],
+            ["Q","W","E","R","T","Y","U","I","O","P","A","S","D","F","G","H"],
+            ["Z","X","C","V","B","N","M","Q","W","E","R","T","Y","U","I","O"]
+        ];
+
+        const palavrasAlvo = ["HORMÔNIO", "ABSORÇÃO", "CAFÉ", "JEJUM", "TIREÓIDE", "MÉDICO", "LEITE", "SOJA", "REMÉDIO", "FIBRAS", "ÁGUA", "HIPOTIREOIDISMO"];
+        let palavrasEncontradas = [];
+        let pontos = 0;
+        let tempoRestante = 120;
+        let timerInterval = null;
+        let penalidadeAplicada = false;
+        let ordemSelecao = [];
+
+        function construirGrade() {
+            const gridEl = document.getElementById('grid');
+            gridEl.innerHTML = '';
+            let index = 1;
+            for (let r = 0; r < 16; r++) {
+                for (let c = 0; c < 16; c++) {
+                    const id = `c${index}`;
+                    const letra = mapaLetras[r][c];
+                    
+                    const input = document.createElement('input');
+                    input.type = 'checkbox';
+                    input.id = id;
+                    input.dataset.row = r;
+                    input.dataset.col = c;
+                    input.addEventListener('change', (e) => gerenciarSelecao(e, id));
+
+                    const label = document.createElement('label');
+                    label.htmlFor = id;
+                    label.innerText = letra;
+
+                    gridEl.appendChild(input);
+                    gridEl.appendChild(label);
+                    index++;
+                }
+            }
+        }
+
+        function gerenciarSelecao(e, id) {
+            if (e.target.checked) {
+                ordemSelecao.push(id);
+            } else {
+                ordemSelecao = ordemSelecao.filter(item => item !== id);
+            }
+        }
+
+        function iniciarJogo() {
+            document.getElementById('grid').classList.add('ativo');
+            document.getElementById('btn-iniciar').disabled = true;
+            document.getElementById('btn-confirmar').disabled = false;
+            timerInterval = setInterval(() => {
+                tempoRestante--;
+                atualizarDisplayTempo();
+                if (tempoRestante <= 0 && !penalidadeAplicada) {
+                    pontos -= 20;
+                    penalidadeAplicada = true;
+                    atualizarPontos();
+                    exibirFeedback('erro', 'Tempo Esgotado!', 'O tempo de 2 minutos acabou (-20 pontos).');
+                }
+            }, 1000);
+        }
+
+        function atualizarDisplayTempo() {
+            let minutos = Math.floor(Math.abs(tempoRestante) / 60);
+            let segundos = Math.abs(tempoRestante) % 60;
+            document.getElementById('tempo').innerText = (tempoRestante < 0 ? "-" : "") + String(minutos).padStart(2, '0') + ":" + String(segundos).padStart(2, '0');
+        }
+
+        function atualizarPontos() {
+            document.getElementById('pontuacao').innerText = pontos;
+        }
+
+        function desmarcarCheckboxes() {
+            document.querySelectorAll('.grid input[type="checkbox"]').forEach(input => {
+                if (!input.disabled) input.checked = false;
+            });
+            ordemSelecao = [];
+        }
+
+        function exibirFeedback(tipo, titulo, mensagem) {
+            const overlay = document.getElementById('modal-feedback');
+            const card = document.getElementById('modal-card');
+            const icone = document.getElementById('modal-icone');
+            const elTitulo = document.getElementById('modal-titulo');
+            const elMensagem = document.getElementById('modal-mensagem');
+            const btn = document.getElementById('modal-btn');
+
+            card.className = 'modal-card ' + (tipo === 'acerto' ? 'modal-acerto' : 'modal-erro');
+            icone.innerText = tipo === 'acerto' ? '🎉' : '❌';
+            elTitulo.innerText = titulo;
+            elMensagem.innerText = mensagem;
+            btn.className = tipo === 'acerto' ? 'btn-modal-acerto' : 'btn-modal-erro';
+
+            overlay.classList.add('visivel');
+        }
+
+        function fecharModal() {
+            document.getElementById('modal-feedback').classList.remove('visivel');
+        }
+
+        function confirmarPalavra() {
+            if (ordemSelecao.length === 0) {
+                exibirFeedback('erro', 'Atenção!', 'Selecione as letras na grade primeiro.');
+                return;
+            }
+
+            let palavraClique = ordemSelecao.map(id => {
+                return document.querySelector(`label[for="${id}"]`).innerText.trim();
+            }).join('');
+
+            let elementos = ordemSelecao.map(id => document.getElementById(id));
+            elementos.sort((a, b) => {
+                if (parseInt(a.dataset.row) === parseInt(b.dataset.row)) {
+                    return parseInt(a.dataset.col) - parseInt(b.dataset.col);
+                }
+                return parseInt(a.dataset.row) - parseInt(b.dataset.row);
+            });
+
+            let palavraGeo = elementos.map(cb => document.querySelector(`label[for="${cb.id}"]`).innerText.trim()).join('');
+
+            let encontrada = null;
+
+            if (palavrasAlvo.includes(palavraClique) && !palavrasEncontradas.includes(palavraClique)) {
+                encontrada = palavraClique;
+            } else if (palavrasAlvo.includes(palavraGeo) && !palavrasEncontradas.includes(palavraGeo)) {
+                encontrada = palavraGeo;
+            }
+
+            if (encontrada) {
+                pontos += 30;
+                palavrasEncontradas.push(encontrada);
+                ordemSelecao.forEach(id => {
+                    const cb = document.getElementById(id);
+                    cb.disabled = true;
+                    cb.checked = false;
+                    document.querySelector(`label[for="${id}"]`).classList.add('encontrada');
+                });
+                ordemSelecao = [];
+                document.getElementById(`p-${encontrada}`).classList.add('achou');
+                atualizarPontos();
+
+                if (palavrasEncontradas.length === palavrasAlvo.length) {
+                    clearInterval(timerInterval);
+                    exibirFeedback('acerto', 'Vitória!', `Você encontrou todas as palavras e finalizou com ${pontos} pontos!`);
+                } else {
+                    exibirFeedback('acerto', 'Muito Bem!', `Você encontrou: ${encontrada} (+30 pts)`);
+                }
+            } else {
+                pontos -= 15;
+                atualizarPontos();
+                desmarcarCheckboxes();
+                exibirFeedback('erro', 'Palavra Incorreta', 'Seleção incorreta ou palavra já encontrada! (-15 pts)');
+            }
+        }
+
+        window.onload = construirGrade;
+    </script>
+</body>
+</html>

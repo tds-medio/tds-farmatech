@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jogo da Forca - Farmacologia da Ranitidina</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+    body { font-family: 'Poppins', sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4">
+
+  <div class="max-w-xl w-full bg-slate-800 rounded-2xl shadow-2xl p-6 border border-slate-700">
+    <div class="text-center mb-4">
+      <h1 class="text-2xl font-bold text-teal-400">Jogo da Forca</h1>
+      <p class="text-xs text-slate-400">Interações Medicamentosas & Ranitidina</p>
+    </div>
+
+    <!-- Canvas da Forca -->
+    <div class="flex justify-center mb-4 bg-slate-950 rounded-xl p-2 border border-slate-800">
+      <canvas id="hangmanCanvas" width="200" height="180"></canvas>
+    </div>
+
+    <!-- Dica e Palavra -->
+    <div class="text-center mb-6">
+      <div id="hintText" class="text-sm font-semibold text-teal-300 bg-slate-900/60 p-2 rounded-lg mb-4 min-h-[40px] flex items-center justify-center border border-slate-700/50">
+        Dica: ...
+      </div>
+      <div id="wordDisplay" class="flex justify-center gap-2 flex-wrap text-2xl font-mono font-bold tracking-widest text-emerald-400 min-h-[40px]">
+        <!-- Letras entram aqui -->
+      </div>
+    </div>
+
+    <!-- Mensagem de Resultado -->
+    <div id="message" class="text-center font-bold min-h-[24px] mb-4"></div>
+
+    <!-- Teclado Virtual -->
+    <div id="keyboard" class="grid grid-cols-7 gap-1 max-w-md mx-auto mb-4">
+      <!-- Botões gerados via JS -->
+    </div>
+
+    <!-- Botão de Reinício -->
+    <div class="text-center">
+      <button onclick="initGame()" class="bg-teal-500 hover:bg-teal-600 text-slate-950 font-bold py-2 px-6 rounded-lg transition-colors shadow-lg">
+        Próxima Palavra / Reiniciar
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const words = [
+      { word: "RANITIDINA", hint: "Medicamento para o estômago que altera a acidez e afeta o metabolismo hepático." },
+      { word: "ACIDEZ", hint: "Propriedade do estômago que é reduzida pela Ranitidina, alterando a absorção de remédios." },
+      { word: "FIGADO", hint: "Órgão responsável pelo metabolismo onde a Ranitidina pode causar interações." },
+      { word: "CETOCONAZOL", hint: "Antifúngico cuja absorção cai drasticamente com a redução da acidez gástrica." },
+      { word: "ITRACONAZOL", hint: "Antifúngico que se torna menos eficaz com o uso de Ranitidina." },
+      { word: "VARFARINA", hint: "Anticoagulante oral que pode ter seu tempo de coagulação alterado, aumentando o risco de sangramento." },
+      { word: "ATAZANAVIR", hint: "Medicamento para HIV que tem sua absorção prejudicada pela alteração do pH." },
+      { word: "DASATINIB", hint: "Fármaco cuja absorção é prejudicada quando o pH estomacal é alterado." },
+      { word: "METFORMINA", hint: "Antidiabético que pode ter seus níveis no sangue aumentados pela Ranitidina." }
+    ];
+
+    let currentItem, guessedLetters, maxWrong, wrongCount, gameOver;
+    const canvas = document.getElementById("hangmanCanvas");
+    const ctx = canvas.getContext("2d");
+
+    function initGame() {
+      currentItem = words[Math.floor(Math.random() * words.length)];
+      guessedLetters = new Set();
+      wrongCount = 0;
+      maxWrong = 6;
+      gameOver = false;
+
+      document.getElementById("hintText").innerText = "Dica: " + currentItem.hint;
+      document.getElementById("message").innerText = "";
+      document.getElementById("message").className = "text-center font-bold min-h-[24px] mb-4";
+
+      renderWord();
+      renderKeyboard();
+      drawHangman();
+    }
+
+    function renderWord() {
+      const display = currentItem.word.split("").map(letter => 
+        guessedLetters.has(letter) ? letter : "_"
+      ).join(" ");
+      document.getElementById("wordDisplay").innerText = display;
+
+      if (!display.includes("_") && !gameOver) {
+        gameOver = true;
+        document.getElementById("message").innerText = "🎉 Você acertou!";
+        document.getElementById("message").classList.add("text-emerald-400");
+      }
+    }
+
+    function renderKeyboard() {
+      const keyboard = document.getElementById("keyboard");
+      keyboard.innerHTML = "";
+      const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+      alphabet.split("").forEach(letter => {
+        const btn = document.createElement("button");
+        btn.innerText = letter;
+        btn.className = "bg-slate-700 hover:bg-slate-600 font-bold p-2 rounded text-sm transition disabled:opacity-30 disabled:cursor-not-allowed";
+        
+        if (guessedLetters.has(letter) || gameOver) {
+          btn.disabled = true;
+        }
+
+        btn.onclick = () => handleGuess(letter);
+        keyboard.appendChild(btn);
+      });
+    }
+
+    function handleGuess(letter) {
+      if (gameOver || guessedLetters.has(letter)) return;
+
+      guessedLetters.add(letter);
+
+      if (!currentItem.word.includes(letter)) {
+        wrongCount++;
+        drawHangman();
+      }
+
+      if (wrongCount >= maxWrong) {
+        gameOver = true;
+        document.getElementById("wordDisplay").innerText = currentItem.word.split("").join(" ");
+        document.getElementById("message").innerText = "❌ Fim de jogo! A palavra era " + currentItem.word;
+        document.getElementById("message").classList.add("text-rose-400");
+      }
+
+      renderWord();
+      renderKeyboard();
+    }
+
+    function drawHangman() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = "#94a3b8";
+      ctx.lineWidth = 3;
+
+      // Base e Forca
+      ctx.beginPath();
+      ctx.moveTo(20, 160); ctx.lineTo(100, 160);
+      ctx.moveTo(40, 160); ctx.lineTo(40, 20);
+      ctx.lineTo(120, 20);
+      ctx.lineTo(120, 40);
+      ctx.stroke();
+
+      ctx.strokeStyle = "#f43f5e";
+      // Partes do boneco
+      if (wrongCount > 0) { ctx.beginPath(); ctx.arc(120, 55, 15, 0, Math.PI * 2); ctx.stroke(); } // Cabeça
+      if (wrongCount > 1) { ctx.beginPath(); ctx.moveTo(120, 70); ctx.lineTo(120, 110); ctx.stroke(); } // Corpo
+      if (wrongCount > 2) { ctx.beginPath(); ctx.moveTo(120, 80); ctx.lineTo(100, 100); ctx.stroke(); } // Braço E
+      if (wrongCount > 3) { ctx.beginPath(); ctx.moveTo(120, 80); ctx.lineTo(140, 100); ctx.stroke(); } // Braço D
+      if (wrongCount > 4) { ctx.beginPath(); ctx.moveTo(120, 110); ctx.lineTo(100, 140); ctx.stroke(); } // Perna E
+      if (wrongCount > 5) { ctx.beginPath(); ctx.moveTo(120, 110); ctx.lineTo(140, 140); ctx.stroke(); } // Perna D
+    }
+
+    window.addEventListener("keydown", (e) => {
+      const key = e.key.toUpperCase();
+      if (/^[A-Z]$/.test(key)) handleGuess(key);
+    });
+
+    initGame();
+  </script>
+</body>
+</html>

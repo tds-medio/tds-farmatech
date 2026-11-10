@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>💊 Missão Remédio - Seringa Mágica!</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { 
+    margin:0; 
+    background:#1a1a2e; 
+    display:flex; 
+    justify-content:center; 
+    align-items:center; 
+    height:100vh; 
+    font-family:Arial, sans-serif; 
+    overflow:hidden; 
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  canvas { 
+    background:linear-gradient(180deg,#87ceeb 0%,#b0e0e6 60%,#98d8c8 100%); 
+    border:4px solid #fff; 
+    border-radius:10px; 
+    box-shadow:0 0 30px rgba(255,255,255,0.3); 
+    max-width: 100vw;
+    max-height: 100vh;
+  }
+  #hud { position:absolute; top:20px; left:50%; transform:translateX(-50%); color:white; font-size:20px; font-weight:bold; text-shadow:2px 2px 4px #000; pointer-events:none; white-space: nowrap; }
+  #bar { width:300px; height:20px; background:rgba(0,0,0,0.4); border:2px solid white; border-radius:10px; margin-top:5px; overflow:hidden; }
+  #fill { height:100%; background:linear-gradient(90deg,#ff6b6b,#ffd93d,#6bcf7f); width:0%; transition:width 0.3s; }
+  #info { position:absolute; bottom:90px; left:50%; transform:translateX(-50%); color:white; font-size:14px; text-shadow:1px 1px 2px #000; text-align:center; pointer-events:none; width: 90%; }
+  #lives { position:absolute; top:20px; left:20px; color:white; font-size:22px; font-weight:bold; text-shadow:2px 2px 4px #000; pointer-events:none; }
+  #bossHP { position:absolute; top:20px; right:80px; color:white; font-size:16px; font-weight:bold; text-shadow:2px 2px 4px #000; display:none; pointer-events:none; text-align: right; }
+  #bossBar { width:180px; height:18px; background:rgba(0,0,0,0.5); border:2px solid #ff0; border-radius:10px; margin-top:5px; overflow:hidden; margin-left: auto; }
+  #bossFill { height:100%; background:linear-gradient(90deg,#ff0000,#ff6600); width:100%; transition:width 0.3s; }
+  #ammo { position:absolute; top:60px; left:20px; color:white; font-size:18px; font-weight:bold; text-shadow:2px 2px 4px #000; pointer-events:none; }
+  
+  /* Controles de Toque para Celular */
+  .touch-controls {
+    position: absolute;
+    bottom: 20px;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 30px;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .touch-group {
+    display: flex;
+    gap: 15px;
+    pointer-events: auto;
+  }
+  .touch-btn {
+    width: 65px;
+    height: 65px;
+    background: rgba(255, 255, 255, 0.25);
+    border: 3px solid rgba(255, 255, 255, 0.7);
+    border-radius: 50%;
+    color: white;
+    font-size: 28px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    transition: background 0.1s, transform 0.1s;
+  }
+  .touch-btn:active, .touch-btn.active {
+    background: rgba(255, 255, 255, 0.6);
+    transform: scale(0.9);
+  }
+  #btnRestart {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: rgba(255, 50, 50, 0.6);
+    border: 2px solid white;
+    color: white;
+    font-size: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    pointer-events: auto;
+    z-index: 10;
+    backdrop-filter: blur(4px);
+    transition: background 0.1s, transform 0.1s;
+  }
+  #btnRestart:active {
+    background: rgba(255, 50, 50, 0.9);
+    transform: scale(0.9);
+  }
+
+  /* Ajustes para telas menores (celulares) */
+  @media (max-width: 768px) {
+    #info { bottom: 100px; font-size: 12px; }
+    #bar { width: 200px; }
+    #hud { font-size: 16px; top: 15px; }
+    #lives { font-size: 18px; top: 15px; left: 15px; }
+    #ammo { font-size: 16px; top: 50px; left: 15px; }
+    #bossHP { right: 15px; top: 15px; font-size: 14px; }
+    #bossBar { width: 140px; }
+    .touch-btn { width: 60px; height: 60px; font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="lives">❤️ ❤️ ❤️</div>
+<div id="ammo">💉 Seringa: <span id="ammoCount">0</span></div>
+<div id="hud">
+  💊 Pontos: <span id="score">0</span> / 370
+  <div id="bar"><div id="fill"></div></div>
+</div>
+<div id="bossHP">
+  👹 CHEFÃO VIRUSÃO
+  <div id="bossBar"><div id="bossFill"></div></div>
+</div>
+
+<canvas id="game" width="900" height="500"></canvas>
+
+<div id="info">PC: ← → mover | ESPAÇO pular | X atirar | V reiniciar<br>Celular: Use os botões na tela!</div>
+
+<!-- Botão de Reiniciar -->
+<button id="btnRestart" title="Reiniciar Jogo">↻</button>
+
+<!-- Controles de Toque -->
+<div class="touch-controls">
+  <div class="touch-group">
+    <div class="touch-btn" id="btnLeft">◀</div>
+    <div class="touch-btn" id="btnRight">▶</div>
+  </div>
+  <div class="touch-group">
+    <div class="touch-btn" id="btnShoot">💉</div>
+    <div class="touch-btn" id="btnJump">▲</div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+let score, gameOver, winAnim, camX, lives, hitCooldown;
+let player, platforms, collectibles, enemies, flyingEnemies, mouth, boss, bossActive, bossDefeated, projectiles, miniPills, syringe, checkpoint, checkpointActive;
+let bossIntro = 0;
+let ammo = 0;
+
+function initGame() {
+  score = 0;
+  gameOver = false;
+  winAnim = 0;
+  camX = 0;
+  lives = 3;
+  hitCooldown = 0;
+  bossActive = false;
+  bossDefeated = false;
+  bossIntro = 0;
+  projectiles = [];
+  miniPills = [];
+  ammo = 0;
+  checkpointActive = false;
+  
+  player = {
+    x: 50, y: 300, w: 40, h: 24,
+    vx: 0, vy: 0,
+    onGround: false,
+    rot: 0
+  };
+  
+  platforms = [
+    {x:0, y:460, w:300, h:40},
+    {x:380, y:420, w:120, h:20},
+    {x:560, y:370, w:100, h:20},
+    {x:720, y:320, w:120, h:20},
+    {x:900, y:380, w:100, h:20},
+    {x:1060, y:440, w:150, h:20},
+    {x:1270, y:380, w:100, h:20},
+    {x:1430, y:320, w:100, h:20},
+    {x:1590, y:260, w:120, h:20},
+    {x:1770, y:340, w:100, h:20},
+    {x:1930, y:400, w:150, h:20},
+    {x:2140, y:340, w:100, h:20},
+    {x:2300, y:280, w:100, h:20},
+    {x:2460, y:220, w:100, h:20},
+    {x:2620, y:280, w:120, h:20},
+    {x:2800, y:360, w:100, h:20},
+    {x:2960, y:420, w:200, h:20},
+    {x:3220, y:360, w:150, h:20},
+    {x:3430, y:300, w:120, h:20},
+    {x:3610, y:380, w:100, h:20},
+    {x:3770, y:320, w:100, h:20},
+    {x:3930, y:260, w:120, h:20},
+    {x:4110, y:340, w:100, h:20},
+    {x:4270, y:400, w:150, h:20},
+    {x:4480, y:340, w:100, h:20},
+    {x:4640, y:280, w:100, h:20},
+    {x:4800, y:220, w:120, h:20},
+    {x:4980, y:300, w:100, h:20},
+    {x:5140, y:380, w:150, h:20},
+    {x:5350, y:320, w:120, h:20},
+    {x:5530, y:260, w:100, h:20},
+    {x:5690, y:340, w:120, h:20},
+    {x:5870, y:400, w:150, h:20},
+    {x:6080, y:460, w:800, h:40},
+    {x:6940, y:460, w:400, h:40}
+  ];
+  
+  collectibles = [];
+  const positions = [
+    [150,420,5,'n'],[420,380,5,'n'],[600,330,5,'n'],[760,280,5,'n'],
+    [940,340,5,'n'],[1100,400,5,'n'],[1310,340,5,'n'],[1470,280,5,'n'],
+    [1630,220,5,'n'],[1810,300,5,'n'],[1970,360,5,'n'],[2180,300,5,'n'],
+    [2340,240,5,'n'],[2660,240,5,'n'],[2840,320,5,'n'],[3000,380,5,'n'],
+    [3080,380,5,'n'],[3260,320,5,'n'],[3470,260,5,'n'],[3650,340,5,'n'],
+    [3810,280,5,'n'],[3970,220,5,'n'],[4150,300,5,'n'],[4310,360,5,'n'],
+    [4520,300,5,'n'],[4680,240,5,'n'],[4840,180,5,'n'],[5020,260,5,'n'],
+    [5180,340,5,'n'],[5390,280,5,'n'],[5570,220,5,'n'],[5730,300,5,'n'],
+    [5910,360,5,'n'],[6200,420,5,'n'],[6400,420,5,'n'],[6600,420,5,'n'],
+    [6800,420,5,'n'],[7000,420,5,'n'],[7100,420,5,'n'],[7200,420,5,'n'],
+    [560,280,10,'g'],[1270,300,10,'g'],[1930,320,10,'g'],[2460,140,10,'g'],
+    [3430,220,10,'g'],[3930,180,10,'g'],[4800,140,10,'g'],[5530,180,10,'g']
+  ];
+  positions.forEach(p => collectibles.push({x:p[0], y:p[1], w:22, h:14, taken:false, value:p[2], type:p[3]}));
+  
+  enemies = [
+    {x:400, y:396, w:28, h:28, vx:1.5, minX:380, maxX:472, type:'ground'},
+    {x:740, y:296, w:28, h:28, vx:1.8, minX:720, maxX:812, type:'ground'},
+    {x:1080, y:416, w:28, h:28, vx:1.5, minX:1060, maxX:1182, type:'ground'},
+    {x:1610, y:236, w:28, h:28, vx:2.0, minX:1590, maxX:1682, type:'ground'},
+    {x:1950, y:376, w:28, h:28, vx:1.7, minX:1930, maxX:2052, type:'ground'},
+    {x:2640, y:256, w:28, h:28, vx:1.8, minX:2620, maxX:2712, type:'ground'},
+    {x:2980, y:396, w:28, h:28, vx:2.0, minX:2960, maxX:3132, type:'ground'},
+    {x:3240, y:336, w:28, h:28, vx:1.5, minX:3220, maxX:3342, type:'ground'},
+    {x:3950, y:236, w:28, h:28, vx:2.0, minX:3930, maxX:4022, type:'ground'},
+    {x:4290, y:376, w:28, h:28, vx:1.7, minX:4270, maxX:4392, type:'ground'},
+    {x:5160, y:356, w:28, h:28, vx:1.8, minX:5140, maxX:5262, type:'ground'},
+    {x:5890, y:376, w:28, h:28, vx:2.0, minX:5870, maxX:5992, type:'ground'}
+  ];
+  
+  flyingEnemies = [
+    {x:500, y:250, w:30, h:30, baseY:250, vx:1.5, minX:400, maxX:700, amp:40, phase:0, type:'flying'},
+    {x:1200, y:200, w:30, h:30, baseY:200, vx:1.8, minX:1100, maxX:1400, amp:50, phase:1, type:'flying'},
+    {x:2000, y:220, w:30, h:30, baseY:220, vx:1.5, minX:1900, maxX:2200, amp:40, phase:2, type:'flying'},
+    {x:2700, y:180, w:30, h:30, baseY:180, vx:2.0, minX:2600, maxX:2900, amp:45, phase:3, type:'flying'},
+    {x:3500, y:200, w:30, h:30, baseY:200, vx:1.7, minX:3400, maxX:3700, amp:50, phase:0, type:'flying'},
+    {x:4200, y:220, w:30, h:30, baseY:220, vx:1.8, minX:4100, maxX:4400, amp:40, phase:1, type:'flying'},
+    {x:4900, y:180, w:30, h:30, baseY:180, vx:2.0, minX:4800, maxX:5100, amp:45, phase:2, type:'flying'},
+    {x:5600, y:200, w:30, h:30, baseY:200, vx:1.7, minX:5500, maxX:5800, amp:50, phase:3, type:'flying'}
+  ];
+  
+  syringe = { x: 5910, y: 360, w: 30, h: 40, collected: false };
+  checkpoint = { x: 5920, y: 370, w: 30, h: 30, activated: false };
+  
+  boss = {
+    x: 6300, y: 380, w: 100, h: 100,
+    vx: 2.5, vy: 0,
+    hp: 5, maxHp: 5,
+    minX: 6100, maxX: 6780,
+    jumpTimer: 0, shootTimer: 0,
+    onGround: true, active: false, defeated: false, hitFlash: 0
+  };
+  
+  mouth = { x: 7040, y: 340, w: 160, h: 160, openAnim: 0.3, closingAnim: 0, chewing: 0 };
+  
+  document.getElementById('bossHP').style.display = 'none';
+  updateHUD();
+  updateAmmo();
+}
+
+function updateHUD() {
+  document.getElementById('score').textContent = score;
+  document.getElementById('fill').style.width = Math.min(100, (score/370)*100) + '%';
+  let hearts = '';
+  for (let i = 0; i < lives; i++) hearts += '❤️ ';
+  document.getElementById('lives').textContent = hearts || '💀';
+}
+
+function updateBossHUD() {
+  document.getElementById('bossFill').style.width = (boss.hp/boss.maxHp)*100 + '%';
+}
+
+function updateAmmo() {
+  document.getElementById('ammoCount').textContent = ammo;
+}
+
+const keys = {};
+window.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (['Space','ArrowUp'].includes(e.code)) e.preventDefault();
+  if (e.code === 'KeyV') initGame();
+  if (e.code === 'KeyX' && ammo > 0 && !gameOver) {
+    shootMiniPill();
+  }
+});
+window.addEventListener('keyup', e => keys[e.code] = false);
+
+function shootMiniPill() {
+  if (ammo <= 0) return;
+  ammo--;
+  updateAmmo();
+  const direction = player.vx >= 0 ? 1 : -1;
+  miniPills.push({
+    x: player.x + player.w/2, y: player.y + player.h/2,
+    vx: direction * 8, vy: 0, w: 15, h: 10, rot: 0, life: 120
+  });
+}
+
+function damagePlayer() {
+  if (hitCooldown > 0) return;
+  lives--;
+  hitCooldown = 60;
+  player.vy = -8;
+  updateHUD();
+  if (lives <= 0) {
+    gameOver = true;
+    winAnim = -1;
+  } else {
+    if (checkpoint.activated) {
+      player.x = 5920; player.y = 350; player.vx = 0; player.vy = 0;
+      camX = 5920 - W/3;
+    } else {
+      player.x = 50; player.y = 300; player.vx = 0; player.vy = 0;
+      camX = 0;
+    }
+  }
+}
+
+function update() {
+  if (gameOver) {
+    if (winAnim >= 0) {
+      winAnim += 0.015;
+      if (winAnim > 0.8 && winAnim < 2.5) {
+        mouth.chewing = Math.sin((winAnim - 0.8) * 15) * 0.3 + 0.3;
+      }
+    }
+    return;
+  }
+  
+  if (hitCooldown > 0) hitCooldown--;
+  if (boss.hitFlash > 0) boss.hitFlash--;
+  
+  if (keys['ArrowLeft'] || keys['KeyA']) player.vx = -5;
+  else if (keys['ArrowRight'] || keys['KeyD']) player.vx = 5;
+  else player.vx *= 0.8;
+  
+  if ((keys['Space'] || keys['ArrowUp'] || keys['KeyW']) && player.onGround) {
+    player.vy = -13;
+    player.onGround = false;
+  }
+  
+  player.vy += 0.6;
+  if (player.vy > 15) player.vy = 15;
+  
+  player.x += player.vx;
+  for (const p of platforms) {
+    if (player.x < p.x + p.w && player.x + player.w > p.x &&
+        player.y < p.y + p.h && player.y + player.h > p.y) {
+      if (player.vx > 0) player.x = p.x - player.w;
+      else if (player.vx < 0) player.x = p.x + p.w;
+    }
+  }
+  
+  player.y += player.vy;
+  player.onGround = false;
+  for (const p of platforms) {
+    if (player.x < p.x + p.w && player.x + player.w > p.x &&
+        player.y < p.y + p.h && player.y + player.h > p.y) {
+      if (player.vy > 0) {
+        player.y = p.y - player.h;
+        player.vy = 0;
+        player.onGround = true;
+      } else if (player.vy < 0) {
+        player.y = p.y + p.h;
+        player.vy = 0;
+      }
+    }
+  }
+  
+  if (Math.abs(player.vx) > 0.5) player.rot += player.vx * 0.05;
+  
+  for (const c of collectibles) {
+    if (c.taken) continue;
+    if (player.x < c.x + c.w && player.x + player.w > c.x &&
+        player.y < c.y + c.h && player.y + player.h > c.y) {
+      c.taken = true;
+      score += c.value;
+      updateHUD();
+    }
+  }
+  
+  if (!syringe.collected &&
+      player.x < syringe.x + syringe.w && player.x + player.w > syringe.x &&
+      player.y < syringe.y + syringe.h && player.y + player.h > syringe.y) {
+    syringe.collected = true;
+    ammo = 10;
+    updateAmmo();
+  }
+  
+  if (!checkpoint.activated &&
+      player.x < checkpoint.x + checkpoint.w && player.x + player.w > checkpoint.x &&
+      player.y < checkpoint.y + checkpoint.h && player.y + player.h > checkpoint.y) {
+    checkpoint.activated = true;
+  }
+  
+  for (const mp of miniPills) {
+    mp.x += mp.vx; mp.y += mp.vy; mp.rot += 0.3; mp.life--;
+    for (const e of enemies) {
+      if (!e.dead && mp.x < e.x + e.w && mp.x + mp.w > e.x && mp.y < e.y + e.h && mp.y + mp.h > e.y) {
+        e.dead = true; mp.dead = true; score += 5; updateHUD();
+      }
+    }
+    for (const e of flyingEnemies) {
+      if (!e.dead && mp.x < e.x + e.w && mp.x + mp.w > e.x && mp.y < e.y + e.h && mp.y + mp.h > e.y) {
+        e.dead = true; mp.dead = true; score += 5; updateHUD();
+      }
+    }
+    if (boss.active && !boss.defeated && mp.x < boss.x + boss.w && mp.x + mp.w > boss.x && mp.y < boss.y + boss.h && mp.y + mp.h > boss.y) {
+      boss.hp--; boss.hitFlash = 15; mp.dead = true; updateBossHUD();
+      if (boss.hp <= 0) {
+        boss.defeated = true; bossDefeated = true; bossActive = false;
+        score += 50; updateHUD();
+        document.getElementById('bossHP').style.display = 'none';
+      }
+    }
+  }
+  miniPills = miniPills.filter(mp => !mp.dead && mp.life > 0);
+  
+  for (const e of enemies) {
+    e.x += e.vx;
+    if (e.x < e.minX) { e.x = e.minX; e.vx *= -1; }
+    if (e.x + e.w > e.maxX) { e.x = e.maxX - e.w; e.vx *= -1; }
+    if (player.x < e.x + e.w && player.x + player.w > e.x && player.y < e.y + e.h && player.y + player.h > e.y) {
+      if (player.vy > 0 && player.y + player.h - e.y < 15) {
+        e.dead = true; player.vy = -10; score += 5; updateHUD();
+      } else {
+        damagePlayer(); player.vx = -player.vx * 2;
+      }
+    }
+  }
+  enemies = enemies.filter(e => !e.dead);
+  
+  const t = Date.now() / 1000;
+  for (const e of flyingEnemies) {
+    e.x += e.vx;
+    e.y = e.baseY + Math.sin(t * 2 + e.phase) * e.amp;
+    if (e.x < e.minX) { e.x = e.minX; e.vx *= -1; }
+    if (e.x + e.w > e.maxX) { e.x = e.maxX - e.w; e.vx *= -1; }
+    if (player.x < e.x + e.w && player.x + player.w > e.x && player.y < e.y + e.h && player.y + player.h > e.y) {
+      if (player.vy > 0 && player.y + player.h - e.y < 15) {
+        e.dead = true; player.vy = -10; score += 5; updateHUD();
+      } else {
+        damagePlayer(); player.vx = -player.vx * 2;
+      }
+    }
+  }
+  flyingEnemies = flyingEnemies.filter(e => !e.dead);
+  
+  if (player.x > 6080 && !boss.active && !boss.defeated) {
+    boss.active = true; bossActive = true; bossIntro = 60;
+    document.getElementById('bossHP').style.display = 'block';
+  }
+  
+  if (boss.active && !boss.defeated) {
+    if (bossIntro > 0) { bossIntro--; }
+    else {
+      boss.x += boss.vx;
+      if (boss.x < boss.minX) { boss.x = boss.minX; boss.vx *= -1; }
+      if (boss.x + boss.w > boss.maxX) { boss.x = boss.maxX - boss.w; boss.vx *= -1; }
+      boss.vy += 0.6; if (boss.vy > 15) boss.vy = 15; boss.y += boss.vy;
+      const arena = platforms.find(p => p.x === 6080);
+      if (boss.y + boss.h > arena.y && boss.x + boss.w > arena.x && boss.x < arena.x + arena.w) {
+        boss.y = arena.y - boss.h; boss.vy = 0; boss.onGround = true;
+      }
+      boss.jumpTimer++;
+      if (boss.jumpTimer > 120 && boss.onGround) {
+        boss.vy = -14; boss.onGround = false; boss.jumpTimer = 0;
+      }
+      boss.shootTimer++;
+      if (boss.shootTimer > 90) {
+        const dx = (player.x + player.w/2) - (boss.x + boss.w/2);
+        const dy = (player.y + player.h/2) - (boss.y + boss.h/2);
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        projectiles.push({
+          x: boss.x + boss.w/2, y: boss.y + boss.h/2,
+          vx: (dx/dist) * 4, vy: (dy/dist) * 4, r: 10, life: 180
+        });
+        boss.shootTimer = 0;
+      }
+      if (player.x < boss.x + boss.w && player.x + player.w > boss.x && player.y < boss.y + boss.h && player.y + player.h > boss.y) {
+        if (player.vy > 0 && player.y + player.h - boss.y < 25) {
+          boss.hp--; boss.hitFlash = 15; player.vy = -13; updateBossHUD();
+          if (boss.hp <= 0) {
+            boss.defeated = true; bossDefeated = true; bossActive = false;
+            score += 50; updateHUD();
+            document.getElementById('bossHP').style.display = 'none';
+          }
+        } else {
+          damagePlayer(); player.vx = (player.x < boss.x + boss.w/2) ? -8 : 8;
+        }
+      }
+    }
+  }
+  
+  for (const p of projectiles) {
+    p.x += p.vx; p.y += p.vy; p.life--;
+    if (player.x < p.x + p.r && player.x + player.w > p.x - p.r && player.y < p.y + p.r && player.y + player.h > p.y - p.r) {
+      p.dead = true; damagePlayer();
+    }
+  }
+  projectiles = projectiles.filter(p => !p.dead && p.life > 0);
+  
+  if (player.y > 600) {
+    lives--; updateHUD();
+    if (lives <= 0) { gameOver = true; winAnim = -1; }
+    else {
+      if (checkpoint.activated) { player.x = 5920; player.y = 350; player.vx = 0; player.vy = 0; camX = 5920 - W/3; }
+      else { player.x = 50; player.y = 300; player.vx = 0; player.vy = 0; camX = 0; }
+    }
+  }
+  
+  if (bossDefeated && score >= 370) {
+    const mouthCenterX = mouth.x + mouth.w/2;
+    const mouthCenterY = mouth.y + mouth.h/2;
+    const playerCenterX = player.x + player.w/2;
+    const playerCenterY = player.y + player.h/2;
+    if (Math.abs(playerCenterX - mouthCenterX) < mouth.w/3 && Math.abs(playerCenterY - mouthCenterY) < mouth.h/3) {
+      gameOver = true; winAnim = 0;
+    }
+  }
+  
+  camX = player.x - W/3;
+  if (camX < 0) camX = 0;
+  const maxCam = 7340 - W;
+  if (camX > maxCam) camX = maxCam;
+  
+  if (bossDefeated && score >= 370) { mouth.openAnim = Math.min(1, mouth.openAnim + 0.05); }
+  else { mouth.openAnim = 0.3 + Math.sin(Date.now()/500) * 0.1; }
+}
+
+// --- Funções de Desenho (Mantidas iguais) ---
+function drawPill(x, y, w, h, rot, golden=false) {
+  ctx.save();
+  ctx.translate(x + w/2, y + h/2);
+  ctx.rotate(rot);
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx.beginPath();
+  ctx.ellipse(2, h/2+3, w/2, 4, 0, 0, Math.PI*2);
+  ctx.fill();
+  const c1 = golden ? '#fff8dc' : '#fff';
+  const c2 = golden ? '#ffd700' : '#e63946';
+  ctx.fillStyle = c1;
+  ctx.beginPath();
+  ctx.ellipse(-w/4, 0, w/4, h/2, 0, -Math.PI/2, Math.PI/2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = c2;
+  ctx.beginPath();
+  ctx.ellipse(w/4, 0, w/4, h/2, 0, Math.PI/2, -Math.PI/2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, w/2, h/2, 0, 0, Math.PI*2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(0, -h/2);
+  ctx.lineTo(0, h/2);
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.beginPath();
+  ctx.ellipse(-w/4, -h/4, w/8, h/8, 0, 0, Math.PI*2);
+  ctx.fill();
+  if (golden) {
+    ctx.fillStyle = 'rgba(255,255,100,0.5)';
+    ctx.beginPath();
+    ctx.arc(0, 0, w/1.5, 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawSyringe(x, y, w, h) {
+  ctx.save();
+  ctx.translate(x + w/2, y + h/2);
+  ctx.fillStyle = '#e0e0e0';
+  ctx.fillRect(-w/4, -h/2, w/2, h*0.7);
+  ctx.strokeStyle = '#999';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(-w/4, -h/2, w/2, h*0.7);
+  ctx.fillStyle = '#4a90e2';
+  ctx.fillRect(-w/4 + 2, -h/2 + 5, w/2 - 4, h*0.5);
+  ctx.fillStyle = '#c0c0c0';
+  ctx.fillRect(-2, -h/2 - 10, 4, 10);
+  ctx.fillStyle = '#999';
+  ctx.beginPath();
+  ctx.moveTo(-2, -h/2 - 10);
+  ctx.lineTo(0, -h/2 - 15);
+  ctx.lineTo(2, -h/2 - 10);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#666';
+  ctx.fillRect(-w/3, h*0.2 - h/2, w*0.66, 5);
+  ctx.fillRect(-3, h*0.2 - h/2 + 5, 6, 10);
+  ctx.strokeStyle = '#999';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 4; i++) {
+    const yPos = -h/2 + 10 + i * 8;
+    ctx.beginPath();
+    ctx.moveTo(-w/4, yPos);
+    ctx.lineTo(-w/4 + 5, yPos);
+    ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.fillRect(-w/4 + 3, -h/2 + 3, 3, h*0.6);
+  ctx.fillStyle = 'rgba(74,144,226,0.3)';
+  ctx.beginPath();
+  ctx.arc(0, 0, w, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawMiniPill(mp) {
+  ctx.save();
+  ctx.translate(mp.x + mp.w/2, mp.y + mp.h/2);
+  ctx.rotate(mp.rot);
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.ellipse(-mp.w/4, 0, mp.w/4, mp.h/2, 0, -Math.PI/2, Math.PI/2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#4a90e2';
+  ctx.beginPath();
+  ctx.ellipse(mp.w/4, 0, mp.w/4, mp.h/2, 0, Math.PI/2, -Math.PI/2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, mp.w/2, mp.h/2, 0, 0, Math.PI*2);
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(74,144,226,0.4)';
+  ctx.beginPath();
+  ctx.arc(-mp.vx * 2, 0, 5, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawCheckpoint(x, y, w, h, activated) {
+  ctx.save();
+  ctx.translate(x + w/2, y + h/2);
+  const t = Date.now() / 300;
+  ctx.fillStyle = activated ? '#00ff00' : '#ff0000';
+  ctx.beginPath();
+  ctx.moveTo(0, -h/2);
+  ctx.lineTo(w/2 + Math.sin(t) * 3, -h/3);
+  ctx.lineTo(0, -h/6);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.strokeStyle = '#666';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(0, -h/2);
+  ctx.lineTo(0, h/2);
+  ctx.stroke();
+  ctx.fillStyle = '#8b4513';
+  ctx.fillRect(-w/3, h/2 - 5, w*0.66, 5);
+  ctx.fillStyle = activated ? '#00ff00' : '#ff0000';
+  ctx.font = 'bold 12px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText(activated ? '✓' : '!', 0, -h/2 - 5);
+  if (activated) {
+    ctx.fillStyle = 'rgba(0,255,0,0.2)';
+    ctx.beginPath();
+    ctx.arc(0, 0, w, 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawVirus(x, y, w, h) {
+  ctx.save();
+  ctx.translate(x + w/2, y + h/2);
+  const t = Date.now() / 200;
+  ctx.strokeStyle = '#8b0000';
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 8; i++) {
+    const a = (i/8) * Math.PI * 2 + t * 0.3;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a) * w/2, Math.sin(a) * h/2);
+    ctx.lineTo(Math.cos(a) * (w/2 + 6), Math.sin(a) * (h/2 + 6));
+    ctx.stroke();
+    ctx.fillStyle = '#8b0000';
+    ctx.beginPath();
+    ctx.arc(Math.cos(a) * (w/2 + 6), Math.sin(a) * (h/2 + 6), 3, 0, Math.PI*2);
+    ctx.fill();
+  }
+  const grad = ctx.createRadialGradient(-3, -3, 2, 0, 0, w/2);
+  grad.addColorStop(0, '#ff4444');
+  grad.addColorStop(1, '#8b0000');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(0, 0, w/2, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = 'white';
+  ctx.beginPath(); ctx.arc(-5, -3, 4, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(5, -3, 4, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'black';
+  ctx.beginPath(); ctx.arc(-5, -3, 2, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(5, -3, 2, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = 'black';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(0, 5, 5, 0, Math.PI, true);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawBat(x, y, w, h) {
+  ctx.save();
+  ctx.translate(x + w/2, y + h/2);
+  const t = Date.now() / 100;
+  const wingFlap = Math.sin(t) * 0.5;
+  ctx.fillStyle = '#4a0080';
+  ctx.save();
+  ctx.rotate(-0.3 + wingFlap);
+  ctx.beginPath();
+  ctx.moveTo(-5, 0);
+  ctx.quadraticCurveTo(-w/2 - 5, -h/3, -w/2 - 8, 0);
+  ctx.quadraticCurveTo(-w/2 - 5, h/3, -5, 5);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+  ctx.save();
+  ctx.rotate(0.3 - wingFlap);
+  ctx.beginPath();
+  ctx.moveTo(5, 0);
+  ctx.quadraticCurveTo(w/2 + 5, -h/3, w/2 + 8, 0);
+  ctx.quadraticCurveTo(w/2 + 5, h/3, 5, 5);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+  const grad = ctx.createRadialGradient(-2, -2, 2, 0, 0, w/3);
+  grad.addColorStop(0, '#9b30ff');
+  grad.addColorStop(1, '#4a0080');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, w/3, h/2.5, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = '#4a0080';
+  ctx.beginPath();
+  ctx.moveTo(-6, -h/3);
+  ctx.lineTo(-10, -h/2 - 3);
+  ctx.lineTo(-3, -h/3);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(6, -h/3);
+  ctx.lineTo(10, -h/2 - 3);
+  ctx.lineTo(3, -h/3);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#ff0000';
+  ctx.beginPath(); ctx.arc(-4, -2, 2.5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(4, -2, 2.5, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#ffff00';
+  ctx.beginPath(); ctx.arc(-4, -2, 1, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(4, -2, 1, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'white';
+  ctx.beginPath();
+  ctx.moveTo(-3, 4);
+  ctx.lineTo(-2, 9);
+  ctx.lineTo(-1, 4);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(3, 4);
+  ctx.lineTo(2, 9);
+  ctx.lineTo(1, 4);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawBoss(x, y, w, h) {
+  ctx.save();
+  ctx.translate(x + w/2, y + h/2);
+  const t = Date.now() / 200;
+  if (boss.hitFlash > 0 && Math.floor(boss.hitFlash/3) % 2 === 0) ctx.globalAlpha = 0.5;
+  ctx.strokeStyle = '#4a0000';
+  ctx.lineWidth = 4;
+  for (let i = 0; i < 12; i++) {
+    const a = (i/12) * Math.PI * 2 + t * 0.2;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a) * w/2, Math.sin(a) * h/2);
+    ctx.lineTo(Math.cos(a) * (w/2 + 15), Math.sin(a) * (h/2 + 15));
+    ctx.stroke();
+    ctx.fillStyle = '#ff0000';
+    ctx.beginPath();
+    ctx.arc(Math.cos(a) * (w/2 + 15), Math.sin(a) * (h/2 + 15), 6, 0, Math.PI*2);
+    ctx.fill();
+  }
+  const grad = ctx.createRadialGradient(-10, -10, 5, 0, 0, w/2);
+  grad.addColorStop(0, '#ff2222');
+  grad.addColorStop(0.6, '#aa0000');
+  grad.addColorStop(1, '#4a0000');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(0, 0, w/2, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.fillStyle = '#ffd700';
+  for (let i = 0; i < 5; i++) {
+    const a = Math.PI + (i/4) * Math.PI;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a) * w/3 - 5, Math.sin(a) * h/3);
+    ctx.lineTo(Math.cos(a) * w/3, Math.sin(a) * h/3 - 15);
+    ctx.lineTo(Math.cos(a) * w/3 + 5, Math.sin(a) * h/3);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.fillStyle = '#ffff00';
+  ctx.beginPath(); ctx.arc(-18, -10, 10, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(18, -10, 10, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.arc(-18, -10, 5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(18, -10, 5, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(-28, -25); ctx.lineTo(-10, -18); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(28, -25); ctx.lineTo(10, -18); ctx.stroke();
+  ctx.fillStyle = '#000';
+  ctx.beginPath();
+  ctx.ellipse(0, 15, 25, 15, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = 'white';
+  for (let i = 0; i < 5; i++) {
+    const tx = -20 + i * 10;
+    ctx.beginPath();
+    ctx.moveTo(tx, 8);
+    ctx.lineTo(tx + 5, 8);
+    ctx.lineTo(tx + 2.5, 18);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(tx, 22);
+    ctx.lineTo(tx + 5, 22);
+    ctx.lineTo(tx + 2.5, 14);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+function drawProjectile(p) {
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  const t = Date.now() / 100;
+  ctx.fillStyle = 'rgba(255,100,0,0.4)';
+  ctx.beginPath();
+  ctx.arc(0, 0, p.r * 1.5, 0, Math.PI*2);
+  ctx.fill();
+  const grad = ctx.createRadialGradient(0, 0, 2, 0, 0, p.r);
+  grad.addColorStop(0, '#ffff00');
+  grad.addColorStop(0.5, '#ff6600');
+  grad.addColorStop(1, '#aa0000');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(0, 0, p.r, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = '#ff0000';
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 6; i++) {
+    const a = (i/6) * Math.PI * 2 + t;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a) * p.r, Math.sin(a) * p.r);
+    ctx.lineTo(Math.cos(a) * (p.r + 5), Math.sin(a) * (p.r + 5));
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawMouth(x, y, w, h, openAmount, chewing=0) {
+  ctx.save();
+  ctx.translate(x, y);
+  let chewOffset = 0;
+  if (chewing > 0) chewOffset = Math.sin(Date.now() / 50) * 3 * chewing;
+  ctx.translate(chewOffset, 0);
+  const headW = w * 1.2;
+  const headH = h * 1.3;
+  const headX = w/2 - headW/2;
+  const headY = h/2 - headH/2;
+  ctx.fillStyle = '#f4c2a1';
+  ctx.fillRect(w/2 - 25, h - 20, 50, 40);
+  ctx.fillStyle = '#e8b896';
+  ctx.beginPath();
+  ctx.ellipse(headX - 5, h/2, 12, 20, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = '#c99b7a';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.ellipse(headX + headW + 5, h/2, 12, 20, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.stroke();
+  const skinGrad = ctx.createRadialGradient(w/2, h/2, 10, w/2, h/2, headW/2);
+  skinGrad.addColorStop(0, '#ffd7b5');
+  skinGrad.addColorStop(1, '#f4c2a1');
+  ctx.fillStyle = skinGrad;
+  ctx.beginPath();
+  ctx.ellipse(w/2, h/2, headW/2, headH/2, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = '#c99b7a';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.fillStyle = '#3a2817';
+  ctx.beginPath();
+  ctx.ellipse(w/2, headY + 30, headW/2 - 5, 50, 0, Math.PI, 0);
+  ctx.fill();
+  ctx.strokeStyle = '#3a2817';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(w/2 - 45, h/2 - 35);
+  ctx.lineTo(w/2 - 20, h/2 - 30);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(w/2 + 45, h/2 - 35);
+  ctx.lineTo(w/2 + 20, h/2 - 30);
+  ctx.stroke();
+  ctx.fillStyle = 'white';
+  ctx.beginPath();
+  ctx.ellipse(w/2 - 30, h/2 - 15, 15, 18, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.ellipse(w/2 + 30, h/2 - 15, 15, 18, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = '#4a90e2';
+  ctx.beginPath();
+  ctx.arc(w/2 - 30, h/2 - 15, 8, 0, Math.PI*2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(w/2 + 30, h/2 - 15, 8, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = '#000';
+  ctx.beginPath();
+  ctx.arc(w/2 - 30, h/2 - 15, 4, 0, Math.PI*2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(w/2 + 30, h/2 - 15, 4, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = 'white';
+  ctx.beginPath();
+  ctx.arc(w/2 - 28, h/2 - 18, 2, 0, Math.PI*2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(w/2 + 32, h/2 - 18, 2, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = '#c99b7a';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(w/2, h/2 - 5);
+  ctx.lineTo(w/2 - 5, h/2 + 15);
+  ctx.lineTo(w/2 + 5, h/2 + 15);
+  ctx.stroke();
+  const openH = h * 0.4 * openAmount;
+  const mouthY = h/2 + 25;
+  ctx.fillStyle = '#1a0008';
+  ctx.beginPath();
+  ctx.ellipse(w/2, mouthY + openH/2, w*0.35, openH/2, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  if (openAmount > 0.2) {
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = '#ccc';
+    ctx.lineWidth = 1;
+    const teethTop = 6;
+    for (let i = 0; i < teethTop; i++) {
+      const tx = w/2 - w*0.3 + (i * (w*0.6) / (teethTop-1));
+      ctx.beginPath();
+      ctx.moveTo(tx - 6, mouthY + 3);
+      ctx.lineTo(tx + 6, mouthY + 3);
+      ctx.lineTo(tx + 4, mouthY + 18);
+      ctx.lineTo(tx - 4, mouthY + 18);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+    for (let i = 0; i < teethTop; i++) {
+      const tx = w/2 - w*0.3 + (i * (w*0.6) / (teethTop-1));
+      ctx.beginPath();
+      ctx.moveTo(tx - 6, mouthY + openH - 3);
+      ctx.lineTo(tx + 6, mouthY + openH - 3);
+      ctx.lineTo(tx + 4, mouthY + openH - 18);
+      ctx.lineTo(tx - 4, mouthY + openH - 18);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+  }
+  if (bossDefeated && score >= 370 && !gameOver) {
+    const pulse = Math.sin(Date.now()/200) * 5;
+    ctx.fillStyle = '#ffd700';
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 3;
+    ctx.font = 'bold 20px Arial';
+    ctx.textAlign = 'center';
+    ctx.strokeText('↓ ENTRE AQUI! ↓', w/2, -30 + pulse);
+    ctx.fillText('↓ ENTRE AQUI! ↓', w/2, -30 + pulse);
+  }
+  ctx.restore();
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  for (let i = 0; i < 10; i++) {
+    const cx = (i * 400 - camX * 0.3) % (W + 400);
+    ctx.beginPath();
+    ctx.ellipse(cx, 80 + (i%3)*30, 50, 20, 0, 0, Math.PI*2);
+    ctx.ellipse(cx + 30, 80 + (i%3)*30, 35, 18, 0, 0, Math.PI*2);
+    ctx.fill();
+  }
+  
+  ctx.save();
+  ctx.translate(-camX, 0);
+  
+  for (const p of platforms) {
+    const grad = ctx.createLinearGradient(0, p.y, 0, p.y + p.h);
+    grad.addColorStop(0, '#6bcf7f');
+    grad.addColorStop(1, '#3a8a4a');
+    ctx.fillStyle = grad;
+    ctx.fillRect(p.x, p.y, p.w, p.h);
+    ctx.fillStyle = '#2d6b38';
+    ctx.fillRect(p.x, p.y + p.h - 4, p.w, 4);
+    ctx.fillStyle = '#4a9d5a';
+    for (let i = 0; i < p.w; i += 10) {
+      ctx.fillRect(p.x + i, p.y - 3, 3, 3);
+    }
+  }
+  
+  if (!bossDefeated) {
+    ctx.fillStyle = 'rgba(255,0,0,0.3)';
+    ctx.fillRect(6080, 0, 800, 460);
+    ctx.fillStyle = '#ff0000';
+    ctx.font = 'bold 30px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('⚠ ARENA DO CHEFÃO ⚠', 6480, 100);
+  }
+  
+  const t = Date.now() / 300;
+  for (const c of collectibles) {
+    if (c.taken) continue;
+    const bob = Math.sin(t + c.x * 0.01) * 4;
+    drawPill(c.x, c.y + bob, c.w, c.h, 0, c.type === 'g');
+  }
+  
+  if (!syringe.collected) {
+    const bob = Math.sin(t) * 5;
+    drawSyringe(syringe.x, syringe.y + bob, syringe.w, syringe.h);
+  }
+  
+  drawCheckpoint(checkpoint.x, checkpoint.y, checkpoint.w, checkpoint.h, checkpoint.activated);
+  
+  for (const e of enemies) drawVirus(e.x, e.y, e.w, e.h);
+  for (const e of flyingEnemies) drawBat(e.x, e.y, e.w, e.h);
+  for (const p of projectiles) drawProjectile(p);
+  for (const mp of miniPills) drawMiniPill(mp);
+  
+  if (boss.active && !boss.defeated) {
+    if (bossIntro > 0) {
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.fillRect(camX, 0, W, H);
+      ctx.fillStyle = '#ff0000';
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 5;
+      ctx.font = 'bold 70px Arial';
+      ctx.textAlign = 'center';
+      const shake = Math.sin(bossIntro * 0.5) * 5;
+      ctx.strokeText('👹 CHEFÃO VIRUSÃO 👹', camX + W/2 + shake, H/2);
+      ctx.fillText('👹 CHEFÃO VIRUSÃO 👹', camX + W/2 + shake, H/2);
+      ctx.font = 'bold 24px Arial';
+      ctx.fillStyle = 'white';
+      ctx.strokeText('Pule na cabeça ou use a SERINGA!', camX + W/2, H/2 + 50);
+      ctx.fillText('Pule na cabeça ou use a SERINGA!', camX + W/2, H/2 + 50);
+    } else {
+      drawBoss(boss.x, boss.y, boss.w, boss.h);
+    }
+  } else if (boss.defeated) {
+    ctx.save();
+    ctx.translate(boss.x + boss.w/2, boss.y + boss.h/2);
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = '#555';
+    ctx.beginPath();
+    ctx.arc(0, 0, boss.w/2, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.moveTo(-25, -15); ctx.lineTo(-10, 0); ctx.moveTo(-10, -15); ctx.lineTo(-25, 0); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(10, -15); ctx.lineTo(25, 0); ctx.moveTo(25, -15); ctx.lineTo(10, 0); ctx.stroke();
+    ctx.restore();
+  }
+  
+  drawMouth(mouth.x, mouth.y, mouth.w, mouth.h, mouth.openAnim, mouth.chewing);
+  
+  if (hitCooldown === 0 || Math.floor(hitCooldown/5) % 2 === 0) {
+    drawPill(player.x, player.y, player.w, player.h, player.rot);
+  }
+  
+  if (gameOver && winAnim >= 0) {
+    if (winAnim < 0.8) {
+      const progress = winAnim / 0.8;
+      const startX = player.x, startY = player.y;
+      const endX = mouth.x + mouth.w/2, endY = mouth.y + mouth.h/2;
+      const pillX = startX + (endX - startX) * progress;
+      const pillY = startY + (endY - startY) * progress - Math.sin(progress * Math.PI) * 120;
+      const scale = 1 - progress * 0.7;
+      drawPill(pillX - player.w*scale/2, pillY - player.h*scale/2, player.w*scale, player.h*scale, progress * 10);
+      const closeAmount = Math.max(0.1, 1 - progress * 0.8);
+      drawMouth(mouth.x, mouth.y, mouth.w, mouth.h, closeAmount * 0.8);
+    }
+    else if (winAnim < 2.5) {
+      drawMouth(mouth.x, mouth.y, mouth.w, mouth.h, 0.2 + mouth.chewing * 0.3);
+    }
+    else {
+      drawMouth(mouth.x, mouth.y, mouth.w, mouth.h, 0.15);
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.fillRect(camX, 0, W, H);
+      ctx.fillStyle = '#ffd700';
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 5;
+      ctx.font = 'bold 60px Arial';
+      ctx.textAlign = 'center';
+      const bounce = Math.sin(Date.now()/200) * 5;
+      ctx.strokeText('🎉 VITÓRIA! 🎉', camX + W/2, H/2 - 60 + bounce);
+      ctx.fillText('🎉 VITÓRIA! 🎉', camX + W/2, H/2 - 60 + bounce);
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 28px Arial';
+      ctx.strokeText('O remédio foi engolido!', camX + W/2, H/2);
+      ctx.fillText('O remédio foi engolido!', camX + W/2, H/2);
+      ctx.font = 'bold 22px Arial';
+      ctx.fillStyle = '#ffd700';
+      ctx.strokeText('O paciente está curado! 💊✨', camX + W/2, H/2 + 40);
+      ctx.fillText('O paciente está curado! 💊✨', camX + W/2, H/2 + 40);
+      ctx.font = 'bold 20px Arial';
+      ctx.fillStyle = 'white';
+      ctx.strokeText('Pressione V ou o botão ↻ para jogar novamente', camX + W/2, H/2 + 90);
+      ctx.fillText('Pressione V ou o botão ↻ para jogar novamente', camX + W/2, H/2 + 90);
+    }
+  }
+  
+  if (gameOver && winAnim < 0) {
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(camX, 0, W, H);
+    ctx.fillStyle = '#ff4444';
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 5;
+    ctx.font = 'bold 60px Arial';
+    ctx.textAlign = 'center';
+    ctx.strokeText('💀 GAME OVER 💀', camX + W/2, H/2 - 20);
+    ctx.fillText('💀 GAME OVER 💀', camX + W/2, H/2 - 20);
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 22px Arial';
+    ctx.strokeText('Pontos: ' + score + '/370', camX + W/2, H/2 + 20);
+    ctx.fillText('Pontos: ' + score + '/370', camX + W/2, H/2 + 20);
+    ctx.font = 'bold 20px Arial';
+    ctx.fillStyle = '#ffd700';
+    ctx.strokeText('Pressione V ou o botão ↻ para tentar novamente', camX + W/2, H/2 + 60);
+    ctx.fillText('Pressione V ou o botão ↻ para tentar novamente', camX + W/2, H/2 + 60);
+  }
+  
+  ctx.restore();
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// --- Configuração dos Controles de Toque (Celular) ---
+function setupTouchControls() {
+  const addTouch = (id, code) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    
+    const start = (e) => { 
+      e.preventDefault(); 
+      keys[code] = true; 
+      btn.classList.add('active'); 
+    };
+    const end = (e) => { 
+      e.preventDefault(); 
+      keys[code] = false; 
+      btn.classList.remove('active'); 
+    };
+    
+    // Eventos de toque (celular)
+    btn.addEventListener('touchstart', start, {passive: false});
+    btn.addEventListener('touchend', end, {passive: false});
+    btn.addEventListener('touchcancel', end, {passive: false});
+    
+    // Eventos de mouse (PC com clique nos botões)
+    btn.addEventListener('mousedown', start);
+    btn.addEventListener('mouseup', end);
+    btn.addEventListener('mouseleave', end);
+  };
+
+  addTouch('btnLeft', 'ArrowLeft');
+  addTouch('btnRight', 'ArrowRight');
+  addTouch('btnJump', 'Space');
+  addTouch('btnShoot', 'KeyX');
+
+  const btnRestart = document.getElementById('btnRestart');
+  if (btnRestart) {
+    const restartAction = (e) => { 
+      if(e) e.preventDefault(); 
+      initGame(); 
+    };
+    btnRestart.addEventListener('touchstart', restartAction, {passive: false});
+    btnRestart.addEventListener('click', restartAction);
+  }
+}
+
+// Inicializa o jogo e os controles
+initGame();
+setupTouchControls();
+loop();
+</script>
+</body>
+</html>

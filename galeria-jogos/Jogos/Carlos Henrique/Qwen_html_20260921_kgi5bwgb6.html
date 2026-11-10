@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>💊 Flappy Cure - A Fuga dos Efeitos</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+  }
+  #gameContainer {
+    position: relative;
+    width: 480px;
+    height: 720px;
+    box-shadow: 0 0 60px rgba(100, 200, 255, 0.3);
+    border-radius: 20px;
+    overflow: hidden;
+    background: #000;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(10, 15, 30, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 10;
+    transition: opacity 0.4s;
+  }
+  .hidden { opacity: 0; pointer-events: none; }
+  h1 {
+    font-size: 48px;
+    color: #fff;
+    text-shadow: 0 0 20px #64c8ff, 0 0 40px #64c8ff;
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+  }
+  h2 {
+    font-size: 28px;
+    color: #ffd700;
+    margin-bottom: 20px;
+    text-shadow: 0 0 10px #ffd700;
+  }
+  .subtitle {
+    color: #aaa;
+    font-size: 16px;
+    margin-bottom: 30px;
+    text-align: center;
+    padding: 0 20px;
+  }
+  .pill-select {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin: 20px 0;
+    padding: 0 30px;
+  }
+  .pill-card {
+    background: linear-gradient(145deg, #2a2a4e, #1a1a3e);
+    border: 2px solid #444;
+    border-radius: 15px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: center;
+  }
+  .pill-card:hover {
+    transform: translateY(-5px) scale(1.05);
+    border-color: #64c8ff;
+    box-shadow: 0 10px 30px rgba(100, 200, 255, 0.4);
+  }
+  .pill-card.selected {
+    border-color: #ffd700;
+    box-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
+  }
+  .pill-preview {
+    width: 60px;
+    height: 30px;
+    margin: 0 auto 10px;
+    border-radius: 15px;
+    box-shadow: 0 0 15px currentColor;
+  }
+  .pill-name {
+    color: #fff;
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 5px;
+  }
+  .pill-type {
+    color: #888;
+    font-size: 11px;
+  }
+  .btn {
+    background: linear-gradient(135deg, #64c8ff, #3a8fd6);
+    color: white;
+    border: none;
+    padding: 15px 40px;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 30px;
+    cursor: pointer;
+    margin-top: 20px;
+    box-shadow: 0 5px 20px rgba(100, 200, 255, 0.4);
+    transition: all 0.3s;
+    letter-spacing: 1px;
+  }
+  .btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(100, 200, 255, 0.6);
+  }
+  .btn:active { transform: translateY(0); }
+  .btn-danger {
+    background: linear-gradient(135deg, #ff6b6b, #c92a2a);
+    box-shadow: 0 5px 20px rgba(255, 107, 107, 0.4);
+  }
+  #hud {
+    position: absolute;
+    top: 20px; left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 20px;
+    z-index: 5;
+    pointer-events: none;
+  }
+  .hud-box {
+    background: rgba(0, 0, 0, 0.5);
+    padding: 8px 16px;
+    border-radius: 20px;
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(5px);
+  }
+  .score-display {
+    font-size: 60px;
+    color: #ffd700;
+    text-shadow: 0 0 20px #ffd700, 3px 3px 0 #000;
+    font-weight: bold;
+    margin: 20px 0;
+  }
+  .record {
+    color: #64c8ff;
+    font-size: 18px;
+    margin-bottom: 10px;
+  }
+  .instructions {
+    color: #ccc;
+    font-size: 14px;
+    text-align: center;
+    padding: 0 30px;
+    margin-top: 15px;
+    line-height: 1.6;
+  }
+  .effect-warning {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-size: 24px;
+    font-weight: bold;
+    text-shadow: 0 0 15px currentColor;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 6;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+  .pulse { animation: pulse 1.5s infinite; }
+</style>
+</head>
+<body>
+
+<div id="gameContainer">
+  <canvas id="game" width="480" height="720"></canvas>
+
+  <div id="hud" class="hidden">
+    <div class="hud-box">💊 <span id="pillName">Dipirona</span></div>
+    <div class="hud-box">⭐ <span id="score">0</span></div>
+  </div>
+
+  <div id="effectWarning" class="effect-warning"></div>
+
+  <!-- TELA DE SELEÇÃO -->
+  <div id="selectScreen" class="overlay">
+    <h1>💊 FLAPPY CURE</h1>
+    <p class="subtitle">Escolha seu remédio e fuja dos efeitos colaterais!</p>
+    <div class="pill-select" id="pillSelect"></div>
+    <button class="btn" id="startBtn">▶ INICIAR TRATAMENTO</button>
+    <p class="instructions">
+      🖱️ <b>Clique</b> ou <b>Espaço</b> para voar<br>
+      💧 Colete água para escudo | 🛡️ Antídoto = invencibilidade
+    </p>
+  </div>
+
+  <!-- TELA DE GAME OVER -->
+  <div id="gameOverScreen" class="overlay hidden">
+    <h2>⚠️ EFEITO COLATERAL!</h2>
+    <div class="score-display" id="finalScore">0</div>
+    <p class="record">🏆 Recorde: <span id="record">0</span></p>
+    <p class="subtitle" id="deathMessage">Você foi derrotado por...</p>
+    <button class="btn" id="retryBtn">🔄 TENTAR NOVAMENTE</button>
+    <button class="btn btn-danger" id="menuBtn">🏠 MENU</button>
+  </div>
+</div>
+
+<script>
+// ============ CONFIGURAÇÃO DOS REMÉDIOS ============
+const PILLS = [
+  {
+    name: "Dipirona",
+    type: "Analgésico",
+    colors: ["#ffffff", "#4a90e2"],
+    effects: [
+      { name: "Queda de Pressão", color: "#9b59b6", emoji: "💜" },
+      { name: "Alergia", color: "#e74c3c", emoji: "🔴" },
+      { name: "Mal-estar", color: "#27ae60", emoji: "🤢" }
+    ]
+  },
+  {
+    name: "Paracetamol",
+    type: "Analgésico Suave",
+    colors: ["#ffffff", "#ff9ec7"],
+    effects: [
+      { name: "Náusea", color: "#2ecc71", emoji: "🤮" },
+      { name: "Reação na Pele", color: "#e74c3c", emoji: "🔴" },
+      { name: "Sobrecarga Hepática", color: "#f39c12", emoji: "🟠" }
+    ]
+  },
+  {
+    name: "Ibuprofeno",
+    type: "Anti-inflamatório",
+    colors: ["#ff8c42", "#c92a2a"],
+    effects: [
+      { name: "Irritação Gástrica", color: "#f39c12", emoji: "🔥" },
+      { name: "Zumbido", color: "#9b59b6", emoji: "🌀" },
+      { name: "Retenção", color: "#3498db", emoji: "💧" }
+    ]
+  },
+  {
+    name: "Amoxicilina",
+    type: "Antibiótico",
+    colors: ["#2ecc71", "#27ae60"],
+    effects: [
+      { name: "Diarreia", color: "#8b4513", emoji: "💩" },
+      { name: "Candidíase", color: "#ecf0f1", emoji: "🦠" },
+      { name: "Resistência", color: "#e74c3c", emoji: "⚠️" }
+    ]
+  },
+  {
+    name: "Dramin",
+    type: "Anti-enjoo",
+    colors: ["#74b9ff", "#0984e3"],
+    effects: [
+      { name: "Sonolência", color: "#34495e", emoji: "😴" },
+      { name: "Boca Seca", color: "#d35400", emoji: "🏜️" },
+      { name: "Confusão", color: "#9b59b6", emoji: "🌀" }
+    ]
+  },
+  {
+    name: "Dorflex",
+    type: "Relaxante Muscular",
+    colors: ["#f1c40f", "#3498db"],
+    effects: [
+      { name: "Sonolência", color: "#34495e", emoji: "😴" },
+      { name: "Tontura", color: "#9b59b6", emoji: "💫" },
+      { name: "Boca Seca", color: "#d35400", emoji: "🏜️" }
+    ]
+  }
+];
+
+// ============ ESTADO DO JOGO ============
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const W = canvas.width, H = canvas.height;
+
+let state = "SELECT"; // SELECT, PLAYING, GAME_OVER
+let selectedPill = 0;
+let score = 0;
+let record = parseInt(localStorage.getItem("flappycure_record") || "0");
+let frame = 0;
+let shakeAmount = 0;
+let slowMotion = 1;
+let deathCause = "";
+
+// ============ JOGADOR (CÁPSULA) ============
+const player = {
+  x: 120,
+  y: H / 2,
+  w: 50,
+  h: 28,
+  vy: 0,
+  rotation: 0,
+  invincible: 0,
+  shield: 0,
+  trail: []
+};
+
+const GRAVITY = 0.5;
+const JUMP = -8.5;
+const MAX_FALL = 10;
+
+// ============ ARRAYS ============
+let obstacles = [];
+let powerUps = [];
+let particles = [];
+let bgCells = [];
+let bgBubbles = [];
+
+// ============ INICIALIZAÇÃO DE FUNDO ============
+function initBackground() {
+  bgCells = [];
+  bgBubbles = [];
+  for (let i = 0; i < 15; i++) {
+    bgCells.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: 15 + Math.random() * 25,
+      speed: 0.3 + Math.random() * 0.5,
+      alpha: 0.1 + Math.random() * 0.2
+    });
+  }
+  for (let i = 0; i < 20; i++) {
+    bgBubbles.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: 3 + Math.random() * 6,
+      speed: 0.5 + Math.random() * 1,
+      alpha: 0.3 + Math.random() * 0.4
+    });
+  }
+}
+
+// ============ OBSTÁCULOS ============
+function spawnObstacle() {
+  const pill = PILLS[selectedPill];
+  const effect = pill.effects[Math.floor(Math.random() * pill.effects.length)];
+  const gap = 170 - Math.min(40, score * 0.5); // gap diminui com score
+  const minGapY = 100;
+  const maxGapY = H - 100 - gap;
+  const gapY = minGapY + Math.random() * (maxGapY - minGapY);
+  const width = 70;
+
+  obstacles.push({
+    x: W + 50,
+    gapY: gapY,
+    gap: gap,
+    width: width,
+    passed: false,
+    effect: effect,
+    pulse: 0
+  });
+}
+
+function spawnPowerUp() {
+  const types = ["water", "antidote", "slowmo"];
+  const type = types[Math.floor(Math.random() * types.length)];
+  const pill = PILLS[selectedPill];
+  const effect = pill.effects[Math.floor(Math.random() * pill.effects.length)];
+
+  // Posiciona no meio de um obstáculo futuro
+  powerUps.push({
+    x: W + 300,
+    y: 150 + Math.random() * (H - 300),
+    r: 18,
+    type: type,
+    pulse: 0
+  });
+}
+
+// ============ PARTÍCULAS ============
+function spawnParticles(x, y, color, count = 10, speed = 3) {
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count + Math.random() * 0.5;
+    const spd = speed * (0.5 + Math.random());
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * spd,
+      vy: Math.sin(angle) * spd,
+      life: 1,
+      color: color,
+      size: 2 + Math.random() * 4
+    });
+  }
+}
+
+// ============ DESENHO ============
+function drawBackground() {
+  // Gradiente do corpo (esôfago → estômago)
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, "#2a0a3a");
+  grad.addColorStop(0.5, "#4a1a5a");
+  grad.addColorStop(1, "#6a2a3a");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Células ao fundo
+  bgCells.forEach(c => {
+    c.x -= c.speed;
+    if (c.x + c.r < 0) { c.x = W + c.r; c.y = Math.random() * H; }
+    ctx.fillStyle = `rgba(255, 150, 200, ${c.alpha})`;
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = `rgba(255, 200, 220, ${c.alpha * 1.5})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  });
+
+  // Bolhas subindo
+  bgBubbles.forEach(b => {
+    b.y -= b.speed;
+    b.x += Math.sin(frame * 0.02 + b.y * 0.01) * 0.3;
+    if (b.y + b.r < 0) { b.y = H + b.r; b.x = Math.random() * W; }
+    ctx.fillStyle = `rgba(200, 230, 255, ${b.alpha})`;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+function drawPill() {
+  const pill = PILLS[selectedPill];
+  ctx.save();
+  ctx.translate(player.x, player.y);
+  ctx.rotate(player.rotation);
+
+  // Rastro
+  if (player.invincible > 0) {
+    ctx.shadowColor = "#ffd700";
+    ctx.shadowBlur = 25;
+  } else if (player.shield > 0) {
+    ctx.shadowColor = "#64c8ff";
+    ctx.shadowBlur = 20;
+  }
+
+  // Escudo (bolha d'água)
+  if (player.shield > 0) {
+    ctx.strokeStyle = `rgba(100, 200, 255, ${0.5 + Math.sin(frame * 0.2) * 0.3})`;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(0, 0, 35, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // Cápsula - metade esquerda
+  ctx.fillStyle = pill.colors[0];
+  ctx.beginPath();
+  ctx.arc(-player.w / 4, 0, player.h / 2, Math.PI / 2, -Math.PI / 2);
+  ctx.lineTo(0, -player.h / 2);
+  ctx.lineTo(0, player.h / 2);
+  ctx.closePath();
+  ctx.fill();
+
+  // Cápsula - metade direita
+  ctx.fillStyle = pill.colors[1];
+  ctx.beginPath();
+  ctx.arc(player.w / 4, 0, player.h / 2, -Math.PI / 2, Math.PI / 2);
+  ctx.lineTo(0, player.h / 2);
+  ctx.lineTo(0, -player.h / 2);
+  ctx.closePath();
+  ctx.fill();
+
+  // Brilho
+  ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+  ctx.beginPath();
+  ctx.ellipse(-player.w / 4, -player.h / 4, 10, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Olhos
+  ctx.fillStyle = "#000";
+  ctx.beginPath();
+  ctx.arc(-5, -3, 3, 0, Math.PI * 2);
+  ctx.arc(8, -3, 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Brilho dos olhos
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  ctx.arc(-4, -4, 1, 0, Math.PI * 2);
+  ctx.arc(9, -4, 1, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+
+  // Rastro de partículas quando invencível
+  if (player.invincible > 0 && frame % 3 === 0) {
+    spawnParticles(player.x - 20, player.y, "#ffd700", 1, 1);
+  }
+}
+
+function drawObstacle(obs) {
+  obs.pulse += 0.1;
+  const pulseScale = 1 + Math.sin(obs.pulse) * 0.03;
+  const color = obs.effect.color;
+
+  ctx.save();
+
+  // Obstáculo de cima
+  drawObstaclePart(obs.x, 0, obs.width, obs.gapY, color, true, obs.effect.emoji);
+  // Obstáculo de baixo
+  drawObstaclePart(obs.x, obs.gapY + obs.gap, obs.width, H - (obs.gapY + obs.gap), color, false, obs.effect.emoji);
+
+  ctx.restore();
+}
+
+function drawObstaclePart(x, y, w, h, color, isTop, emoji) {
+  if (h <= 0) return;
+
+  // Corpo principal com gradiente
+  const grad = ctx.createLinearGradient(x, y, x + w, y);
+  grad.addColorStop(0, color);
+  grad.addColorStop(0.5, shadeColor(color, 30));
+  grad.addColorStop(1, shadeColor(color, -20));
+  ctx.fillStyle = grad;
+
+  ctx.beginPath();
+  if (isTop) {
+    // Parte de baixo arredondada
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + w, y);
+    ctx.lineTo(x + w, y + h - 15);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - 15, y + h);
+    ctx.lineTo(x + 15, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - 15);
+  } else {
+    // Parte de cima arredondada
+    ctx.moveTo(x, y + 15);
+    ctx.quadraticCurveTo(x, y, x + 15, y);
+    ctx.lineTo(x + w - 15, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + 15);
+    ctx.lineTo(x + w, y + h);
+    ctx.lineTo(x, y + h);
+  }
+  ctx.closePath();
+  ctx.fill();
+
+  // Borda brilhante
+  ctx.strokeStyle = shadeColor(color, 50);
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Textura de bolhas/efeito
+  ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
+  for (let i = 0; i < 5; i++) {
+    const bx = x + 10 + (i * w / 5);
+    const by = isTop ? y + h - 30 - i * 15 : y + 20 + i * 15;
+    if (by > y && by < y + h - 10) {
+      ctx.beginPath();
+      ctx.arc(bx, by, 5 + Math.sin(frame * 0.05 + i) * 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Emoji do efeito
+  ctx.font = "24px Arial";
+  ctx.textAlign = "center";
+  const emojiY = isTop ? y + h - 20 : y + 30;
+  ctx.fillText(emoji, x + w / 2, emojiY);
+}
+
+function drawPowerUp(pu) {
+  pu.pulse += 0.15;
+  const scale = 1 + Math.sin(pu.pulse) * 0.15;
+  const y = pu.y + Math.sin(frame * 0.05) * 5;
+
+  ctx.save();
+  ctx.translate(pu.x, y);
+  ctx.scale(scale, scale);
+
+  // Brilho
+  let color, emoji;
+  if (pu.type === "water") {
+    color = "#64c8ff"; emoji = "💧";
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 20;
+  } else if (pu.type === "antidote") {
+    color = "#ffd700"; emoji = "🛡️";
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 25;
+  } else {
+    color = "#9b59b6"; emoji = "⏱️";
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 20;
+  }
+
+  // Círculo de fundo
+  ctx.fillStyle = color;
+  ctx.globalAlpha = 0.3;
+  ctx.beginPath();
+  ctx.arc(0, 0, pu.r + 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(0, 0, pu.r, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Emoji
+  ctx.font = "20px Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(emoji, 0, 1);
+
+  ctx.restore();
+}
+
+function drawParticles() {
+  particles.forEach(p => {
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = p.life;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+}
+
+// ============ ATUALIZAÇÃO ============
+function update() {
+  if (state !== "PLAYING") return;
+
+  frame++;
+
+  // Física do jogador
+  player.vy += GRAVITY * slowMotion;
+  if (player.vy > MAX_FALL) player.vy = MAX_FALL;
+  player.y += player.vy * slowMotion;
+
+  // Rotação baseada na velocidade
+  player.rotation = Math.max(-0.5, Math.min(1.2, player.vy * 0.08));
+
+  // Limites verticais
+  if (player.y < 20) { player.y = 20; player.vy = 0; }
+  if (player.y > H - 20) { gameOver("Caiu no fundo do estômago!"); return; }
+
+  // Timers
+  if (player.invincible > 0) player.invincible--;
+  if (player.shield > 0) player.shield--;
+  if (slowMotion < 1) {
+    slowMotion += 0.005;
+    if (slowMotion > 1) slowMotion = 1;
+  }
+
+  // Spawn de obstáculos
+  const spawnRate = Math.max(70, 110 - score * 0.5);
+  if (frame % Math.floor(spawnRate) === 0) spawnObstacle();
+  if (frame % 250 === 0 && Math.random() < 0.7) spawnPowerUp();
+
+  // Atualiza obstáculos
+  const speed = 3 + Math.min(2, score * 0.03);
+  obstacles.forEach(obs => {
+    obs.x -= speed * slowMotion;
+
+    // Pontuação
+    if (!obs.passed && obs.x + obs.width < player.x) {
+      obs.passed = true;
+      score++;
+      document.getElementById("score").textContent = score;
+      spawnParticles(player.x, player.y, "#ffd700", 8, 2);
+      playSound("score");
+    }
+
+    // Colisão
+    if (player.invincible <= 0) {
+      const px = player.x, py = player.y;
+      const pr = 14; // raio aproximado da cápsula
+      if (px + pr > obs.x && px - pr < obs.x + obs.width) {
+        if (py - pr < obs.gapY || py + pr > obs.gapY + obs.gap) {
+          if (player.shield > 0) {
+            player.shield = 0;
+            spawnParticles(px, py, "#64c8ff", 20, 4);
+            playSound("shield");
+            showWarning("Escudo quebrado!");
+          } else {
+            gameOver("Atingido por: " + obs.effect.name + " " + obs.effect.emoji);
+          }
+        }
+      }
+    }
+  });
+
+  // Remove obstáculos fora da tela
+  obstacles = obstacles.filter(o => o.x + o.width > -50);
+
+  // Atualiza power-ups
+  powerUps.forEach(pu => {
+    pu.x -= speed * slowMotion;
+    const dx = pu.x - player.x;
+    const dy = pu.y - player.y;
+    if (Math.sqrt(dx * dx + dy * dy) < pu.r + 18) {
+      collectPowerUp(pu);
+      pu.collected = true;
+    }
+  });
+  powerUps = powerUps.filter(p => p.x > -50 && !p.collected);
+
+  // Atualiza partículas
+  particles.forEach(p => {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.1;
+    p.life -= 0.02;
+  });
+  particles = particles.filter(p => p.life > 0);
+
+  // Screen shake
+  if (shakeAmount > 0) shakeAmount *= 0.9;
+}
+
+function collectPowerUp(pu) {
+  spawnParticles(pu.x, pu.y, "#ffd700", 15, 3);
+  playSound("powerup");
+  if (pu.type === "water") {
+    player.shield = 300;
+    showWarning("💧 Escudo d'Água!");
+  } else if (pu.type === "antidote") {
+    player.invincible = 240;
+    showWarning("🛡️ Invencível!");
+  } else if (pu.type === "slowmo") {
+    slowMotion = 0.4;
+    showWarning("⏱️ Tempo Lento!");
+  }
+}
+
+function showWarning(text) {
+  const el = document.getElementById("effectWarning");
+  el.textContent = text;
+  el.style.opacity = "1";
+  setTimeout(() => el.style.opacity = "0", 1500);
+}
+
+function gameOver(cause) {
+  state = "GAME_OVER";
+  deathCause = cause;
+  shakeAmount = 15;
+  spawnParticles(player.x, player.y, "#ff4444", 30, 5);
+  playSound("death");
+
+  if (score > record) {
+    record = score;
+    localStorage.setItem("flappycure_record", record);
+  }
+
+  document.getElementById("finalScore").textContent = score;
+  document.getElementById("record").textContent = record;
+  document.getElementById("deathMessage").textContent = cause;
+  document.getElementById("hud").classList.add("hidden");
+
+  setTimeout(() => {
+    document.getElementById("gameOverScreen").classList.remove("hidden");
+  }, 600);
+}
+
+// ============ RENDER ============
+function render() {
+  ctx.save();
+  if (shakeAmount > 0.5) {
+    ctx.translate(
+      (Math.random() - 0.5) * shakeAmount,
+      (Math.random() - 0.5) * shakeAmount
+    );
+  }
+
+  drawBackground();
+
+  // Efeito de slow motion (tint roxo)
+  if (slowMotion < 1) {
+    ctx.fillStyle = `rgba(155, 89, 182, ${(1 - slowMotion) * 0.2})`;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  obstacles.forEach(drawObstacle);
+  powerUps.forEach(drawPowerUp);
+  drawParticles();
+  drawPill();
+
+  // Vinheta
+  const vignette = ctx.createRadialGradient(W/2, H/2, H/3, W/2, H/2, H/1.2);
+  vignette.addColorStop(0, "rgba(0,0,0,0)");
+  vignette.addColorStop(1, "rgba(0,0,0,0.5)");
+  ctx.fillStyle = vignette;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.restore();
+}
+
+// ============ LOOP ============
+function loop() {
+  update();
+  render();
+  requestAnimationFrame(loop);
+}
+
+// ============ CONTROLES ============
+function jump() {
+  if (state === "PLAYING") {
+    player.vy = JUMP;
+    spawnParticles(player.x - 15, player.y + 10, "#ffffff", 5, 2);
+    playSound("jump");
+  }
+}
+
+document.addEventListener("keydown", e => {
+  if (e.code === "Space") { e.preventDefault(); jump(); }
+});
+canvas.addEventListener("mousedown", jump);
+canvas.addEventListener("touchstart", e => { e.preventDefault(); jump(); });
+
+// ============ UI ============
+function buildPillSelect() {
+  const container = document.getElementById("pillSelect");
+  container.innerHTML = "";
+  PILLS.forEach((pill, i) => {
+    const card = document.createElement("div");
+    card.className = "pill-card" + (i === selectedPill ? " selected" : "");
+    card.innerHTML = `
+      <div class="pill-preview" style="background: linear-gradient(90deg, ${pill.colors[0]} 50%, ${pill.colors[1]} 50%); color: ${pill.colors[1]};"></div>
+      <div class="pill-name">${pill.name}</div>
+      <div class="pill-type">${pill.type}</div>
+    `;
+    card.onclick = () => {
+      selectedPill = i;
+      document.querySelectorAll(".pill-card").forEach(c => c.classList.remove("selected"));
+      card.classList.add("selected");
+      playSound("select");
+    };
+    container.appendChild(card);
+  });
+}
+
+function startGame() {
+  state = "PLAYING";
+  score = 0;
+  frame = 0;
+  slowMotion = 1;
+  player.y = H / 2;
+  player.vy = 0;
+  player.rotation = 0;
+  player.invincible = 0;
+  player.shield = 0;
+  obstacles = [];
+  powerUps = [];
+  particles = [];
+  initBackground();
+
+  document.getElementById("score").textContent = "0";
+  document.getElementById("pillName").textContent = PILLS[selectedPill].name;
+  document.getElementById("hud").classList.remove("hidden");
+  document.getElementById("selectScreen").classList.add("hidden");
+  document.getElementById("gameOverScreen").classList.add("hidden");
+}
+
+document.getElementById("startBtn").onclick = startGame;
+document.getElementById("retryBtn").onclick = startGame;
+document.getElementById("menuBtn").onclick = () => {
+  state = "SELECT";
+  document.getElementById("gameOverScreen").classList.add("hidden");
+  document.getElementById("selectScreen").classList.remove("hidden");
+};
+
+// ============ ÁUDIO (Web Audio API) ============
+let audioCtx;
+function playSound(type) {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    const now = audioCtx.currentTime;
+    if (type === "jump") {
+      osc.frequency.setValueAtTime(400, now);
+      osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+      gain.gain.setValueAtTime(0.1, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+      osc.start(now); osc.stop(now + 0.1);
+    } else if (type === "score") {
+      osc.frequency.setValueAtTime(800, now);
+      osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+      gain.gain.setValueAtTime(0.1, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+      osc.start(now); osc.stop(now + 0.15);
+    } else if (type === "powerup") {
+      osc.frequency.setValueAtTime(600, now);
+      osc.frequency.exponentialRampToValueAtTime(1400, now + 0.2);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+      osc.start(now); osc.stop(now + 0.3);
+    } else if (type === "death") {
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(400, now);
+      osc.frequency.exponentialRampToValueAtTime(80, now + 0.5);
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+      osc.start(now); osc.stop(now + 0.5);
+    } else if (type === "shield") {
+      osc.frequency.setValueAtTime(500, now);
+      osc.frequency.exponentialRampToValueAtTime(200, now + 0.2);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+      osc.start(now); osc.stop(now + 0.2);
+    } else if (type === "select") {
+      osc.frequency.setValueAtTime(700, now);
+      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+      osc.start(now); osc.stop(now + 0.08);
+    }
+  } catch(e) {}
+}
+
+// ============ UTIL ============
+function shadeColor(color, percent) {
+  const num = parseInt(color.replace("#", ""), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = Math.min(255, Math.max(0, (num >> 16) + amt));
+  const G = Math.min(255, Math.max(0, (num >> 8 & 0x00FF) + amt));
+  const B = Math.min(255, Math.max(0, (num & 0x0000FF) + amt));
+  return "#" + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
+}
+
+// ============ INÍCIO ============
+buildPillSelect();
+initBackground();
+document.getElementById("record").textContent = record;
+loop();
+</script>
+
+</body>
+</html>

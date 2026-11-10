@@ -1,0 +1,1710 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Caça Palavras do FarmaTech</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{overflow:hidden;background:#000;font-family:'Courier New',monospace;}
+  #canvas{display:block;width:100vw;height:100vh;}
+
+  /* HUD */
+  #hud{position:fixed;top:0;left:0;width:100%;pointer-events:none;z-index:10;}
+  #timer-hud{position:fixed;top:16px;right:20px;background:rgba(0,0,0,0.75);border:2px solid #ff4400;border-radius:8px;padding:8px 18px;color:#ff4400;font-size:1.4rem;font-weight:bold;z-index:20;letter-spacing:2px;text-shadow:0 0 8px #ff4400;}
+  #timer-hud.warning{color:#ff0000;border-color:#ff0000;animation:pulse-border 0.5s infinite alternate;font-size:1.6rem;}
+  @keyframes pulse-border{from{box-shadow:0 0 4px #ff0000;}to{box-shadow:0 0 18px #ff0000,0 0 32px #ff0000;}}
+  #crosshair{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:20px;height:20px;z-index:15;pointer-events:none;}
+  #crosshair::before,#crosshair::after{content:'';position:absolute;background:#fff;opacity:0.8;}
+  #crosshair::before{width:2px;height:20px;left:9px;top:0;}
+  #crosshair::after{width:20px;height:2px;top:9px;left:0;}
+  #interact-hint{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#00ffcc;border:1px solid #00ffcc;border-radius:6px;padding:8px 20px;font-size:1rem;z-index:20;display:none;pointer-events:none;letter-spacing:1px;}
+  #vest-indicator{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);border:2px solid #ff4400;border-radius:10px;padding:8px 22px;color:#ff4400;font-size:0.95rem;z-index:20;pointer-events:none;letter-spacing:1px;}
+  #vest-indicator.safe{border-color:#00ff88;color:#00ff88;}
+
+  /* TUTORIAL MODAL */
+  /* Rola quando o conteúdo é mais alto que a tela (celular), mantendo o
+     botão JOGAR alcançável. margin:auto na caixa centraliza quando cabe e
+     evita o corte do topo que acontece com align-items:center + overflow. */
+  #tutorial-modal{position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:100;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px;}
+  .tut-box{background:linear-gradient(135deg,#0a0a1a,#0d1f0d);border:2px solid #00ff88;border-radius:16px;max-width:640px;width:90%;padding:36px 40px;color:#e0ffe0;position:relative;box-shadow:0 0 40px #00ff8844;margin:auto;flex-shrink:0;}
+  .tut-box h1{text-align:center;font-size:1.8rem;color:#00ff88;margin-bottom:6px;text-shadow:0 0 10px #00ff88;}
+  .tut-box h2{text-align:center;font-size:1rem;color:#aaffcc;margin-bottom:24px;font-weight:normal;}
+  .tut-box .section{margin-bottom:16px;}
+  .tut-box .section-title{color:#ffdd44;font-size:1rem;font-weight:bold;margin-bottom:6px;border-bottom:1px solid #ffdd4422;padding-bottom:4px;}
+  .tut-box p,.tut-box li{font-size:0.9rem;line-height:1.65;color:#cceecc;}
+  .tut-box ul{padding-left:18px;}
+  .tut-box ul li{margin-bottom:4px;}
+  .tut-box kbd{background:#1a2a1a;border:1px solid #00ff88;border-radius:4px;padding:1px 7px;font-family:'Courier New',monospace;font-size:0.85rem;color:#00ffcc;}
+  #start-btn{display:block;margin:24px auto 0;background:linear-gradient(90deg,#00aa55,#008844);color:#fff;font-size:1.1rem;font-weight:bold;border:none;border-radius:8px;padding:12px 48px;cursor:pointer;letter-spacing:2px;transition:all 0.2s;box-shadow:0 0 16px #00aa5544;}
+  #start-btn:hover{background:linear-gradient(90deg,#00cc66,#00aa44);transform:scale(1.04);box-shadow:0 0 24px #00cc6688;}
+  .bomb-icon{font-size:2rem;text-align:center;margin-bottom:8px;}
+
+  /* TERMINAL OVERLAY */
+  #terminal-overlay{position:fixed;inset:0;background:rgba(0,5,0,0.97);z-index:50;display:none;flex-direction:column;align-items:center;justify-content:flex-start;padding:16px 20px;overflow-y:auto;}
+  #terminal-overlay.active{display:flex;}
+  .term-header{width:100%;max-width:1060px;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-shrink:0;}
+  .term-title{color:#00ff88;font-size:1.4rem;font-weight:bold;text-shadow:0 0 10px #00ff88;letter-spacing:2px;}
+  .term-subtitle{color:#aaffcc;font-size:0.8rem;}
+  #exit-terminal-btn{background:transparent;border:1px solid #ff4444;color:#ff4444;border-radius:6px;padding:6px 16px;cursor:pointer;font-family:'Courier New',monospace;transition:all 0.2s;flex-shrink:0;}
+  #exit-terminal-btn:hover{background:#ff444422;}
+  .term-body{width:100%;max-width:1060px;display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start;}
+  /* Word search grid */
+  #word-grid-container{flex:1;min-width:300px;overflow-x:auto;}
+  #word-grid{--cell:32px;display:inline-grid;gap:3px;background:#001100;border:2px solid #00ff4444;border-radius:8px;padding:12px;user-select:none;cursor:pointer;}
+  .grid-cell{width:var(--cell);height:var(--cell);display:flex;align-items:center;justify-content:center;font-size:1.05rem;font-weight:bold;color:#88ffaa;border-radius:4px;transition:background 0.15s,color 0.15s;border:1px solid transparent;}
+  .grid-cell:hover{background:#00ff8822;border-color:#00ff8844;}
+  .grid-cell.selected{background:#00ff8855;color:#fff;border-color:#00ff88;}
+  .grid-cell.found{background:#004422;color:#00ffcc;border-color:#00ff88;animation:found-flash 0.4s ease;}
+  .grid-cell.found-highlight{background:#00aa3388;color:#ffffff;border-color:#00ff88;font-weight:bold;}
+  .grid-cell.revealed{background:#660000;color:#ffaaaa;border-color:#ff4444;}
+  .grid-cell.wrong{background:#aa0000;color:#fff;border-color:#ff0000;animation:wrong-shake 0.4s ease;}
+  @keyframes wrong-shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-3px);}75%{transform:translateX(3px);}}
+  @keyframes found-flash{0%{transform:scale(1.3);background:#00ff88;}100%{transform:scale(1);}}
+  /* Side panel */
+  .term-side{min-width:220px;max-width:280px;display:flex;flex-direction:column;gap:14px;}
+  .panel-box{background:#001a00;border:1px solid #00aa4466;border-radius:8px;padding:14px;}
+  .panel-box h3{color:#ffdd44;font-size:0.85rem;font-weight:bold;margin-bottom:10px;letter-spacing:1px;text-transform:uppercase;}
+  .word-item{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:0.88rem;}
+  .word-item .wi-name{color:#aaccaa;text-decoration:none;transition:all 0.3s;}
+  .word-item .wi-name.found{color:#00ff88;text-decoration:line-through;text-shadow:0 0 8px #00ff88;}
+  .word-item .wi-check{width:16px;height:16px;border:2px solid #446644;border-radius:50%;display:inline-block;transition:all 0.3s;}
+  .word-item .wi-check.found{background:#00ff88;border-color:#00ff88;box-shadow:0 0 8px #00ff88;}
+  .score-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+  .score-label{color:#aaffcc;font-size:0.82rem;}
+  .score-val{color:#ffdd44;font-size:1.1rem;font-weight:bold;}
+  /* Puzzle Timer */
+  #puzzle-timer-display{font-size:2rem;font-weight:bold;color:#00ff88;text-align:center;letter-spacing:4px;text-shadow:0 0 10px #00ff88;padding:6px 0;}
+  #puzzle-timer-display.warning{color:#ff0000;animation:pulse-txt 0.5s infinite alternate;}
+  @keyframes pulse-txt{from{text-shadow:0 0 6px #ff0000;}to{text-shadow:0 0 20px #ff0000,0 0 40px #ff0000;}}
+  .dir-badge{display:inline-block;font-size:0.68rem;padding:1px 5px;border-radius:10px;margin-left:4px;background:#002200;color:#55aa55;border:1px solid #446644;white-space:nowrap;}
+  /* Instructions */
+  .instructions{color:#668866;font-size:0.8rem;line-height:1.5;}
+
+  /* GAME OVER SCREEN */
+  #gameover-screen{position:fixed;inset:0;background:#000;z-index:200;display:none;flex-direction:column;align-items:center;justify-content:center;color:#ff0000;}
+  #gameover-screen.active{display:flex;}
+  .gameover-title{font-size:3rem;font-weight:bold;text-shadow:0 0 30px #ff0000;margin-bottom:16px;animation:flicker 1.5s infinite;}
+  @keyframes flicker{0%,100%{opacity:1;}50%{opacity:0.6;}}
+  .gameover-sub{font-size:1.2rem;color:#ff6666;margin-bottom:30px;}
+  #restart-btn{background:#660000;border:2px solid #ff0000;color:#fff;font-size:1.1rem;padding:12px 40px;border-radius:8px;cursor:pointer;letter-spacing:2px;transition:all 0.2s;}
+  #restart-btn:hover{background:#880000;box-shadow:0 0 20px #ff0000;}
+
+  /* VICTORY SCREEN */
+  #victory-screen{position:fixed;inset:0;background:rgba(0,20,0,0.95);z-index:200;display:none;flex-direction:column;align-items:center;justify-content:center;color:#00ff88;}
+  #victory-screen.active{display:flex;}
+  .victory-title{font-size:2.8rem;font-weight:bold;text-shadow:0 0 30px #00ff88;margin-bottom:12px;animation:glow-pulse 2s infinite alternate;}
+  @keyframes glow-pulse{from{text-shadow:0 0 10px #00ff88;}to{text-shadow:0 0 40px #00ff88,0 0 80px #00ff88;}}
+  .victory-sub{font-size:1.1rem;color:#aaffcc;margin-bottom:10px;text-align:center;max-width:500px;}
+  #restart-btn2{background:#004422;border:2px solid #00ff88;color:#fff;font-size:1.1rem;padding:12px 40px;border-radius:8px;cursor:pointer;letter-spacing:2px;margin-top:20px;}
+  #restart-btn2:hover{background:#006633;box-shadow:0 0 20px #00ff88;}
+
+  /* Explosion overlay */
+  #explosion-overlay{position:fixed;inset:0;background:radial-gradient(circle,#ff8800,#ff2200,#000);z-index:190;display:none;animation:explode-anim 1.5s ease-out forwards;}
+  @keyframes explode-anim{0%{opacity:0;transform:scale(0.5);}30%{opacity:1;transform:scale(1);}100%{opacity:1;transform:scale(1);}}
+
+  /* CRT scanlines overlay on terminal */
+  #terminal-overlay::before{
+    content:'';position:fixed;inset:0;
+    background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.08) 2px,rgba(0,0,0,0.08) 4px);
+    pointer-events:none;z-index:1;
+  }
+  #terminal-overlay > *{position:relative;z-index:2;}
+
+  /* Animated terminal border */
+  #terminal-overlay::after{
+    content:'';position:fixed;inset:2px;border:1px solid #00ff4422;pointer-events:none;z-index:1;border-radius:4px;
+    animation:term-flicker 4s infinite;
+  }
+  @keyframes term-flicker{0%,100%{border-color:#00ff4422;}50%{border-color:#00ff4444;}}
+
+  /* Scrollbar */
+  ::-webkit-scrollbar{width:6px;}
+  ::-webkit-scrollbar-track{background:#001100;}
+  ::-webkit-scrollbar-thumb{background:#00aa44;border-radius:3px;}
+
+  /* Responsive terminal — grid shrinks so the 18x18 board fits small screens */
+  #word-grid{touch-action:none;} /* evita rolagem/zoom ao arrastar letras no celular */
+  @media(max-width:1000px){ #word-grid{--cell:26px;padding:9px;} .grid-cell{font-size:0.9rem;} }
+  @media(max-width:860px){  #word-grid{--cell:22px;padding:7px;gap:2px;} .grid-cell{font-size:0.75rem;border-radius:3px;} }
+  @media(max-width:700px){  #word-grid{--cell:19px;padding:6px;gap:2px;} .grid-cell{font-size:0.65rem;} }
+  @media(max-width:540px){  #word-grid{--cell:16px;padding:5px;gap:1px;} .grid-cell{font-size:0.56rem;} }
+  /* Empilha o painel lateral só em retrato (em paisagem mantém lado a lado) */
+  @media(max-width:700px) and (orientation:portrait){
+    .term-side{max-width:100%;min-width:100%;}
+    #word-grid-container{min-width:100%;}
+  }
+  /* Telas baixas (celular deitado): compacta cabeçalho e painéis */
+  @media(max-height:500px){
+    #terminal-overlay{padding:8px 10px;}
+    .term-title{font-size:1rem;}
+    .term-subtitle{display:none;}
+    .term-header{margin-bottom:6px;}
+    .panel-box{padding:8px 10px;}
+    .panel-box h3{font-size:0.72rem;margin-bottom:6px;}
+    #puzzle-timer-display{font-size:1.4rem;padding:2px 0;}
+    .word-item{font-size:0.74rem;margin-bottom:4px;}
+    .term-side{gap:8px;min-width:190px;}
+    .instructions{font-size:0.68rem;}
+  }
+
+  /* ── CONTROLES MOBILE (ocultos no PC) ───────────────────────────── */
+  #mobile-controls{display:none;}
+  body.touch-mode.in-game #mobile-controls{display:block;}
+  .mobile-only{display:none;}
+  body.touch-mode .mobile-only{display:list-item;}
+  body.touch-mode #crosshair{opacity:0.45;}
+  #joystick-base{position:fixed;left:22px;bottom:22px;width:124px;height:124px;border-radius:50%;
+    background:rgba(0,0,0,0.38);border:2px solid rgba(0,255,136,0.45);z-index:25;touch-action:none;}
+  #joystick-knob{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;
+    background:rgba(0,255,136,0.33);border:2px solid #00ff88;box-shadow:0 0 12px #00ff8866;pointer-events:none;}
+  #btn-interact{position:fixed;right:24px;bottom:34px;width:94px;height:94px;border-radius:50%;
+    background:rgba(0,40,20,0.75);border:2px solid #00ffcc;color:#00ffcc;font-family:'Courier New',monospace;
+    font-size:0.78rem;font-weight:bold;z-index:25;display:none;align-items:center;justify-content:center;
+    text-align:center;line-height:1.2;touch-action:none;box-shadow:0 0 16px #00ffcc55;}
+  #btn-interact.show{display:flex;}
+  #btn-interact:active{background:rgba(0,80,50,0.9);}
+  /* Em telas de toque o terminal é fechado pelo botão ✕ (não há tecla ESC) */
+  body.touch-mode #interact-hint{bottom:160px;font-size:0.85rem;}
+  body.touch-mode #vest-indicator{bottom:auto;top:62px;font-size:0.8rem;padding:6px 14px;}
+
+  /* ── AVISO: VIRE O CELULAR ──────────────────────────────────────── */
+  #rotate-notice{position:fixed;inset:0;background:#000;z-index:500;display:none;
+    flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px;}
+  #rotate-notice.show{display:flex;}
+  #rotate-notice .rot-icon{font-size:3.4rem;margin-bottom:14px;animation:rotate-hint 1.8s ease-in-out infinite;}
+  @keyframes rotate-hint{0%,100%{transform:rotate(0deg);}50%{transform:rotate(90deg);}}
+  #rotate-notice h2{color:#00ff88;font-size:1.3rem;margin-bottom:10px;text-shadow:0 0 10px #00ff88;}
+  #rotate-notice p{color:#aaffcc;font-size:0.95rem;line-height:1.6;max-width:420px;}
+  #rotate-dismiss{margin-top:22px;background:#004422;border:2px solid #00ff88;color:#fff;
+    font-family:'Courier New',monospace;font-size:0.9rem;padding:10px 26px;border-radius:8px;}
+
+  /* pointer lock notice */
+  #pointer-lock-notice{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#00ff88;cursor:pointer;}
+  #pointer-lock-notice h2{font-size:1.6rem;margin-bottom:10px;}
+  #pointer-lock-notice p{font-size:1rem;color:#aaffcc;}
+  #pointer-lock-notice{display:none;}
+  #pointer-lock-notice.active{display:flex;}
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+
+<!-- HUD -->
+<div id="hud">
+  <div id="timer-hud">05:00</div>
+  <div id="crosshair"></div>
+  <div id="interact-hint">[E] Acessar terminal</div>
+  <div id="vest-indicator">COLETE DE DINAMITE ATIVO</div>
+</div>
+
+<!-- CONTROLES MOBILE -->
+<div id="mobile-controls">
+  <div id="joystick-base"><div id="joystick-knob"></div></div>
+  <button id="btn-interact">ACESSAR</button>
+</div>
+
+<!-- AVISO DE ORIENTAÇÃO (apenas celular/tablet) -->
+<div id="rotate-notice">
+  <div class="rot-icon">📱</div>
+  <h2>Vire o celular na horizontal</h2>
+  <p>Para a melhor experiência de jogo, gire o aparelho para o modo <strong>paisagem</strong>. O caça-palavras ocupa bastante espaço na tela!</p>
+  <button id="rotate-dismiss">Continuar assim mesmo</button>
+</div>
+
+<!-- POINTER LOCK NOTICE -->
+<div id="pointer-lock-notice">
+  <h2>Clique para retomar</h2>
+  <p>Clique na tela para capturar o mouse</p>
+</div>
+
+<!-- TUTORIAL MODAL -->
+<div id="tutorial-modal">
+  <div class="tut-box">
+    <div class="bomb-icon">💣</div>
+    <h1>Caça Palavras do FarmaTech</h1>
+    <h2>Você tem 5 minutos para desarmar o colete de dinamite!</h2>
+    <div class="section">
+      <div class="section-title">🎮 Controles</div>
+      <ul>
+        <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> — Mover o personagem</li>
+        <li><kbd>Mouse</kbd> — Olhar ao redor (clique para capturar o mouse)</li>
+        <li><kbd>E</kbd> — Interagir com o computador</li>
+        <li><kbd>ESC</kbd> — Sair do terminal / Liberar mouse</li>
+        <li class="mobile-only">📱 <strong>No celular:</strong> joystick à esquerda para andar, arraste a tela para olhar, botão <strong>ACESSAR</strong> para usar o computador e <strong>✕</strong> para sair do terminal</li>
+        <li class="mobile-only">📱 Use o aparelho na <strong>horizontal</strong> para enxergar a grade inteira</li>
+      </ul>
+    </div>
+    <div class="section">
+      <div class="section-title">🎯 Objetivo</div>
+      <p>Você acordou preso numa sala com um <strong style="color:#ff4400">colete de dinamite</strong>! O único jeito de desarmá-lo é encontrando todas as palavras no terminal do computador.</p>
+    </div>
+    <div class="section">
+      <div class="section-title">🖥️ Terminal</div>
+      <ul>
+        <li>Aproxime-se do computador e pressione <kbd>E</kbd> para acessar</li>
+        <li>Clique e arraste as letras para selecionar palavras</li>
+        <li>O cronômetro é <strong style="color:#ffdd44">o mesmo</strong> da bomba: <strong style="color:#ffdd44">5 minutos</strong></li>
+        <li>⚠️ Palavra errada = <strong style="color:#ff5555">−10 segundos</strong> no cronômetro!</li>
+        <li>Encontre <strong style="color:#00ff88">8 fármacos</strong>: Levotiroxina, Tetraciclina, Varfarina, Alendronato, Amoxicilina, Sinvastatina, Metformina, Omeprazol</li>
+        <li>As palavras mudam de lugar <strong style="color:#00ff88">a cada partida</strong>!</li>
+      </ul>
+    </div>
+    <div class="section">
+      <div class="section-title">🚪 Vitória</div>
+      <p>Ao resolver o puzzle, o colete é desarmado, a porta abre e você pode escapar para o lado de fora!</p>
+    </div>
+    <button id="start-btn">▶ INICIAR MISSÃO</button>
+  </div>
+</div>
+
+<!-- TERMINAL OVERLAY -->
+<div id="terminal-overlay">
+  <div class="term-header">
+    <div>
+      <div class="term-title">🖥️ FARMTECH TERMINAL v2.4</div>
+      <div class="term-subtitle">Sistema de Desarme — Insira a sequência correta</div>
+    </div>
+    <button id="exit-terminal-btn">✕ Sair [ESC]</button>
+  </div>
+  <div class="term-body">
+    <div id="word-grid-container">
+      <div id="word-grid"></div>
+      <div class="instructions" style="margin-top:8px;">Clique e arraste para selecionar • Horizontal • Diagonal • Invertido</div>
+    </div>
+    <div class="term-side">
+      <div class="panel-box">
+        <h3>⏱ Tempo Restante</h3>
+        <div id="puzzle-timer-display">05:00</div>
+      </div>
+      <div class="panel-box">
+        <h3>📋 Palavras Alvo</h3>
+        <div id="word-list"></div>
+      </div>
+      <div class="panel-box">
+        <h3>📊 Placar</h3>
+        <div class="score-row"><span class="score-label">Palavras Encontradas</span><span class="score-val" id="score-found">0/8</span></div>
+        <div class="score-row"><span class="score-label">Pontuação</span><span class="score-val" id="score-pts">0</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EXPLOSION -->
+<div id="explosion-overlay"></div>
+
+<!-- GAME OVER -->
+<div id="gameover-screen">
+  <div class="gameover-title">💥 VOCÊ MORREU 💥</div>
+  <div class="gameover-sub">A bomba explodiu. Missão fracassada.</div>
+  <div style="font-size:0.95rem;color:#ff4444;margin-bottom:20px;">Você não conseguiu encontrar todas as palavras a tempo.</div>
+  <button id="restart-btn" onclick="location.reload()">🔄 TENTAR NOVAMENTE</button>
+</div>
+
+<!-- VICTORY -->
+<div id="victory-screen">
+  <div class="victory-title">🎉 MISSÃO CONCLUÍDA!</div>
+  <div class="victory-sub">Você desarmou o colete de dinamite e escapou com sucesso!</div>
+  <div class="victory-sub" style="font-size:0.9rem;color:#88ffcc;">O FarmaTech agradece seu conhecimento em farmacologia!</div>
+  <div style="margin-top:18px;background:rgba(0,60,20,0.6);border:1px solid #00ff88;border-radius:10px;padding:16px 32px;text-align:center;">
+    <div style="color:#ffdd44;font-size:1rem;margin-bottom:6px;">📊 PONTUAÇÃO FINAL</div>
+    <div style="color:#00ff88;font-size:2rem;font-weight:bold;" id="final-score">0</div>
+    <div style="color:#aaffcc;font-size:0.82rem;margin-top:4px;">Palavras encontradas: <span id="final-words">4/4</span></div>
+  </div>
+  <div style="margin-top:12px;color:#aaffcc;font-size:0.85rem;max-width:560px;text-align:center;">💊 Fármacos identificados: Levotiroxina • Tetraciclina • Varfarina • Alendronato • Amoxicilina • Sinvastatina • Metformina • Omeprazol</div>
+  <button id="restart-btn2" onclick="location.reload()">🔄 JOGAR NOVAMENTE</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ====================================================
+   FARMTECH WORD HUNT — MAIN GAME SCRIPT
+   ==================================================== */
+
+// ─── Audio Engine ──────────────────────────────────────────────────────────
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+function getAudio(){if(!audioCtx)audioCtx=new AudioCtx();return audioCtx;}
+function playTone(freq,dur,type='sine',vol=0.3,delay=0){
+  const a=getAudio();const o=a.createOscillator();const g=a.createGain();
+  o.connect(g);g.connect(a.destination);
+  o.type=type;o.frequency.setValueAtTime(freq,a.currentTime+delay);
+  g.gain.setValueAtTime(0,a.currentTime+delay);
+  g.gain.linearRampToValueAtTime(vol,a.currentTime+delay+0.01);
+  g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+delay+dur);
+  o.start(a.currentTime+delay);o.stop(a.currentTime+delay+dur+0.05);
+}
+function sfxSelect(){playTone(440,0.06,'square',0.12);}
+function sfxFound(){
+  [523,659,784,1047].forEach((f,i)=>playTone(f,0.18,'sine',0.25,i*0.1));
+}
+function sfxWrong(){
+  // descending buzz = penalidade
+  playTone(220,0.18,'sawtooth',0.28);
+  playTone(150,0.28,'sawtooth',0.28,0.12);
+}
+function sfxWarning(){
+  playTone(880,0.08,'sawtooth',0.4);
+  playTone(880,0.08,'sawtooth',0.4,0.25);
+}
+function sfxVictory(){
+  const notes=[523,659,784,1047,1319,1568];
+  notes.forEach((f,i)=>playTone(f,0.3,'sine',0.3,i*0.12));
+  setTimeout(()=>{[784,1047,1319].forEach((f,i)=>playTone(f,0.4,'sine',0.35,i*0.15));},900);
+}
+function sfxExplosion(){
+  const a=getAudio();
+  const buf=a.createBuffer(1,a.sampleRate*1.5,a.sampleRate);
+  const d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,0.5);
+  const src=a.createBufferSource();src.buffer=buf;
+  const g=a.createGain();g.gain.setValueAtTime(1.5,a.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+1.5);
+  const dist=a.createWaveShaper();
+  const curve=new Float32Array(256);
+  for(let i=0;i<256;i++)curve[i]=((i/128)-1)*5;
+  dist.curve=curve;
+  src.connect(dist);dist.connect(g);g.connect(a.destination);
+  src.start();
+}
+function sfxDoorOpen(){
+  const a=getAudio();const o=a.createOscillator();const g=a.createGain();
+  o.connect(g);g.connect(a.destination);
+  o.type='sawtooth';
+  o.frequency.setValueAtTime(200,a.currentTime);
+  o.frequency.linearRampToValueAtTime(80,a.currentTime+1.2);
+  g.gain.setValueAtTime(0.3,a.currentTime);
+  g.gain.linearRampToValueAtTime(0,a.currentTime+1.2);
+  o.start();o.stop(a.currentTime+1.3);
+}
+
+// ─── Game State ─────────────────────────────────────────────────────────────
+const STATE = {
+  phase: 'tutorial',     // tutorial, playing, terminal, won, dead
+  bombTimer: 300,        // ÚNICO timer (5 min) — usado no HUD e no terminal
+  penaltySeconds: 10,    // penalidade por palavra errada
+  bombActive: true,
+  puzzleSolved: false,
+  doorOpen: false,
+  doorAnimating: false,
+  doorAngle: 0,
+  playerOutside: false,
+  score: 0,
+  wordsFound: 0,
+  puzzleTimedOut: false,
+};
+
+// ─── WORD SEARCH ENGINE ─────────────────────────────────────────────────────
+const TARGET_WORDS = [
+  'LEVOTIROXINA','TETRACICLINA','VARFARINA','ALENDRONATO',
+  'AMOXICILINA','SINVASTATINA','METFORMINA','OMEPRAZOL'
+];
+// 8 direções (as com dr<0 ou dc<0 são "invertidas" / de trás para frente)
+const DIRECTIONS = [
+  {dr: 0, dc: 1,  name:'→ Horizontal', rev:false},
+  {dr: 1, dc: 1,  name:'↘ Diagonal',   rev:false},
+  {dr: 1, dc: 0,  name:'↓ Vertical',   rev:false},
+  {dr:-1, dc: 1,  name:'↗ Diagonal',   rev:false},
+  {dr: 0, dc:-1,  name:'← Invertido',  rev:true },
+  {dr:-1, dc:-1,  name:'↖ Invertido',  rev:true },
+  {dr:-1, dc: 0,  name:'↑ Invertido',  rev:true },
+  {dr: 1, dc:-1,  name:'↙ Invertido',  rev:true },
+];
+const GRID_SIZE = 18;
+let grid = [];
+let wordPositions = {}; // word -> [{r,c}]
+let wordDirections = {}; // word -> direction string
+let foundWords = new Set();
+let cellElements = [];
+// Palavras realmente colocadas na grade desta rodada.
+// Palavras impossíveis são DESCARTADAS e não entram aqui.
+let ACTIVE_WORDS = [];
+
+// Verifica se a palavra é viável ANTES de tentar posicionar:
+// precisa ter 2+ letras, só A-Z (sem acento/espaço/número) e caber na grade.
+function isWordPossible(word){
+  if(typeof word!=='string') return false;
+  const w=word.trim().toUpperCase();
+  if(w.length<2) return false;                 // curta demais para selecionar
+  if(w.length>GRID_SIZE) return false;         // nunca cabe na grade
+  if(!/^[A-Z]+$/.test(w)) return false;        // caracteres inválidos
+  return true;
+}
+
+function shuffleArr(a){
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+// Testa se a palavra cabe a partir de (r,c) na direção dir.
+// Retorna as células, ou null se sair da grade ou conflitar com letra diferente.
+function tryPlace(word,dir,r,c){
+  const cells=[];
+  for(let i=0;i<word.length;i++){
+    const rr=r+i*dir.dr, cc=c+i*dir.dc;
+    if(rr<0||rr>=GRID_SIZE||cc<0||cc>=GRID_SIZE) return null;
+    const cur=grid[rr][cc];
+    if(cur!=='' && cur!==word[i]) return null; // só sobrepõe se a letra bater
+    cells.push({r:rr,c:cc});
+  }
+  return cells;
+}
+
+function commitWord(word,cells,dirName){
+  cells.forEach((p,i)=>{ grid[p.r][p.c]=word[i]; });
+  wordPositions[word]=cells;
+  wordDirections[word]=dirName;
+}
+
+function placeWord(word,dirPool){
+  // 1) tentativas aleatórias (espalha bem pela grade)
+  for(let a=0;a<500;a++){
+    const dir=dirPool[Math.floor(Math.random()*dirPool.length)];
+    const r=Math.floor(Math.random()*GRID_SIZE);
+    const c=Math.floor(Math.random()*GRID_SIZE);
+    const cells=tryPlace(word,dir,r,c);
+    if(cells){ commitWord(word,cells,dir.name); return true; }
+  }
+  // 2) varredura exaustiva (garante colocação se houver qualquer espaço)
+  for(const dir of shuffleArr(dirPool.slice())){
+    for(const r of shuffleArr([...Array(GRID_SIZE).keys()])){
+      for(const c of shuffleArr([...Array(GRID_SIZE).keys()])){
+        const cells=tryPlace(word,dir,r,c);
+        if(cells){ commitWord(word,cells,dir.name); return true; }
+      }
+    }
+  }
+  return false;
+}
+
+// Monta a grade. Tenta algumas vezes para conseguir o máximo de palavras;
+// qualquer palavra IMPOSSÍVEL de posicionar é descartada da rodada.
+function buildGrid(){
+  let best=null;
+  for(let attempt=0; attempt<30; attempt++){
+    const res=buildGridAttempt();
+    if(!best || res.placed.length>best.placed.length) best=res;
+    if(best.placed.length===TARGET_WORDS.length) break; // todas couberam
+  }
+  // Restaura o melhor resultado obtido
+  grid           = best.grid;
+  wordPositions  = best.wordPositions;
+  wordDirections = best.wordDirections;
+  ACTIVE_WORDS   = best.placed;
+
+  if(best.discarded.length){
+    console.warn('Palavras descartadas (impossíveis de posicionar):', best.discarded.join(', '));
+  }
+
+  // Preenche os espaços vazios com letras aleatórias
+  const letters='BCDFGHJKMNPQRSTVWXYZ'; // fewer vowels to reduce false matches
+  for(let r=0;r<GRID_SIZE;r++)
+    for(let c=0;c<GRID_SIZE;c++)
+      if(!grid[r][c]) grid[r][c]=letters[Math.floor(Math.random()*letters.length)];
+}
+
+function buildGridAttempt(){
+  grid = [];
+  wordPositions = {};
+  wordDirections = {};
+  for(let r=0;r<GRID_SIZE;r++){
+    grid.push([]);
+    for(let c=0;c<GRID_SIZE;c++) grid[r].push('');
+  }
+  const placed=[], discarded=[];
+
+  // 1) Descarta de cara as palavras inviáveis (muito longas, curtas ou inválidas)
+  const candidates=[];
+  TARGET_WORDS.forEach(w=>{
+    if(isWordPossible(w)) candidates.push(w.trim().toUpperCase());
+    else discarded.push(w);
+  });
+
+  // Espalha as palavras ALEATORIAMENTE a cada rodada.
+  // Sobreposição é permitida SOMENTE quando a letra coincide, então nenhuma
+  // palavra é corrompida e o puzzle nunca fica impossível.
+  // Palavras maiores primeiro = maior taxa de sucesso.
+  const order = shuffleArr(candidates).sort((a,b)=>b.length-a.length);
+  // Garante pelo menos UMA palavra invertida (de trás para frente) por rodada
+  const forcedReverse = order.length ? order[Math.floor(Math.random()*order.length)] : null;
+
+  // 2) Descarta as que não encontram nenhum espaço livre na grade
+  for(const word of order){
+    const pool = (word===forcedReverse) ? DIRECTIONS.filter(d=>d.rev) : DIRECTIONS;
+    let ok = placeWord(word, pool);
+    // Se a direção invertida forçada não couber, tenta qualquer direção
+    if(!ok && word===forcedReverse) ok = placeWord(word, DIRECTIONS);
+    if(ok) placed.push(word);
+    else   discarded.push(word); // impossível nesta grade: descartada
+  }
+
+  // Mantém a ordem original da lista para exibição estável
+  placed.sort((a,b)=>TARGET_WORDS.indexOf(a)-TARGET_WORDS.indexOf(b));
+  return {grid, wordPositions, wordDirections, placed, discarded};
+}
+
+function renderGrid(){
+  const wg = document.getElementById('word-grid');
+  wg.style.gridTemplateColumns=`repeat(${GRID_SIZE},var(--cell,32px))`;
+  wg.innerHTML='';
+  cellElements=[];
+  for(let r=0;r<GRID_SIZE;r++){
+    const row=[];
+    for(let c=0;c<GRID_SIZE;c++){
+      const el=document.createElement('div');
+      el.className='grid-cell';
+      el.textContent=grid[r][c];
+      el.dataset.r=r;el.dataset.c=c;
+      wg.appendChild(el);
+      row.push(el);
+    }
+    cellElements.push(row);
+  }
+  renderWordList();
+  setupGridEvents();
+}
+
+function renderWordList(){
+  const wl=document.getElementById('word-list');
+  wl.innerHTML='';
+  ACTIVE_WORDS.forEach(w=>{
+    const div=document.createElement('div');
+    div.className='word-item';
+    div.id='wi-'+w;
+    const check=document.createElement('span');
+    check.className='wi-check'+(foundWords.has(w)?' found':'');
+    const name=document.createElement('span');
+    name.className='wi-name'+(foundWords.has(w)?' found':'');
+    name.textContent=w.charAt(0)+w.slice(1).toLowerCase();
+    // direction badge using stored directions
+    const badge=document.createElement('span');
+    badge.className='dir-badge';
+    badge.textContent=wordDirections[w]||'→';
+    div.appendChild(check);div.appendChild(name);div.appendChild(badge);
+    wl.appendChild(div);
+  });
+}
+
+// ─── Grid Selection ─────────────────────────────────────────────────────────
+let isDragging=false;
+let startCell=null;
+let currentSelection=[];
+
+function setupGridEvents(){
+  const wg=document.getElementById('word-grid');
+  // Celulares disparam eventos de mouse "fantasma" logo após o toque.
+  // Ignoramos cliques que chegam até 700ms depois de um toque.
+  let lastTouchTs=0;
+  const isGhost=()=>Date.now()-lastTouchTs<700;
+  wg.addEventListener('mousedown',e=>{
+    if(isGhost())return;
+    const el=e.target.closest('.grid-cell');
+    if(!el)return;
+    isDragging=true;startCell=el;
+    clearSelection();
+    selectCell(el);
+    sfxSelect();
+  });
+  wg.addEventListener('mousemove',e=>{
+    if(!isDragging||!startCell)return;
+    const el=e.target.closest('.grid-cell');
+    if(!el)return;
+    const line=getCellsInLine(startCell,el);
+    clearSelection();
+    line.forEach(c=>selectCell(c));
+  });
+  document.addEventListener('mouseup',e=>{
+    if(!isDragging)return;
+    isDragging=false;
+    checkSelection();
+    clearSelection();
+    startCell=null;
+  });
+  // Touch support
+  wg.addEventListener('touchstart',e=>{
+    lastTouchTs=Date.now();
+    const t=e.touches[0];
+    const el=document.elementFromPoint(t.clientX,t.clientY)?.closest('.grid-cell');
+    if(!el)return;
+    isDragging=true;startCell=el;clearSelection();selectCell(el);
+    sfxSelect();
+  },{passive:true});
+  wg.addEventListener('touchmove',e=>{
+    lastTouchTs=Date.now();
+    if(!isDragging||!startCell)return;
+    const t=e.touches[0];
+    const el=document.elementFromPoint(t.clientX,t.clientY)?.closest('.grid-cell');
+    if(!el)return;
+    const line=getCellsInLine(startCell,el);
+    clearSelection();line.forEach(c=>selectCell(c));
+  },{passive:true});
+  wg.addEventListener('touchend',()=>{
+    lastTouchTs=Date.now();
+    if(!isDragging)return;
+    isDragging=false;checkSelection();clearSelection();startCell=null;
+  });
+  wg.addEventListener('touchcancel',()=>{
+    lastTouchTs=Date.now();
+    isDragging=false;clearSelection();startCell=null;
+  });
+}
+
+function selectCell(el){
+  if(!el.classList.contains('found')) el.classList.add('selected');
+  currentSelection.push(el);
+}
+
+function clearSelection(){
+  currentSelection.forEach(el=>{
+    if(!el.classList.contains('found')) el.classList.remove('selected');
+  });
+  currentSelection=[];
+}
+
+function getCellsInLine(a,b){
+  // REPAIR: snap drag direction to the nearest of 8 directions (45° sectors)
+  // Previously it returned only the start cell unless the drag formed a perfect
+  // straight line / exact 45° diagonal, making diagonal & reverse selection feel broken
+  const r1=+a.dataset.r, c1=+a.dataset.c;
+  const r2=+b.dataset.r, c2=+b.dataset.c;
+  const dr=r2-r1, dc=c2-c1;
+  if(dr===0 && dc===0) return [a];
+  const angle   = Math.atan2(dc, dr);
+  const snapped = Math.round(angle/(Math.PI/4)) * (Math.PI/4);
+  const sr = Math.round(Math.cos(snapped));
+  const sc = Math.round(Math.sin(snapped));
+  let len;
+  if(sr!==0 && sc!==0) len = Math.max(Math.abs(dr), Math.abs(dc)); // diagonal
+  else                 len = (sr!==0) ? Math.abs(dr) : Math.abs(dc);
+  const cells=[];
+  for(let i=0;i<=len;i++){
+    const r=r1+sr*i, c=c1+sc*i;
+    if(r<0||r>=GRID_SIZE||c<0||c>=GRID_SIZE) break;
+    cells.push(cellElements[r][c]);
+  }
+  return cells;
+}
+
+function checkSelection(){
+  if(currentSelection.length < 2) return;
+  const word = currentSelection.map(el=>el.textContent).join('');
+  const wordRev = word.split('').reverse().join('');
+  let found = null;
+  if(ACTIVE_WORDS.includes(word) && !foundWords.has(word)) found = word;
+  else if(ACTIVE_WORDS.includes(wordRev) && !foundWords.has(wordRev)) found = wordRev;
+  if(found){
+    foundWords.add(found);
+    // Mark all canonical cells for this word as found (highlight)
+    wordPositions[found].forEach(pos=>{
+      const cell = cellElements[pos.r][pos.c];
+      cell.classList.remove('selected');
+      cell.classList.add('found');
+    });
+    // Also mark currently selected cells
+    currentSelection.forEach(el=>{
+      el.classList.remove('selected');
+      el.classList.add('found');
+    });
+    sfxFound();
+    STATE.wordsFound++;
+    STATE.score += 100 + Math.floor(STATE.bombTimer / 3);
+    updateScoreUI();
+    // Update word list item
+    const wi = document.getElementById('wi-'+found);
+    if(wi){
+      wi.querySelector('.wi-check').classList.add('found');
+      wi.querySelector('.wi-name').classList.add('found');
+    }
+    // Show success flash message
+    showFoundMessage(found);
+    if(foundWords.size === ACTIVE_WORDS.length) onPuzzleSolved();
+  } else {
+    // PENALIDADE: palavra errada = -10 segundos no cronômetro
+    applyWrongWordPenalty();
+  }
+}
+
+function applyWrongWordPenalty(){
+  if(STATE.puzzleSolved || STATE.phase === 'dead' || STATE.bombTimer <= 0) return;
+  // Flash the selected cells red before they clear
+  currentSelection.forEach(el=>{
+    if(el.classList.contains('found')) return;
+    el.classList.remove('selected');
+    el.classList.add('wrong');
+    setTimeout(()=>el.classList.remove('wrong'), 450);
+  });
+  STATE.bombTimer = Math.max(0, STATE.bombTimer - STATE.penaltySeconds);
+  updateTimers();
+  sfxWrong();
+  showPenaltyMessage();
+  // Penalty may have driven the timer to zero
+  if(STATE.bombTimer <= 0) onTimeOut();
+}
+
+function showPenaltyMessage(){
+  let msg = document.getElementById('penalty-msg');
+  if(!msg){
+    msg = document.createElement('div');
+    msg.id = 'penalty-msg';
+    msg.style.cssText='position:fixed;top:32%;left:50%;transform:translate(-50%,-50%);background:rgba(90,0,0,0.95);color:#ff5555;font-size:1.35rem;font-weight:bold;padding:12px 30px;border-radius:10px;border:2px solid #ff3333;z-index:999;pointer-events:none;text-shadow:0 0 10px #ff3333;letter-spacing:2px;transition:opacity 0.4s;';
+    document.body.appendChild(msg);
+  }
+  msg.textContent = '✕ Palavra incorreta!  −' + STATE.penaltySeconds + 's';
+  msg.style.opacity='1';
+  clearTimeout(msg._t);
+  msg._t = setTimeout(()=>{ msg.style.opacity='0'; }, 1400);
+}
+
+function showFoundMessage(word){
+  let msg = document.getElementById('found-msg');
+  if(!msg){
+    msg = document.createElement('div');
+    msg.id = 'found-msg';
+    msg.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,80,30,0.95);color:#00ff88;font-size:1.4rem;font-weight:bold;padding:14px 32px;border-radius:10px;border:2px solid #00ff88;z-index:999;pointer-events:none;text-shadow:0 0 10px #00ff88;letter-spacing:2px;transition:opacity 0.4s;';
+    document.body.appendChild(msg);
+  }
+  msg.textContent = '✓ ' + word.charAt(0)+word.slice(1).toLowerCase() + ' encontrada!';
+  msg.style.opacity='1';
+  clearTimeout(msg._t);
+  msg._t = setTimeout(()=>{ msg.style.opacity='0'; }, 1600);
+}
+
+function updateScoreUI(){
+  document.getElementById('score-found').textContent=`${STATE.wordsFound}/${ACTIVE_WORDS.length}`;
+  document.getElementById('score-pts').textContent=STATE.score;
+}
+
+function revealAllWords(){
+  ACTIVE_WORDS.forEach(w=>{
+    if(!foundWords.has(w) && wordPositions[w]){
+      wordPositions[w].forEach(pos=>{
+        cellElements[pos.r][pos.c].classList.add('revealed');
+      });
+    }
+  });
+}
+
+// ─── THREE.JS SCENE ─────────────────────────────────────────────────────────
+let scene,camera,renderer,clock;
+let doorMesh, doorPivot;
+let computerMesh;
+let floorMesh,ceilMesh;
+let walls=[];
+let outsideObjects=[];
+let lights=[];
+
+// Player state
+const player = {
+  pos: new THREE.Vector3(0, 1.7, 3),
+  vel: new THREE.Vector3(),
+  yaw: 0,
+  pitch: 0,
+  speed: 4,
+  keys: {},
+  pointerLocked: false,
+  joy: {x:0, y:0},   // eixo do joystick virtual (celular)
+};
+
+// Celular/tablet: ponteiro grosso E sem hover. Notebooks com tela de toque
+// continuam sendo tratados como PC (mantêm mouse + pointer lock).
+const IS_MOBILE = window.matchMedia
+  ? window.matchMedia('(pointer:coarse) and (hover:none)').matches
+  : false;
+
+function initThree(){
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x001100);
+  scene.fog = new THREE.FogExp2(0x000a00, 0.04);
+
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 200);
+  camera.position.copy(player.pos);
+
+  renderer = new THREE.WebGLRenderer({canvas:document.getElementById('canvas'),antialias:true});
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 0.8;
+
+  clock = new THREE.Clock();
+
+  buildRoom();
+  buildOutdoor();
+  buildChestBomb();
+  setupLights();
+  setupPointerLock();
+  setupTouchControls();
+  setupRotateNotice();
+
+  window.addEventListener('resize',()=>{
+    camera.aspect=window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth,window.innerHeight);
+  });
+
+  window.addEventListener('keydown',e=>{
+    player.keys[e.code]=true;
+    if(e.code==='KeyE'&&STATE.phase==='playing'&&isNearComputer()) openTerminal();
+    if(e.code==='Escape'&&STATE.phase==='terminal') closeTerminal();
+  });
+  window.addEventListener('keyup',e=>{player.keys[e.code]=false;});
+
+  animate();
+}
+
+// ─── ROOM BUILD ─────────────────────────────────────────────────────────────
+function buildRoom(){
+  // Materials
+  const wallMat = new THREE.MeshLambertMaterial({color:0x223322});
+  const floorMat = new THREE.MeshLambertMaterial({color:0x111811});
+  const ceilMat  = new THREE.MeshLambertMaterial({color:0x1a2a1a});
+  const doorFrameMat = new THREE.MeshLambertMaterial({color:0x553300});
+  const doorMat  = new THREE.MeshLambertMaterial({color:0x774400});
+
+  const RW=12,RH=4.5,RL=14;
+
+  // Floor
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(RW,RL),floorMat);
+  floor.rotation.x=-Math.PI/2;floor.position.y=0;floor.receiveShadow=true;
+  scene.add(floor);
+
+  // Ceiling
+  const ceil=new THREE.Mesh(new THREE.PlaneGeometry(RW,RL),ceilMat);
+  ceil.rotation.x=Math.PI/2;ceil.position.y=RH;ceil.receiveShadow=true;
+  scene.add(ceil);
+
+  // Walls (back, left, right)
+  const backWall=new THREE.Mesh(new THREE.PlaneGeometry(RW,RH),wallMat);
+  backWall.position.set(0,RH/2,-RL/2);scene.add(backWall);
+
+  const leftWall=new THREE.Mesh(new THREE.PlaneGeometry(RL,RH),wallMat);
+  leftWall.rotation.y=Math.PI/2;leftWall.position.set(-RW/2,RH/2,0);scene.add(leftWall);
+
+  const rightWall=new THREE.Mesh(new THREE.PlaneGeometry(RL,RH),wallMat);
+  rightWall.rotation.y=-Math.PI/2;rightWall.position.set(RW/2,RH/2,0);scene.add(rightWall);
+
+  // Front wall with door opening (two segments)
+  const doorW=1.4,doorH=3.0;
+  // left segment
+  const fw1=new THREE.Mesh(new THREE.PlaneGeometry((RW-doorW)/2,RH),wallMat);
+  fw1.rotation.y=Math.PI;fw1.position.set(-(doorW/2+(RW-doorW)/4),RH/2,RL/2);scene.add(fw1);
+  // right segment
+  const fw2=new THREE.Mesh(new THREE.PlaneGeometry((RW-doorW)/2,RH),wallMat);
+  fw2.rotation.y=Math.PI;fw2.position.set(doorW/2+(RW-doorW)/4,RH/2,RL/2);scene.add(fw2);
+  // top segment
+  const fw3=new THREE.Mesh(new THREE.PlaneGeometry(doorW,RH-doorH),wallMat);
+  fw3.rotation.y=Math.PI;fw3.position.set(0,doorH+(RH-doorH)/2,RL/2);scene.add(fw3);
+
+  // Door frame
+  const dfMat=new THREE.MeshLambertMaterial({color:0x442200});
+  [-1,1].forEach(side=>{
+    const df=new THREE.Mesh(new THREE.BoxGeometry(0.1,doorH,0.15),dfMat);
+    df.position.set(side*doorW/2,doorH/2,RL/2);scene.add(df);
+  });
+  const dft=new THREE.Mesh(new THREE.BoxGeometry(doorW+0.2,0.1,0.15),dfMat);
+  dft.position.set(0,doorH,RL/2);scene.add(dft);
+
+  // Door pivot (rotate around left edge)
+  doorPivot = new THREE.Group();
+  doorPivot.position.set(-doorW/2+0.05, 0, RL/2-0.05);
+  scene.add(doorPivot);
+
+  doorMesh = new THREE.Mesh(new THREE.BoxGeometry(doorW-0.1,doorH,0.08),doorMat);
+  doorMesh.position.set(doorW/2-0.05, doorH/2, 0);
+  doorMesh.castShadow=true;
+  doorPivot.add(doorMesh);
+
+  // Computer terminal
+  const deskMat=new THREE.MeshLambertMaterial({color:0x334433});
+  const desk=new THREE.Mesh(new THREE.BoxGeometry(2.2,0.1,0.9),deskMat);
+  desk.position.set(0,0.9,-RL/2+1.5);desk.castShadow=true;desk.receiveShadow=true;
+  scene.add(desk);
+  // Desk legs — REPAIR: previous formula stacked 2 legs on the same corner and
+  // left the left-front corner empty. Now one leg per corner under the desk top.
+  [[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([sx,sz])=>{
+    const leg=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.9,0.08),deskMat);
+    leg.position.set(sx*0.95, 0.45, -RL/2+1.5+sz*0.35);
+    scene.add(leg);
+  });
+
+  // Monitor
+  const screenMat=new THREE.MeshLambertMaterial({color:0x001100,emissive:new THREE.Color(0x00ff44),emissiveIntensity:0.4});
+  const monBase=new THREE.Mesh(new THREE.BoxGeometry(1.2,0.08,0.3),deskMat);
+  monBase.position.set(0,0.97,-RL/2+1.5);scene.add(monBase);
+  const monStem=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.35,0.08),deskMat);
+  monStem.position.set(0,1.15,-RL/2+1.5);scene.add(monStem);
+  const monScreen=new THREE.Mesh(new THREE.BoxGeometry(1.3,0.9,0.08),screenMat);
+  monScreen.position.set(0,1.65,-RL/2+1.6);
+  monScreen.castShadow=true;
+  scene.add(monScreen);
+  computerMesh=monScreen;
+
+  // Screen glow text — REPAIR: the plane was previously placed INSIDE the monitor
+  // box (box depth 0.08, front face at z=-5.36) making it invisible/z-fighting.
+  // Moved onto the front face of the monitor, facing the player.
+  const textPlane=new THREE.Mesh(new THREE.PlaneGeometry(1.1,0.7),
+    new THREE.MeshLambertMaterial({color:0x001100,emissive:new THREE.Color(0x00ff44),emissiveIntensity:0.8}));
+  textPlane.position.set(0,1.65,-RL/2+1.66);
+  scene.add(textPlane);
+
+  // Bookshelf left wall — REPAIR: was 3 floating vertical slabs with books hovering
+  // at wrong heights. Rebuilt as a proper shelf unit: sides, back, boards, top,
+  // with books standing upright on the boards.
+  const shelfMat=new THREE.MeshLambertMaterial({color:0x5a3a1a});
+  const shelfX =-RW/2+0.45;   // against left wall
+  const shelfZc=-RL/2+2.5;    // unit center
+  const boardYs=[0.4,0.9,1.4];
+  // side panels
+  [-0.85,0.85].forEach(dz=>{
+    const side=new THREE.Mesh(new THREE.BoxGeometry(0.4,2.0,0.06),shelfMat);
+    side.position.set(shelfX,1.0,shelfZc+dz);scene.add(side);
+  });
+  // back panel
+  const shelfBack=new THREE.Mesh(new THREE.BoxGeometry(0.06,2.0,1.76),shelfMat);
+  shelfBack.position.set(-RW/2+0.26,1.0,shelfZc);scene.add(shelfBack);
+  // horizontal boards
+  boardYs.forEach(by=>{
+    const board=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.05,1.7),shelfMat);
+    board.position.set(shelfX,by,shelfZc);scene.add(board);
+  });
+  // top board
+  const topBoard=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.05,1.76),shelfMat);
+  topBoard.position.set(shelfX,1.975,shelfZc);scene.add(topBoard);
+  // Books standing on the boards
+  const bookColors=[0xff4444,0x4444ff,0x44ff44,0xffff44,0xff44ff,0x44ffff];
+  for(let i=0;i<6;i++){
+    const bm=new THREE.MeshLambertMaterial({color:bookColors[i]});
+    const book=new THREE.Mesh(new THREE.BoxGeometry(0.22,0.28,0.16),bm);
+    const row=Math.floor(i/3);
+    book.position.set(shelfX, boardYs[row]+0.165, shelfZc-0.45+((i%3)*0.3));
+    scene.add(book);
+  }
+
+  // Lab table right side — REPAIR: the tabletop was floating in mid-air with no
+  // legs at all. Added four legs under its corners and seated the flasks on it.
+  const labMat=new THREE.MeshLambertMaterial({color:0x224422});
+  const labX=RW/2-1.2, labZ=-RL/2+2, labTopY=0.9;
+  const labTable=new THREE.Mesh(new THREE.BoxGeometry(1.8,0.08,0.8),labMat);
+  labTable.position.set(labX,labTopY,labZ);
+  labTable.castShadow=true;labTable.receiveShadow=true;
+  scene.add(labTable);
+  // Legs (one per corner, under the tabletop)
+  [[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([sx,sz])=>{
+    const leg=new THREE.Mesh(new THREE.BoxGeometry(0.08,labTopY-0.04,0.08),labMat);
+    leg.position.set(labX+sx*0.8, (labTopY-0.04)/2, labZ+sz*0.32);
+    scene.add(leg);
+  });
+  // Flasks standing on the tabletop surface
+  const flaskColors=[0x88ff88,0xff8844,0x4488ff];
+  const flaskH=0.3, surfaceY=labTopY+0.04;
+  flaskColors.forEach((col,i)=>{
+    const fm=new THREE.MeshLambertMaterial({color:col,transparent:true,opacity:0.7});
+    const flask=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.1,flaskH,8),fm);
+    flask.position.set(labX-0.3+i*0.3, surfaceY+flaskH/2, labZ);
+    scene.add(flask);
+  });
+
+  // Ceiling light
+  const liteMat=new THREE.MeshLambertMaterial({color:0xffffff,emissive:new THREE.Color(0xffffff),emissiveIntensity:1});
+  const liteGeom=new THREE.BoxGeometry(2,0.06,0.4);
+  const lite=new THREE.Mesh(liteGeom,liteMat);
+  lite.position.set(0,RH-0.05,0);scene.add(lite);
+
+  // Warning sign on wall
+  const signMat=new THREE.MeshLambertMaterial({color:0xff4400,emissive:new THREE.Color(0xff2200),emissiveIntensity:0.5});
+  const sign=new THREE.Mesh(new THREE.PlaneGeometry(0.6,0.4),signMat);
+  sign.position.set(-RW/2+0.06,2.5,0);sign.rotation.y=Math.PI/2;scene.add(sign);
+
+  // Bomb vest on a chair (visual prop)
+  const chairMat=new THREE.MeshLambertMaterial({color:0x443322});
+  const chairSeat=new THREE.Mesh(new THREE.BoxGeometry(0.6,0.06,0.6),chairMat);
+  chairSeat.position.set(2,0.55,2);scene.add(chairSeat);
+  const chairBack=new THREE.Mesh(new THREE.BoxGeometry(0.6,0.7,0.06),chairMat);
+  chairBack.position.set(2,0.9,1.7);scene.add(chairBack);
+  // Legs
+  [[0.25,0.25],[0.25,-0.25],[-0.25,0.25],[-0.25,-0.25]].forEach(([ox,oz])=>{
+    const leg=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,0.55,6),chairMat);
+    leg.position.set(2+ox,0.27,2+oz);scene.add(leg);
+  });
+  // Dynamite vest prop (red box on chair)
+  const vestMat=new THREE.MeshLambertMaterial({color:0xcc2200,emissive:new THREE.Color(0x880000),emissiveIntensity:0.3});
+  const vest=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.12,0.4),vestMat);
+  vest.position.set(2,0.65,2);scene.add(vest);
+
+  // Floor chemical tiles (variation)
+  const tileMat=new THREE.MeshLambertMaterial({color:0x1a2a1a});
+  for(let tx=-4;tx<=4;tx+=2){
+    for(let tz=-6;tz<=6;tz+=2){
+      const tile=new THREE.Mesh(new THREE.PlaneGeometry(1.9,1.9),tileMat);
+      tile.rotation.x=-Math.PI/2;tile.position.set(tx,0.005,tz);scene.add(tile); // REPAIR: raised to stop z-fighting with the floor
+    }
+  }
+
+  // Additional shelving unit (right back)
+  const shelf2Mat=new THREE.MeshLambertMaterial({color:0x334433});
+  const s2back=new THREE.Mesh(new THREE.BoxGeometry(0.06,2,1.5),shelf2Mat);
+  s2back.position.set(RW/2-0.5,1.5,-RL/2+2.5);scene.add(s2back);
+  // Medicament boxes on shelf
+  const boxColors=[0xffaaaa,0xaaffaa,0xaaaaff,0xffffaa,0xffaaff];
+  boxColors.forEach((col,i)=>{
+    const bm=new THREE.MeshLambertMaterial({color:col});
+    const box=new THREE.Mesh(new THREE.BoxGeometry(0.15,0.22,0.22),bm);
+    box.position.set(RW/2-0.5,0.6+Math.floor(i/3)*0.4,-RL/2+1.9+(i%3)*0.3);
+    scene.add(box);
+  });
+
+  // Hanging lamp cord
+  const cordMat=new THREE.MeshLambertMaterial({color:0x222222});
+  const cord=new THREE.Mesh(new THREE.CylinderGeometry(0.015,0.015,0.5,4),cordMat);
+  cord.position.set(0,RH-0.35,0);scene.add(cord);
+
+  // Posters on back wall
+  const posterColors=[0x004433,0x220044];
+  posterColors.forEach((col,i)=>{
+    const pm=new THREE.MeshLambertMaterial({color:col,emissive:new THREE.Color(col),emissiveIntensity:0.15});
+    const poster=new THREE.Mesh(new THREE.PlaneGeometry(0.8,1.1),pm);
+    poster.position.set(-2+i*4,2.2,-RL/2+0.06);scene.add(poster);
+  });
+}
+
+// ─── OUTDOOR BUILD ──────────────────────────────────────────────────────────
+function buildOutdoor(){
+  // Large outdoor floor (multiple tiles for variety)
+  const grassMat=new THREE.MeshLambertMaterial({color:0x1a4a0a});
+  const grass=new THREE.Mesh(new THREE.PlaneGeometry(300,300),grassMat);
+  grass.rotation.x=-Math.PI/2;grass.position.set(0,-0.02,80); // REPAIR: lowered to stop z-fighting with interior floor
+  scene.add(grass);
+
+  // Dirt patch outside door — REPAIR: previously leaked INSIDE the room (spanned z 4..24,
+  // overlapping interior floor) and z-fought with the grass. Moved fully outside (z 7..27).
+  const extFloorMat=new THREE.MeshLambertMaterial({color:0x224422});
+  const extFloor=new THREE.Mesh(new THREE.PlaneGeometry(20,20),extFloorMat);
+  extFloor.rotation.x=-Math.PI/2;extFloor.position.set(0,0,17);
+  scene.add(extFloor);
+
+  // House exterior — REPAIR: previously a single plane covered the whole front INCLUDING
+  // the door opening (player walked visibly through a solid wall), and the side/back
+  // walls were see-through from outside (single-sided interior planes).
+  // Now built as proper segments leaving the doorway open, plus side/back walls + roof.
+  const houseExtMat=new THREE.MeshLambertMaterial({color:0x1a2a1a});
+  const doorW2=1.4, doorH2=3.0, RW2=12, RH2=4.5, RL2=14;
+  // front segments (facing +z)
+  const fwL=new THREE.Mesh(new THREE.PlaneGeometry((RW2-doorW2)/2,RH2),houseExtMat);
+  fwL.position.set(-(doorW2/2+(RW2-doorW2)/4), RH2/2, 7.01); scene.add(fwL);
+  const fwR=new THREE.Mesh(new THREE.PlaneGeometry((RW2-doorW2)/2,RH2),houseExtMat);
+  fwR.position.set(doorW2/2+(RW2-doorW2)/4, RH2/2, 7.01); scene.add(fwR);
+  const fwT=new THREE.Mesh(new THREE.PlaneGeometry(doorW2,RH2-doorH2),houseExtMat);
+  fwT.position.set(0, doorH2+(RH2-doorH2)/2, 7.01); scene.add(fwT);
+  // left + right + back outer shells
+  const extL=new THREE.Mesh(new THREE.PlaneGeometry(RL2,RH2),houseExtMat);
+  extL.rotation.y=-Math.PI/2; extL.position.set(-6.01, RH2/2, 0); scene.add(extL);
+  const extR=new THREE.Mesh(new THREE.PlaneGeometry(RL2,RH2),houseExtMat);
+  extR.rotation.y=Math.PI/2;  extR.position.set( 6.01, RH2/2, 0); scene.add(extR);
+  const extB=new THREE.Mesh(new THREE.PlaneGeometry(RW2,RH2),houseExtMat);
+  extB.rotation.y=Math.PI;    extB.position.set(0, RH2/2, -7.01); scene.add(extB);
+  // roof slab so the house doesn't look like floating walls from outside
+  const roof=new THREE.Mesh(new THREE.BoxGeometry(13,0.2,15),houseExtMat);
+  roof.position.set(0, 4.56, 0); scene.add(roof);
+
+  // Sky dome — night sky
+  const skyMat=new THREE.MeshBasicMaterial({color:0x03080f,side:THREE.BackSide});
+  const sky=new THREE.Mesh(new THREE.SphereGeometry(150,16,8),skyMat);
+  scene.add(sky);
+
+  // Trees
+  for(let i=0;i<20;i++){
+    const angle=Math.random()*Math.PI*2;
+    const dist=20+Math.random()*50;
+    const x=Math.cos(angle)*dist;
+    const z=40+Math.sin(angle)*dist+Math.random()*30;
+    addTree(x,z);
+  }
+
+  // Stars
+  const starGeo=new THREE.BufferGeometry();
+  const starVerts=[];
+  for(let i=0;i<800;i++){
+    const theta=Math.random()*Math.PI*2;
+    const phi=Math.random()*Math.PI;
+    const r=100+Math.random()*40;
+    starVerts.push(r*Math.sin(phi)*Math.cos(theta),r*Math.cos(phi),r*Math.sin(phi)*Math.sin(theta));
+  }
+  starGeo.setAttribute('position',new THREE.Float32BufferAttribute(starVerts,3));
+  const starMat=new THREE.PointsMaterial({color:0xffffff,size:0.5});
+  scene.add(new THREE.Points(starGeo,starMat));
+
+  // Moon
+  const moonMat=new THREE.MeshBasicMaterial({color:0xddddaa});
+  const moon=new THREE.Mesh(new THREE.SphereGeometry(4,8,8),moonMat);
+  moon.position.set(30,60,50);scene.add(moon);
+
+  // Path
+  const pathMat=new THREE.MeshLambertMaterial({color:0x554433});
+  const path=new THREE.Mesh(new THREE.PlaneGeometry(2.5,40),pathMat);
+  path.rotation.x=-Math.PI/2;path.position.set(0,0.01,27);scene.add(path);
+
+  // Outdoor lights (lamp posts)
+  for(let i=0;i<4;i++){
+    const postMat=new THREE.MeshLambertMaterial({color:0x333333});
+    const post=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,3.5,6),postMat);
+    post.position.set(i%2===0?-2.5:2.5, 1.75, 12+Math.floor(i/2)*12);
+    scene.add(post);
+    const bulbMat=new THREE.MeshBasicMaterial({color:0xffeeaa});
+    const bulb=new THREE.Mesh(new THREE.SphereGeometry(0.2,6,6),bulbMat);
+    bulb.position.set(post.position.x,3.6,post.position.z);scene.add(bulb);
+    const pl=new THREE.PointLight(0xffeeaa,0.8,10);
+    pl.position.copy(bulb.position);scene.add(pl);
+  }
+}
+
+function addTree(x,z){
+  const trunkMat=new THREE.MeshLambertMaterial({color:0x4a2800});
+  const trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.25,2,6),trunkMat);
+  trunk.position.set(x,1,z);scene.add(trunk);
+  const leavesMat=new THREE.MeshLambertMaterial({color:0x1a5a0a});
+  const leaves=new THREE.Mesh(new THREE.ConeGeometry(1.2,2.5,7),leavesMat);
+  leaves.position.set(x,3.2,z);scene.add(leaves);
+  const leaves2=new THREE.Mesh(new THREE.ConeGeometry(0.9,2,7),leavesMat);
+  leaves2.position.set(x,4.5,z);scene.add(leaves2);
+}
+
+// ─── COLETE DE DINAMITE NO PEITO (visível em primeira pessoa) ───────────────
+let chestBomb=null, chestLed=null, chestLedLight=null, chestSticks=[];
+function buildChestBomb(){
+  // Anexado à câmera: aparece no peito quando o jogador olha para baixo
+  scene.add(camera);
+  chestBomb=new THREE.Group();
+  chestBomb.position.set(0,-0.42,-0.42);
+  chestBomb.rotation.x=0.55;
+  camera.add(chestBomb);
+
+  // Faixa/colete preto
+  const strapMat=new THREE.MeshLambertMaterial({color:0x14110f});
+  const vestBody=new THREE.Mesh(new THREE.BoxGeometry(0.52,0.30,0.10),strapMat);
+  chestBomb.add(vestBody);
+  // Alças sobre os ombros
+  [-0.17,0.17].forEach(sx=>{
+    const strap=new THREE.Mesh(new THREE.BoxGeometry(0.07,0.34,0.07),strapMat);
+    strap.position.set(sx,0.28,0.01);
+    strap.rotation.x=-0.25;
+    chestBomb.add(strap);
+  });
+
+  // Bananas de dinamite vermelhas
+  const dynMat=new THREE.MeshLambertMaterial({color:0xbb2211});
+  const capMat=new THREE.MeshLambertMaterial({color:0x6b4a2a});
+  for(let i=0;i<4;i++){
+    const stick=new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.045,0.26,10),dynMat);
+    stick.position.set(-0.195+i*0.13, 0, 0.085);
+    stick.rotation.x=Math.PI/2;
+    chestBomb.add(stick);
+    chestSticks.push(stick);
+    // topo claro da banana
+    const cap=new THREE.Mesh(new THREE.CylinderGeometry(0.047,0.047,0.04,10),capMat);
+    cap.position.set(stick.position.x, 0.11, 0.085);
+    chestBomb.add(cap);
+  }
+
+  // Fios coloridos cruzando o peito
+  const wireCols=[0xdddd22,0x2277dd,0x22cc44];
+  wireCols.forEach((col,i)=>{
+    const wire=new THREE.Mesh(new THREE.CylinderGeometry(0.009,0.009,0.5,6),
+      new THREE.MeshLambertMaterial({color:col}));
+    wire.rotation.z=Math.PI/2;
+    wire.position.set(0,-0.055+i*0.045,0.14);
+    chestBomb.add(wire);
+  });
+
+  // Caixa do detonador
+  const boxMat=new THREE.MeshLambertMaterial({color:0x2b2b30});
+  const detBox=new THREE.Mesh(new THREE.BoxGeometry(0.17,0.12,0.07),boxMat);
+  detBox.position.set(0,0.015,0.15);
+  chestBomb.add(detBox);
+
+  // LED vermelho piscante
+  chestLed=new THREE.Mesh(new THREE.SphereGeometry(0.022,10,10),
+    new THREE.MeshBasicMaterial({color:0xff0000}));
+  chestLed.position.set(0,0.015,0.195);
+  chestBomb.add(chestLed);
+  chestLedLight=new THREE.PointLight(0xff0000,0.9,0.9);
+  chestLedLight.position.copy(chestLed.position);
+  chestBomb.add(chestLedLight);
+}
+
+// Pisca o LED; fica verde fixo quando a bomba é desarmada
+function updateChestBomb(now){
+  if(!chestLed) return;
+  if(STATE.puzzleSolved){
+    chestLed.material.color.setHex(0x00ff66);
+    if(chestLedLight){ chestLedLight.color.setHex(0x00ff66); chestLedLight.intensity=0.55; }
+    return;
+  }
+  // Pisca mais rápido conforme o tempo acaba
+  const rate = STATE.bombTimer<=30 ? 180 : (STATE.bombTimer<=60 ? 320 : 700);
+  const on = (now % rate) < rate*0.45;
+  chestLed.material.color.setHex(on?0xff2200:0x330000);
+  if(chestLedLight) chestLedLight.intensity = on?1.1:0.05;
+}
+
+// ─── LIGHTS ─────────────────────────────────────────────────────────────────
+function setupLights(){
+  const ambient=new THREE.AmbientLight(0x113311,0.5);
+  scene.add(ambient);
+  const roomLight=new THREE.PointLight(0x88ff88,1.2,25);
+  roomLight.position.set(0,4,0);roomLight.castShadow=true;
+  scene.add(roomLight);
+  // Screen glow
+  const screenLight=new THREE.PointLight(0x00ff44,0.8,4);
+  screenLight.position.set(0,1.8,-6.5);
+  scene.add(screenLight);
+  // Outdoor moonlight
+  const moonLight=new THREE.DirectionalLight(0x334466,0.6);
+  moonLight.position.set(30,60,50);scene.add(moonLight);
+}
+
+// ─── POINTER LOCK ────────────────────────────────────────────────────────────
+function setupPointerLock(){
+  const notice=document.getElementById('pointer-lock-notice');
+  if(IS_MOBILE) return; // celular/tablet usa controles de toque, sem pointer lock
+  document.addEventListener('pointerlockchange',()=>{
+    player.pointerLocked=document.pointerLockElement===renderer.domElement;
+    if(!player.pointerLocked) player.keys={}; // REPAIR: clear stuck keys when mouse lock is released
+    if(!player.pointerLocked&&(STATE.phase==='playing'||STATE.phase==='won')){
+      notice.classList.add('active');
+    } else {
+      notice.classList.remove('active');
+    }
+  });
+  notice.addEventListener('click',()=>{
+    if(STATE.phase==='playing'||STATE.phase==='won'){
+      renderer.domElement.requestPointerLock();
+    }
+  });
+  renderer.domElement.addEventListener('click',()=>{
+    if(STATE.phase==='playing'||STATE.phase==='won'){
+      renderer.domElement.requestPointerLock();
+    }
+  });
+  document.addEventListener('mousemove',e=>{
+    if(!player.pointerLocked||STATE.phase==='terminal') return;
+    player.yaw   -= e.movementX * 0.002;
+    player.pitch -= e.movementY * 0.002;
+    player.pitch  = Math.max(-Math.PI/2+0.05, Math.min(Math.PI/2-0.05, player.pitch));
+  });
+}
+
+// ─── CONTROLES DE TOQUE (celular/tablet) ────────────────────────────────────
+// Só é ativado em aparelhos com ponteiro grosso e sem hover, para NÃO interferir
+// em PCs (inclusive notebooks com tela de toque, que continuam no pointer lock).
+function setupTouchControls(){
+  if(!IS_MOBILE) return;
+  document.body.classList.add('touch-mode');
+
+  const canvas = renderer.domElement;
+  const base   = document.getElementById('joystick-base');
+  const knob   = document.getElementById('joystick-knob');
+  const btnE   = document.getElementById('btn-interact');
+  const JOY_R  = 46;
+
+  // ── Olhar: arrastar em qualquer lugar do canvas ──
+  let lookId=null,lastX=0,lastY=0;
+  canvas.addEventListener('touchstart',e=>{
+    if(STATE.phase==='terminal'||STATE.phase==='dead') return;
+    if(lookId!==null) return;
+    const t=e.changedTouches[0];
+    lookId=t.identifier; lastX=t.clientX; lastY=t.clientY;
+  },{passive:true});
+  canvas.addEventListener('touchmove',e=>{
+    if(lookId===null||STATE.phase==='terminal') return;
+    for(const t of e.changedTouches){
+      if(t.identifier!==lookId) continue;
+      player.yaw   -= (t.clientX-lastX)*0.0055;
+      player.pitch -= (t.clientY-lastY)*0.0055;
+      player.pitch  = Math.max(-Math.PI/2+0.05, Math.min(Math.PI/2-0.05, player.pitch));
+      lastX=t.clientX; lastY=t.clientY;
+    }
+  },{passive:true});
+  const endLook=e=>{
+    for(const t of e.changedTouches) if(t.identifier===lookId) lookId=null;
+  };
+  canvas.addEventListener('touchend',endLook,{passive:true});
+  canvas.addEventListener('touchcancel',endLook,{passive:true});
+
+  // ── Joystick de movimento ──
+  let joyId=null,cx=0,cy=0;
+  function moveKnob(dx,dy){ knob.style.transform=`translate(${dx}px,${dy}px)`; }
+  function setJoy(t){
+    let dx=t.clientX-cx, dy=t.clientY-cy;
+    const d=Math.hypot(dx,dy);
+    if(d>JOY_R){ dx=dx/d*JOY_R; dy=dy/d*JOY_R; }
+    moveKnob(dx,dy);
+    player.joy.x = dx/JOY_R;
+    player.joy.y = dy/JOY_R;
+  }
+  function resetJoy(){ player.joy.x=0; player.joy.y=0; moveKnob(0,0); joyId=null; }
+  base.addEventListener('touchstart',e=>{
+    e.preventDefault(); e.stopPropagation();
+    const t=e.changedTouches[0];
+    const r=base.getBoundingClientRect();
+    cx=r.left+r.width/2; cy=r.top+r.height/2;
+    joyId=t.identifier; setJoy(t);
+  },{passive:false});
+  base.addEventListener('touchmove',e=>{
+    e.preventDefault(); e.stopPropagation();
+    for(const t of e.changedTouches) if(t.identifier===joyId) setJoy(t);
+  },{passive:false});
+  const endJoy=e=>{
+    for(const t of e.changedTouches) if(t.identifier===joyId) resetJoy();
+  };
+  base.addEventListener('touchend',endJoy,{passive:true});
+  base.addEventListener('touchcancel',endJoy,{passive:true});
+
+  // ── Botão de interagir (equivale à tecla E) ──
+  btnE.addEventListener('touchstart',e=>{
+    e.preventDefault(); e.stopPropagation();
+    if(STATE.phase==='playing' && isNearComputer()) openTerminal();
+  },{passive:false});
+}
+
+// ── Aviso para virar o celular na horizontal ──
+let rotateDismissed=false;
+function setupRotateNotice(){
+  if(!IS_MOBILE) return;
+  const el=document.getElementById('rotate-notice');
+  document.getElementById('rotate-dismiss').addEventListener('click',()=>{
+    rotateDismissed=true; el.classList.remove('show');
+  });
+  const check=()=>{
+    const portrait = window.innerHeight > window.innerWidth;
+    if(portrait && !rotateDismissed) el.classList.add('show');
+    else el.classList.remove('show');
+  };
+  window.addEventListener('resize',check);
+  window.addEventListener('orientationchange',()=>setTimeout(check,250));
+  check();
+}
+
+// ─── INTERACTION ─────────────────────────────────────────────────────────────
+function isNearComputer(){
+  const dx=camera.position.x-computerMesh.position.x;
+  const dz=camera.position.z-computerMesh.position.z;
+  return Math.sqrt(dx*dx+dz*dz)<3.0;
+}
+
+function isNearDoor(){
+  const doorZ=6.95;
+  return Math.abs(camera.position.z-doorZ)<2&&Math.abs(camera.position.x)<1.5;
+}
+
+// ─── TERMINAL ────────────────────────────────────────────────────────────────
+function openTerminal(){
+  STATE.phase='terminal';
+  document.getElementById('terminal-overlay').classList.add('active');
+  document.exitPointerLock();
+  document.getElementById('pointer-lock-notice').classList.remove('active');
+}
+function closeTerminal(){
+  // Don't override 'won' or 'dead' state
+  if(STATE.phase !== 'won' && STATE.phase !== 'dead') STATE.phase = 'playing';
+  document.getElementById('terminal-overlay').classList.remove('active');
+  if(STATE.phase !== 'dead' && !IS_MOBILE){
+    setTimeout(()=>renderer.domElement.requestPointerLock(), 200);
+  }
+}
+document.getElementById('exit-terminal-btn').addEventListener('click',closeTerminal);
+
+// ─── PUZZLE SOLVED ───────────────────────────────────────────────────────────
+function onPuzzleSolved(){
+  STATE.puzzleSolved=true;
+  STATE.bombActive=false;
+  sfxVictory();
+  // Update HUD
+  document.getElementById('vest-indicator').textContent='COLETE DESARMADO!';
+  document.getElementById('vest-indicator').classList.add('safe');
+  document.getElementById('timer-hud').style.color='#00ff88';
+  document.getElementById('timer-hud').style.borderColor='#00ff88';
+  document.getElementById('timer-hud').textContent='BOMBA DESARMADA!';
+  // Close terminal after short delay and open door
+  setTimeout(()=>{
+    closeTerminal();
+    setTimeout(()=>openDoor(),1200);
+  },2000);
+}
+
+// ─── DOOR ANIMATION ──────────────────────────────────────────────────────────
+function openDoor(){
+  if(STATE.doorOpen||STATE.doorAnimating) return;
+  STATE.doorAnimating=true;
+  sfxDoorOpen();
+  // Animate door opening over 2.5s
+  const startAngle=0;
+  const endAngle=-Math.PI*0.75;
+  const duration=2500;
+  const start=performance.now();
+  function animDoor(now){
+    const t=Math.min((now-start)/duration,1);
+    const ease=1-Math.pow(1-t,3);
+    doorPivot.rotation.y=startAngle+ease*(endAngle-startAngle);
+    if(t<1) requestAnimationFrame(animDoor);
+    else{STATE.doorOpen=true;STATE.doorAnimating=false;STATE.phase='won';showWinHint();}
+  }
+  requestAnimationFrame(animDoor);
+}
+
+function showWinHint(){
+  const hint=document.getElementById('interact-hint');
+  hint.textContent='A porta está aberta! Caminhe para fora!';
+  hint.style.display='block';
+}
+
+// ─── TIMERS ──────────────────────────────────────────────────────────────────
+let bombInterval=null;
+let puzzleInterval=null;
+let warningBeepInterval=null;
+
+// UM ÚNICO cronômetro alimenta o HUD e o terminal — antes eram dois
+// contadores separados (8 min e 5 min) que mostravam tempos diferentes.
+function startBombTimer(){
+  bombInterval=setInterval(()=>{
+    if(!STATE.bombActive || STATE.puzzleSolved || STATE.phase==='dead') return;
+    STATE.bombTimer--;
+    updateTimers();
+    if(STATE.bombTimer<=0) onTimeOut();
+  },1000);
+}
+
+function onTimeOut(){
+  if(STATE.puzzleTimedOut || STATE.phase==='dead') return;
+  STATE.puzzleTimedOut=true;
+  STATE.bombTimer=0;
+  updateTimers();
+  clearInterval(bombInterval);
+  clearInterval(warningBeepInterval);
+  warningBeepInterval=null;
+  // Show all remaining words on grid
+  revealAllWords();
+  const td=document.getElementById('puzzle-timer-display');
+  td.textContent='💥 TEMPO!';
+  td.style.color='#ff0000';
+  // After showing for 5s, close terminal and blow up
+  setTimeout(()=>{
+    closeTerminal();
+    setTimeout(triggerExplosion, 3000);
+  }, 5000);
+}
+
+// Atualiza AMBOS os mostradores com o mesmo valor
+function updateTimers(){
+  if(!STATE.bombActive) return;
+  const t = Math.max(0, STATE.bombTimer);
+  const m = Math.floor(t/60).toString().padStart(2,'0');
+  const s = (t%60).toString().padStart(2,'0');
+  const txt = `${m}:${s}`;
+
+  const hud = document.getElementById('timer-hud');
+  hud.textContent = txt;
+
+  const td = document.getElementById('puzzle-timer-display');
+  td.textContent = txt;
+
+  // Aviso nos últimos 10 segundos (negrito/vermelho + bipes rítmicos)
+  if(t<=10 && t>0){
+    td.classList.add('warning');
+    hud.classList.add('warning');
+    if(!warningBeepInterval) warningBeepInterval=setInterval(sfxWarning, 500);
+  } else if(t>10){
+    td.classList.remove('warning');
+    if(t>30) hud.classList.remove('warning');
+    if(warningBeepInterval){ clearInterval(warningBeepInterval); warningBeepInterval=null; }
+  }
+  if(t<=30) hud.classList.add('warning');
+}
+
+// ─── EXPLOSION / GAME OVER ───────────────────────────────────────────────────
+function triggerExplosion(){
+  if(STATE.phase==='dead') return;
+  STATE.phase='dead';
+  STATE.bombActive=false;
+  clearInterval(bombInterval);
+  clearInterval(puzzleInterval);
+  clearInterval(warningBeepInterval);
+  document.exitPointerLock();
+  const _btnE=document.getElementById('btn-interact');
+  if(_btnE) _btnE.classList.remove('show');
+  player.joy.x=0; player.joy.y=0;
+  sfxExplosion();
+  const exp=document.getElementById('explosion-overlay');
+  exp.style.display='block';
+  setTimeout(()=>{
+    exp.style.display='none';
+    document.getElementById('gameover-screen').classList.add('active');
+  },2000);
+}
+
+// ─── PLAYER MOVEMENT ─────────────────────────────────────────────────────────
+const ROOM_MIN_X=-5.7,ROOM_MAX_X=5.7;
+const ROOM_MIN_Z=-6.9,ROOM_MAX_Z_INDOOR=6.8;
+const OUTDOOR_MAX_Z=80;
+
+function updatePlayer(dt){
+  if(STATE.phase==='terminal'||STATE.phase==='dead') return;
+
+  // Direction vectors based on yaw only (no pitch for movement)
+  const cosY=Math.cos(player.yaw), sinY=Math.sin(player.yaw);
+  const forward=new THREE.Vector3(-sinY, 0, -cosY);
+  const right  =new THREE.Vector3( cosY, 0, -sinY);
+  const move   =new THREE.Vector3();
+
+  if(player.keys['KeyW']||player.keys['ArrowUp'])    move.add(forward);
+  if(player.keys['KeyS']||player.keys['ArrowDown'])  move.sub(forward);
+  if(player.keys['KeyA']||player.keys['ArrowLeft'])  move.sub(right);
+  if(player.keys['KeyD']||player.keys['ArrowRight']) move.add(right);
+
+  // Joystick virtual (celular): y para cima = andar para frente
+  if(player.joy.x || player.joy.y){
+    move.add(forward.clone().multiplyScalar(-player.joy.y));
+    move.add(right.clone().multiplyScalar(player.joy.x));
+  }
+
+  if(move.lengthSq()>0){
+    move.normalize().multiplyScalar(player.speed*dt);
+    const cur    = camera.position;
+    const newPos = cur.clone().add(move);
+    const doorZ  = 6.95;
+    const indoors     = cur.z <= doorZ;
+    const throughDoor = STATE.doorOpen && Math.abs(newPos.x) < 1.0;
+
+    if(indoors){
+      // Room bounds (with small padding)
+      newPos.x = Math.max(ROOM_MIN_X+0.3, Math.min(ROOM_MAX_X-0.3, newPos.x));
+      newPos.z = Math.max(ROOM_MIN_Z+0.3, newPos.z);
+      // Block computer desk area
+      if(newPos.z < -5.2 && Math.abs(newPos.x) < 1.3) newPos.z = -5.2;
+      if(newPos.z > doorZ){
+        // REPAIR: may only exit through the OPEN doorway (no teleporting past a closed door at low FPS)
+        camera.position.set(newPos.x, 1.7, throughDoor ? newPos.z : doorZ-0.4);
+      } else {
+        if(!STATE.doorOpen && newPos.z > doorZ-0.4) newPos.z = doorZ-0.4;
+        camera.position.set(newPos.x, 1.7, newPos.z);
+      }
+    } else {
+      // Outdoors
+      newPos.x = Math.max(-50, Math.min(50, newPos.x));
+      newPos.z = Math.min(OUTDOOR_MAX_Z, newPos.z);
+      if(newPos.z <= doorZ && !throughDoor){
+        // REPAIR: cannot wall-clip back inside through the solid wall — must use the doorway
+        camera.position.set(newPos.x, 1.7, doorZ+0.06);
+      } else {
+        camera.position.set(newPos.x, 1.7, newPos.z);
+      }
+    }
+
+    // Victory trigger (walked far enough outside)
+    if(camera.position.z > 18 && STATE.phase==='won' && !STATE.playerOutside){
+      STATE.playerOutside=true;
+      showVictoryScreen();
+    }
+  }
+
+  // Apply camera rotation (yaw + pitch)
+  const euler=new THREE.Euler(player.pitch, player.yaw, 0, 'YXZ');
+  camera.quaternion.setFromEuler(euler);
+
+  // Interact hints
+  const hint=document.getElementById('interact-hint');
+  const btnE=document.getElementById('btn-interact');
+  if(STATE.phase==='playing'){
+    if(isNearComputer()){
+      hint.textContent = IS_MOBILE ? 'Toque em ACESSAR' : '[E] Acessar terminal';
+      hint.style.display='block';
+      if(btnE) btnE.classList.add('show');
+    } else {
+      hint.style.display='none';
+      if(btnE) btnE.classList.remove('show');
+    }
+  } else if(STATE.phase==='won'){
+    if(btnE) btnE.classList.remove('show');
+    if(!STATE.playerOutside){
+      hint.textContent='Caminhe para a frente até sair pela porta aberta!';
+      hint.style.display='block';
+    } else {
+      hint.style.display='none';
+    }
+  }
+}
+
+function showVictoryScreen(){
+  const timeBonus = STATE.bombTimer * 2;
+  STATE.score += timeBonus;
+  setTimeout(()=>{
+    document.getElementById('final-score').textContent = STATE.score;
+    document.getElementById('final-words').textContent = STATE.wordsFound+'/'+ACTIVE_WORDS.length;
+    document.getElementById('victory-screen').classList.add('active');
+    clearInterval(bombInterval);
+    clearInterval(puzzleInterval);
+    clearInterval(warningBeepInterval);
+    sfxVictory();
+  }, 1500);
+}
+
+// ─── ANIMATE LOOP ────────────────────────────────────────────────────────────
+let shakeIntensity = 0;
+let screenShakeEnabled = false;
+
+function animate(){
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.1);
+  const now = Date.now();
+  updatePlayer(dt);
+
+  // Pisca o LED do colete de dinamite no peito
+  updateChestBomb(now);
+
+  // Animate computer screen glow flicker
+  if(computerMesh && STATE.phase !== 'dead'){
+    computerMesh.material.emissiveIntensity = 0.35 + Math.sin(now*0.003)*0.05 + Math.sin(now*0.0071)*0.02;
+  }
+
+  // Camera shake when bomb is critical (< 30s)
+  if(STATE.bombActive && STATE.bombTimer <= 30 && STATE.bombTimer > 0 && STATE.phase === 'playing'){
+    const intensity = (30 - STATE.bombTimer) / 30 * 0.015;
+    camera.position.x += (Math.random()-0.5)*intensity;
+    camera.position.y = 1.7 + (Math.random()-0.5)*intensity;
+    camera.position.z += (Math.random()-0.5)*intensity;
+  }
+
+  // Animate door pivot (for any additional effects)
+  // Change scene lighting after bomb defused
+  if(STATE.puzzleSolved && scene.fog){
+    scene.fog.color.lerp(new THREE.Color(0x0a1a0a), 0.02);
+  }
+
+  renderer.render(scene, camera);
+}
+
+// ─── START GAME ──────────────────────────────────────────────────────────────
+document.getElementById('start-btn').addEventListener('click',()=>{
+  getAudio(); // unlock audio
+  document.getElementById('tutorial-modal').style.display='none';
+  document.body.classList.add('in-game'); // libera os controles de toque
+  STATE.phase='playing';
+  buildGrid();
+  renderGrid();
+  updateScoreUI(); // sincroniza o contador com as palavras realmente ativas
+  updateTimers();
+  startBombTimer();
+  // Request pointer lock directly inside the click (user gesture required by browsers)
+  if(!IS_MOBILE){
+    const plr = renderer.domElement.requestPointerLock();
+    if(plr && plr.catch) plr.catch(()=>{}); // REPAIR: swallow rejection; user can click canvas to lock
+  }
+});
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+initThree();
+</script>
+</body>
+</html>

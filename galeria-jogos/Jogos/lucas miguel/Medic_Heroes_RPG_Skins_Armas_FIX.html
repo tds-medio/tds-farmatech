@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Medic Heroes RPG — Arsenal & Monstros</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:radial-gradient(circle at top,#182848,#070b14 72%);
+  color:#fff;font-family:Arial,Helvetica,sans-serif;min-height:100vh;
+  display:flex;justify-content:center;align-items:center;overflow-x:hidden
+}
+button{font:inherit}
+#gameContainer{width:min(1250px,97vw);background:#0b1020;border:2px solid #33446f;border-radius:18px;box-shadow:0 0 45px #000b;overflow:hidden}
+.hidden{display:none!important}
+
+/* MENU */
+#menu{padding:28px;min-height:760px;text-align:center}
+#menu h1{font-size:clamp(38px,6vw,70px);margin:8px 0;text-shadow:0 0 20px #36d1dc}
+.subtitle{color:#aebbd8;font-size:17px;margin-bottom:22px}
+.tabs{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+.tabBtn,.gameButton{
+  border:1px solid #435985;border-radius:10px;padding:10px 16px;
+  color:#fff;background:#26385f;cursor:pointer;transition:.2s;font-weight:bold
+}
+.tabBtn:hover,.gameButton:hover{transform:translateY(-2px);background:#344b7a}
+.tabBtn.active{background:#2678a6;border-color:#62d8ff}
+.menuSection{max-width:1100px;margin:auto}
+.heroGrid,.skinGrid,.weaponGrid{display:grid;gap:14px}
+.heroGrid{grid-template-columns:repeat(2,minmax(250px,1fr))}
+.skinGrid{grid-template-columns:repeat(4,minmax(150px,1fr))}
+.weaponGrid{grid-template-columns:repeat(3,minmax(180px,1fr))}
+.card{
+  background:linear-gradient(145deg,#151f38,#0c1222);border:2px solid #33446f;
+  border-radius:16px;padding:18px;cursor:pointer;transition:.2s;text-align:left
+}
+.card:hover{transform:translateY(-4px);border-color:#53d7ff}
+.card.selected{border-color:#ffe45c;box-shadow:0 0 20px #ffe45c33}
+.heroCard{text-align:center}
+.heroIcon{width:92px;height:92px;border-radius:24px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:52px;background:#17233e;border:3px solid #53678f}
+.skinPreview,.weaponIcon,.monsterPreview{
+  width:72px;height:72px;border-radius:18px;margin:0 auto 9px;display:flex;align-items:center;justify-content:center;
+  font-size:36px;background:#101a30;border:2px solid #435985
+}
+.card h3{margin-bottom:6px}.card p{color:#aebbd8;line-height:1.45;font-size:14px}
+.tag{display:inline-block;padding:4px 8px;border-radius:999px;background:#20304e;color:#9ee9ff;font-size:12px;margin:5px 3px 0}
+.actionRow{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:20px}
+.startBtn{background:#1f8f62;font-size:18px;padding:14px 26px}
+.infoBox{max-width:900px;margin:18px auto 0;background:#ffffff08;border:1px solid #293756;border-radius:12px;padding:14px;color:#9eaccb;line-height:1.5}
+.selectionInfo{margin:15px auto;max-width:900px;color:#dce5f8}
+
+/* GAME */
+#gameScreen{display:none}
+#topBar{min-height:92px;background:#10182b;border-bottom:1px solid #2e3d60;display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:15px;padding:12px 18px;align-items:center}
+.statusTitle{font-size:13px;color:#8fa2c8;margin-bottom:5px}.bar{height:16px;background:#202b45;border-radius:20px;overflow:hidden;border:1px solid #354565}.barFill{height:100%;width:100%;transition:width .15s}
+#hpFill{background:linear-gradient(90deg,#ff3b5c,#ff758c)}#energyFill{background:linear-gradient(90deg,#247bff,#62d8ff)}#xpFill{background:linear-gradient(90deg,#b347ff,#e095ff)}
+.statusNumbers{margin-top:3px;font-size:12px;color:#ccd5e9}
+#centerInfo{text-align:center}#heroName{font-size:21px;font-weight:bold}#levelText{color:#9eaed0;margin-top:3px}
+#waveText{font-size:13px;color:#ffe45c;margin-top:4px}
+#canvasWrap{position:relative;background:#07101c}
+canvas{width:100%;height:auto;display:block;background:#07101c}
+#mission{position:absolute;left:15px;top:15px;background:#050a14bf;border:1px solid #3b4c70;border-radius:10px;padding:9px 12px;font-size:13px;color:#dce5f8;pointer-events:none}
+#weaponHud{position:absolute;right:15px;top:15px;background:#050a14d9;border:1px solid #3b4c70;border-radius:10px;padding:10px 12px;text-align:right;min-width:155px}
+#weaponHud b{color:#ffe45c}#pauseLabel{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#000a;font-size:50px;font-weight:bold}
+#bottomPanel{background:#0e1628;border-top:1px solid #2e3d60;padding:13px;display:grid;grid-template-columns:1fr 1.4fr;gap:12px}
+#controlsInfo{color:#9cabc9;font-size:13px;line-height:1.7}
+.buttons{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.attackButton{background:#a52e46}.specialButton{background:#2856a1}.weaponButton{background:#7652a8}
+#mobileControls{display:none;justify-content:center;gap:8px;padding:9px;background:#0a1221;flex-wrap:wrap}
+.mobileButton{width:55px;height:43px;border-radius:9px;border:1px solid #42557c;background:#1b2945;color:white;font-weight:bold}
+
+/* RESULT */
+#resultScreen{display:none;position:fixed;inset:0;background:#02050ce6;align-items:center;justify-content:center;z-index:50;padding:20px}
+.resultBox{width:min(650px,94vw);background:#111a2d;border:2px solid #41557f;border-radius:20px;padding:30px;text-align:center;box-shadow:0 20px 70px #000b}
+.resultBox h2{font-size:40px;margin-bottom:12px}.resultBox p{color:#b9c5dd;line-height:1.6;margin-bottom:18px}
+#resultStats{background:#0b1221;border-radius:12px;padding:14px;margin-bottom:18px;line-height:1.8}
+.nextWave{color:#ffe45c;font-weight:bold;margin-bottom:15px}
+@media(max-width:850px){
+ .heroGrid,.skinGrid,.weaponGrid{grid-template-columns:1fr 1fr}
+ #topBar{grid-template-columns:1fr 1fr}.centerInfo{grid-column:1/-1}
+ #bottomPanel{grid-template-columns:1fr}.buttons{justify-content:center}#mobileControls{display:flex}
+}
+@media(max-width:560px){.heroGrid,.skinGrid,.weaponGrid{grid-template-columns:1fr}.card{padding:14px}#menu{padding:18px 12px}}
+</style>
+</head>
+<body>
+<div id="gameContainer">
+
+<section id="menu">
+  <h1>⚔️ MEDIC HEROES</h1>
+  <p class="subtitle">RPG 2D — A batalha dentro do corpo</p>
+
+  <div class="tabs">
+    <button class="tabBtn active" data-tab="heroes">🧬 Heróis</button>
+    <button class="tabBtn" data-tab="skins">🎨 Skins</button>
+    <button class="tabBtn" data-tab="weapons">🔫 Arsenal</button>
+  </div>
+
+  <div id="heroesTab" class="menuSection">
+    <div class="heroGrid">
+      <div class="card heroCard" id="heroCard-amoxicilina" onclick="selectHero('amoxicilina')">
+        <div class="heroIcon">💊</div><h2>Amoxicilina</h2>
+        <p>Herói antibiótico da representação educativa, enfrentando ameaças bacterianas.</p>
+        <span class="tag">Ataque rápido</span><span class="tag">Área</span>
+      </div>
+      <div class="card heroCard" id="heroCard-warfarina" onclick="selectHero('warfarina')">
+        <div class="heroIcon">🩸</div><h2>Varfarina</h2>
+        <p>Herói anticoagulante da representação educativa, enfrentando ameaças relacionadas a coágulos.</p>
+        <span class="tag">Resistência</span><span class="tag">Controle</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="skinsTab" class="menuSection hidden">
+    <div class="selectionInfo">Escolha uma skin para o herói selecionado.</div>
+    <div id="skinGrid" class="skinGrid"></div>
+  </div>
+
+  <div id="weaponsTab" class="menuSection hidden">
+    <div class="selectionInfo">Escolha a arma principal. Cada tipo muda velocidade, dano, alcance e quantidade de projéteis.</div>
+    <div id="weaponGrid" class="weaponGrid"></div>
+  </div>
+
+  <div id="selectionInfo" class="selectionInfo"></div>
+  <div class="actionRow">
+    <button class="gameButton startBtn" onclick="startGame()">🚀 INICIAR PARTIDA</button>
+  </div>
+  <div class="infoBox">
+    <b>Como jogar:</b> WASD/setas para movimentar • Espaço para atacar • E para especial • P para pausar • Q para trocar arma.
+    <br><br><b>Sistema de ondas:</b> cada vitória aumenta a onda, o tempo de sobrevivência, a quantidade de inimigos e a dificuldade.
+    <br><br><b>Observação educativa:</b> o combate é uma representação fictícia para tornar o tema dos medicamentos mais visual. Não representa prescrição, dose ou uso médico real.
+  </div>
+</section>
+
+<section id="gameScreen">
+  <div id="topBar">
+    <div>
+      <div class="statusTitle">❤️ VIDA</div><div class="bar"><div id="hpFill" class="barFill"></div></div>
+      <div id="hpText" class="statusNumbers">100 / 100</div>
+    </div>
+    <div id="centerInfo">
+      <div id="heroName">Herói</div>
+      <div id="levelText">Nível 1</div>
+      <div id="waveText">Onda 1 • 0:00</div>
+    </div>
+    <div>
+      <div class="statusTitle">⚡ ENERGIA</div><div class="bar"><div id="energyFill" class="barFill"></div></div>
+      <div id="energyText" class="statusNumbers">100 / 100</div>
+      <div class="bar" style="margin-top:5px;height:7px"><div id="xpFill" class="barFill"></div></div>
+    </div>
+  </div>
+
+  <div id="canvasWrap">
+    <canvas id="gameCanvas" width="1100" height="650"></canvas>
+    <div id="mission">Sobreviva à onda!</div>
+    <div id="weaponHud">🔫 <b id="weaponNameHud">Arma</b><br><small id="weaponAmmoHud">Pronta</small></div>
+    <div id="pauseLabel">PAUSADO</div>
+  </div>
+
+  <div id="mobileControls">
+    <button class="mobileButton" onclick="moveMobile('up')">▲</button>
+    <button class="mobileButton" onclick="moveMobile('left')">◀</button>
+    <button class="mobileButton" onclick="moveMobile('down')">▼</button>
+    <button class="mobileButton" onclick="moveMobile('right')">▶</button>
+    <button class="mobileButton" onclick="playerAttack()">⚔</button>
+    <button class="mobileButton" onclick="playerSpecial()">★</button>
+  </div>
+
+  <div id="bottomPanel">
+    <div id="controlsInfo">
+      <b>Controles:</b><br>
+      Movimento: <b>W A S D</b> / setas<br>
+      Ataque: <b>ESPAÇO</b> • Especial: <b>E</b><br>
+      Trocar arma: <b>Q</b> • Pausar: <b>P</b>
+    </div>
+    <div class="buttons">
+      <button class="gameButton attackButton" onclick="playerAttack()">⚔️ ATAQUE</button>
+      <button class="gameButton weaponButton" onclick="cycleWeapon()">🔫 TROCAR ARMA</button>
+      <button class="gameButton specialButton" onclick="playerSpecial()">💥 ESPECIAL</button>
+      <button class="gameButton" onclick="togglePause()">⏸️ PAUSAR</button>
+      <button class="gameButton" onclick="returnToMenu()">🏠 MENU</button>
+    </div>
+  </div>
+</section>
+</div>
+
+<div id="resultScreen">
+  <div class="resultBox">
+    <h2 id="resultTitle">🏆 Vitória!</h2>
+    <p id="resultDescription"></p>
+    <div id="resultStats"></div>
+    <div id="nextWaveText" class="nextWave"></div>
+    <button id="continueBtn" class="gameButton startBtn" onclick="continueNextWave()">⚡ PRÓXIMA ONDA</button>
+    <button class="gameButton" onclick="restartGame()">🔄 RECOMEÇAR</button>
+    <button class="gameButton" onclick="returnToMenu()">🏠 MENU</button>
+  </div>
+</div>
+
+<script>
+const canvas=document.getElementById("gameCanvas"),ctx=canvas.getContext("2d");
+const menu=document.getElementById("menu"),gameScreen=document.getElementById("gameScreen"),resultScreen=document.getElementById("resultScreen");
+const hpFill=document.getElementById("hpFill"),energyFill=document.getElementById("energyFill"),xpFill=document.getElementById("xpFill");
+const hpText=document.getElementById("hpText"),energyText=document.getElementById("energyText"),heroName=document.getElementById("heroName");
+const levelText=document.getElementById("levelText"),waveText=document.getElementById("waveText"),mission=document.getElementById("mission");
+const pauseLabel=document.getElementById("pauseLabel"),weaponNameHud=document.getElementById("weaponNameHud"),weaponAmmoHud=document.getElementById("weaponAmmoHud");
+
+const heroData={
+ amoxicilina:{name:"Amoxicilina",icon:"💊",color:"#50d8ff",hp:100,damage:22,speed:280,specialCost:40,specialName:"Pulso Antibacteriano"},
+ warfarina:{name:"Varfarina",icon:"🩸",color:"#ff6688",hp:115,damage:19,speed:255,specialCost:45,specialName:"Controle da Coagulação"}
+};
+
+const skins={
+ amoxicilina:[
+  {id:"classic",name:"Clássica",icon:"💊",main:"#50d8ff",accent:"#ffffff",desc:"Visual médico futurista."},
+  {id:"neon",name:"Neon",icon:"💠",main:"#8b5cff",accent:"#54fff1",desc:"Armadura neon."},
+  {id:"bio",name:"Bio Guard",icon:"🧪",main:"#45e38b",accent:"#eaffb5",desc:"Especialista em defesa biológica."},
+  {id:"shadow",name:"Shadow",icon:"🕶️",main:"#586174",accent:"#d9e0ff",desc:"Skin sombria."}
+ ],
+ warfarina:[
+  {id:"classic",name:"Clássica",icon:"🩸",main:"#ff6688",accent:"#ffffff",desc:"Visual médico futurista."},
+  {id:"crimson",name:"Crimson",icon:"🛡️",main:"#c42d50",accent:"#ff9aab",desc:"Armadura carmesim."},
+  {id:"royal",name:"Royal",icon:"👑",main:"#9b6cff",accent:"#ffd85c",desc:"Visual de elite."},
+  {id:"shadow",name:"Night",icon:"🌑",main:"#39445f",accent:"#ff6688",desc:"Visual noturno."}
+ ]
+};
+
+const weapons=[
+ {id:"pulse",name:"Pistola de Pulso",icon:"🔵",type:"Precisão",damage:1.0,speed:650,cooldown:.25,count:1,spread:0,color:"#62d8ff",energy:0,desc:"Rápida e precisa."},
+ {id:"double",name:"Dupla Micro-Blaster",icon:"🔫",type:"Dupla",damage:.72,speed:600,cooldown:.34,count:2,spread:.10,color:"#ffe45c",energy:0,desc:"Dois disparos em leque."},
+ {id:"shot",name:"Canhão de Cápsulas",icon:"💊",type:"Rajada",damage:.48,speed:520,cooldown:.62,count:5,spread:.34,color:"#ff9b62",energy:0,desc:"Muitos projéteis de curto alcance."},
+ {id:"laser",name:"Feixe Biomédico",icon:"⚡",type:"Laser",damage:1.55,speed:900,cooldown:.55,count:1,spread:0,color:"#b77dff",energy:5,desc:"Disparo concentrado."},
+ {id:"orbit",name:"Mini Drones",icon:"🛰️",type:"Drones",damage:.62,speed:430,cooldown:.42,count:3,spread:.55,color:"#70ffb0",energy:2,desc:"Projéteis orbitais."},
+ {id:"nova",name:"Nova Molecular",icon:"💥",type:"Explosão",damage:1.15,speed:390,cooldown:.78,count:1,spread:0,color:"#ff6688",energy:8,explosive:true,desc:"Projétil com pequena área de impacto."}
+];
+
+const monsters={
+ bacteria:[
+  {name:"Germídeo",icon:"🦠",color:"#55e36d",hp:45,damage:7,speed:66,radius:23,xp:30,style:0},
+  {name:"Mutante Esporoso",icon:"👾",color:"#9be33d",hp:62,damage:9,speed:58,radius:26,xp:42,style:1},
+  {name:"Monstro Flagelado",icon:"🧟",color:"#32b86c",hp:78,damage:11,speed:50,radius:29,xp:55,style:2},
+  {name:"Titã Bacteriano",icon:"👹",color:"#d3c832",hp:125,damage:15,speed:40,radius:35,xp:85,style:3}
+ ],
+ clot:[
+  {name:"Coágulo",icon:"🩸",color:"#e84b62",hp:55,damage:8,speed:59,radius:25,xp:35,style:0},
+  {name:"Coágulo Sombrio",icon:"👹",color:"#a9253d",hp:82,damage:11,speed:52,radius:28,xp:52,style:1},
+  {name:"Núcleo Rubro",icon:"👾",color:"#ff3f69",hp:105,damage:13,speed:45,radius:31,xp:68,style:2},
+  {name:"Titã do Coágulo",icon:"💀",color:"#742038",hp:155,damage:17,speed:37,radius:37,xp:100,style:3}
+ ]
+};
+
+let selectedHero="amoxicilina",selectedSkin={amoxicilina:"classic",warfarina:"classic"},selectedWeapon="pulse";
+let game={
+ running:false,paused:false,finished:false,heroType:null,wave:1,waveTime:0,waveDuration:22,
+ enemies:[],projectiles:[],particles:[],defeated:0,score:0,keys:{},spawnTimer:0,shake:0,totalTime:0
+};
+let hero={x:550,y:325,radius:25,speed:270,hp:100,maxHp:100,energy:100,maxEnergy:100,level:1,xp:0,xpNeeded:100,damage:20,attackCooldown:0,specialCooldown:0,invulnerable:0,skin:null};
+
+function selectHero(type){
+ selectedHero=type;
+ document.querySelectorAll(".heroCard").forEach(x=>x.classList.remove("selected"));
+ document.getElementById("heroCard-"+type).classList.add("selected");
+ renderSkins();updateSelectionInfo();
+}
+function renderSkins(){
+ const grid=document.getElementById("skinGrid");grid.innerHTML="";
+ skins[selectedHero].forEach(s=>{
+  const d=document.createElement("div");d.className="card"+(selectedSkin[selectedHero]===s.id?" selected":"");
+  d.onclick=()=>{selectedSkin[selectedHero]=s.id;renderSkins();updateSelectionInfo()};
+  d.innerHTML=`<div class="skinPreview" style="border-color:${s.main};box-shadow:0 0 16px ${s.main}44">${s.icon}</div>
+  <h3>${s.name}</h3><p>${s.desc}</p><span class="tag">Skin</span>`;
+  grid.appendChild(d);
+ });
+}
+function renderWeapons(){
+ const grid=document.getElementById("weaponGrid");grid.innerHTML="";
+ weapons.forEach(w=>{
+  const d=document.createElement("div");d.className="card"+(selectedWeapon===w.id?" selected":"");
+  d.onclick=()=>{selectedWeapon=w.id;renderWeapons();updateSelectionInfo()};
+  d.innerHTML=`<div class="weaponIcon" style="border-color:${w.color}">${w.icon}</div>
+  <h3>${w.name}</h3><p>${w.desc}</p><span class="tag">${w.type}</span><span class="tag">${w.count} proj.</span>`;
+  grid.appendChild(d);
+ });
+}
+function updateSelectionInfo(){
+ const h=heroData[selectedHero],s=skins[selectedHero].find(x=>x.id===selectedSkin[selectedHero]),w=weapons.find(x=>x.id===selectedWeapon);
+ document.getElementById("selectionInfo").innerHTML=`<b>${h.icon} ${h.name}</b> • Skin: <b>${s.name}</b> • Arma: <b>${w.icon} ${w.name}</b>`;
+}
+document.querySelectorAll(".tabBtn").forEach(btn=>{
+ btn.onclick=()=>{
+  document.querySelectorAll(".tabBtn").forEach(b=>b.classList.remove("active"));btn.classList.add("active");
+  ["heroes","skins","weapons"].forEach(t=>document.getElementById(t+"Tab").classList.toggle("hidden",btn.dataset.tab!==t));
+ };
+});
+selectHero("amoxicilina");renderWeapons();updateSelectionInfo();
+
+function startGame(){
+ const d=heroData[selectedHero],s=skins[selectedHero].find(x=>x.id===selectedSkin[selectedHero]);
+ game.heroType=selectedHero;game.wave=1;game.waveTime=0;game.waveDuration=22;game.score=0;game.totalTime=0;
+ resetWaveState(true);game.running=true;game.finished=false;game.paused=false;
+ menu.style.display="none";gameScreen.style.display="block";resultScreen.style.display="none";
+ hero.skin=s;hero.x=canvas.width/2;hero.y=canvas.height/2;hero.speed=d.speed;hero.hp=d.hp;hero.maxHp=d.hp;
+ hero.energy=100;hero.maxEnergy=100;hero.level=1;hero.xp=0;hero.xpNeeded=100;hero.damage=d.damage;
+ hero.attackCooldown=0;hero.specialCooldown=0;hero.invulnerable=0;
+ for(let i=0;i<4;i++)spawnEnemy();
+ updateInterface();game.lastTime=performance.now();
+}
+function resetWaveState(full=false){
+ game.enemies=[];game.projectiles=[];game.particles=[];game.defeated=0;game.spawnTimer=0;
+ if(full){game.wave=1;game.waveTime=0;game.waveDuration=22}
+}
+function continueNextWave(){
+ resultScreen.style.display="none";game.finished=false;game.running=true;game.paused=false;
+ game.wave++;game.waveTime=0;game.waveDuration=22+(game.wave-1)*7;
+ resetWaveState(false);
+ hero.hp=Math.min(hero.maxHp,hero.hp+Math.round(hero.maxHp*.22));hero.energy=hero.maxEnergy;
+ for(let i=0;i<Math.min(4+game.wave,9);i++)spawnEnemy();
+ updateInterface();game.lastTime=performance.now();
+}
+function restartGame(){resultScreen.style.display="none";startGame()}
+function returnToMenu(){game.running=false;game.finished=false;resultScreen.style.display="none";gameScreen.style.display="none";menu.style.display="block"}
+function togglePause(){if(!game.running||game.finished)return;game.paused=!game.paused;pauseLabel.style.display=game.paused?"flex":"none"}
+function cycleWeapon(){
+ const i=weapons.findIndex(w=>w.id===selectedWeapon);selectedWeapon=weapons[(i+1)%weapons.length].id;
+ updateWeaponHud();
+}
+document.addEventListener("keydown",e=>{
+ const k=e.key.toLowerCase();game.keys[k]=true;
+ if([" ","arrowup","arrowdown","arrowleft","arrowright"].includes(k))e.preventDefault();
+ if(!game.running||game.paused||game.finished)return;
+ if(k===" ")playerAttack();if(k==="e")playerSpecial();if(k==="q")cycleWeapon();if(k==="p")togglePause();
+});
+document.addEventListener("keyup",e=>game.keys[e.key.toLowerCase()]=false);
+function moveMobile(dir){if(!game.running||game.paused)return;const n=42;if(dir==="up")hero.y-=n;if(dir==="down")hero.y+=n;if(dir==="left")hero.x-=n;if(dir==="right")hero.x+=n;keepHeroInside()}
+
+function currentWeapon(){return weapons.find(w=>w.id===selectedWeapon)}
+function playerAttack(){
+ if(!game.running||game.paused||game.finished||hero.attackCooldown>0)return;
+ const w=currentWeapon();hero.attackCooldown=w.cooldown;
+ const target=findClosestEnemy();
+ const base=target?Math.atan2(target.y-hero.y,target.x-hero.x):0;
+ for(let i=0;i<w.count;i++){
+  const offset=w.count===1?0:(i-(w.count-1)/2)*(w.spread/(w.count-1||1));
+  const a=base+offset+(Math.random()-.5)*.035;
+  game.projectiles.push({
+   x:hero.x,y:hero.y,vx:Math.cos(a)*w.speed,vy:Math.sin(a)*w.speed,
+   radius:w.explosive?9:6,damage:hero.damage*w.damage, color:w.color,life:1.5,
+   explosive:!!w.explosive,energyCost:w.energy
+  });
+ }
+}
+function playerSpecial(){
+ if(!game.running||game.paused||game.finished)return;
+ const cost=heroData[game.heroType].specialCost;if(hero.specialCooldown>0||hero.energy<cost)return;
+ hero.energy-=cost;hero.specialCooldown=4;
+ const radius=game.heroType==="amoxicilina"?190:215,damage=game.heroType==="amoxicilina"?68:58;
+ game.enemies.forEach(e=>{const d=Math.hypot(e.x-hero.x,e.y-hero.y);if(d<=radius)e.hp-=damage});
+ createParticles(hero.x,hero.y,hero.skin.main,70);game.shake=10;
+}
+function findClosestEnemy(){
+ let c=null,b=Infinity;game.enemies.forEach(e=>{const d=(e.x-hero.x)**2+(e.y-hero.y)**2;if(d<b){b=d;c=e}});return c
+}
+function spawnEnemy(){
+ const pool=game.heroType==="amoxicilina"?monsters.bacteria:monsters.clot;
+ const wave=game.wave;
+ let idx=Math.min(pool.length-1,Math.floor(Math.random()*(Math.min(pool.length,1+Math.floor(wave/2)))));
+ const base=pool[idx],scale=1+(wave-1)*.12;
+ let side=Math.floor(Math.random()*4),x,y;
+ if(side===0){x=Math.random()*canvas.width;y=-50}
+ if(side===1){x=canvas.width+50;y=Math.random()*canvas.height}
+ if(side===2){x=Math.random()*canvas.width;y=canvas.height+50}
+ if(side===3){x=-50;y=Math.random()*canvas.height}
+ game.enemies.push({type:base.name,x,y,radius:base.radius,hp:base.hp*scale,maxHp:base.hp*scale,
+ damage:base.damage*scale,speed:base.speed*(1+(wave-1)*.025),color:base.color,icon:base.icon,xp:base.xp,wobble:Math.random()*7,hitFlash:0,style:base.style});
+}
+function updateHero(dt){
+ let dx=0,dy=0;if(game.keys.w||game.keys.arrowup)dy--;if(game.keys.s||game.keys.arrowdown)dy++;
+ if(game.keys.a||game.keys.arrowleft)dx--;if(game.keys.d||game.keys.arrowright)dx++;
+ if(dx||dy){const l=Math.hypot(dx,dy);hero.x+=dx/l*hero.speed*dt;hero.y+=dy/l*hero.speed*dt}keepHeroInside()
+}
+function keepHeroInside(){hero.x=Math.max(hero.radius,Math.min(canvas.width-hero.radius,hero.x));hero.y=Math.max(hero.radius,Math.min(canvas.height-hero.radius,hero.y))}
+function updateEnemies(dt){
+ for(let i=game.enemies.length-1;i>=0;i--){
+  const e=game.enemies[i],dx=hero.x-e.x,dy=hero.y-e.y,d=Math.hypot(dx,dy)||1;
+  e.x+=dx/d*e.speed*dt;e.y+=dy/d*e.speed*dt;e.wobble+=dt*4;e.hitFlash=Math.max(0,e.hitFlash-dt);
+  if(d<hero.radius+e.radius&&hero.invulnerable<=0){
+   hero.hp=Math.max(0,hero.hp-e.damage);hero.invulnerable=.65;game.shake=7;createParticles(hero.x,hero.y,"#ff4b66",14);
+   if(hero.hp<=0){finishGame(false);return}
+  }
+ }
+}
+function updateProjectiles(dt){
+ for(let i=game.projectiles.length-1;i>=0;i--){
+  const p=game.projectiles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;
+  if(p.life<=0||p.x<-40||p.x>canvas.width+40||p.y<-40||p.y>canvas.height+40){game.projectiles.splice(i,1);continue}
+  for(let j=game.enemies.length-1;j>=0;j--){
+   const e=game.enemies[j];if(Math.hypot(p.x-e.x,p.y-e.y)<p.radius+e.radius){
+    e.hp-=p.damage;e.hitFlash=.12;createParticles(p.x,p.y,p.color,8);game.projectiles.splice(i,1);
+    if(p.explosive){game.enemies.forEach(other=>{if(other!==e&&Math.hypot(other.x-e.x,other.y-e.y)<70)other.hp-=p.damage*.45})}
+    if(e.hp<=0)defeatEnemy(j);break
+   }
+  }
+ }
+}
+function defeatEnemy(i){
+ const e=game.enemies[i];game.defeated++;game.score+=e.xp;createParticles(e.x,e.y,e.color,25);game.enemies.splice(i);gainXP(e.xp);
+}
+function gainXP(a){
+ hero.xp+=a;while(hero.xp>=hero.xpNeeded){hero.xp-=hero.xpNeeded;hero.level++;hero.xpNeeded=Math.floor(hero.xpNeeded*1.32);hero.maxHp+=10;hero.hp=hero.maxHp;hero.maxEnergy+=5;hero.energy=hero.maxEnergy;hero.damage+=4;createParticles(hero.x,hero.y,"#ffe45c",45)}
+}
+function createParticles(x,y,color,n){
+ for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=30+Math.random()*150;game.particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,size:2+Math.random()*5,life:.4+Math.random()*.7,color})}
+}
+function updateParticles(dt){
+ for(let i=game.particles.length-1;i>=0;i--){const p=game.particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.97;p.vy*=.97;p.life-=dt;if(p.life<=0)game.particles.splice(i,1)}
+}
+function update(dt){
+ if(!game.running||game.paused||game.finished)return;
+ game.waveTime+=dt;game.totalTime+=dt;hero.attackCooldown=Math.max(0,hero.attackCooldown-dt);hero.specialCooldown=Math.max(0,hero.specialCooldown-dt);
+ hero.invulnerable=Math.max(0,hero.invulnerable-dt);hero.energy=Math.min(hero.maxEnergy,hero.energy+12*dt);
+ updateHero(dt);updateEnemies(dt);updateProjectiles(dt);updateParticles(dt);
+ game.spawnTimer-=dt;
+ const maxAlive=Math.min(5+game.wave*2,20);
+ if(game.spawnTimer<=0&&game.enemies.length<maxAlive){spawnEnemy();game.spawnTimer=Math.max(.45,1.55-game.wave*.045)}
+ if(game.waveTime>=game.waveDuration)finishGame(true);
+ if(game.shake>0)game.shake=Math.max(0,game.shake-dt*30);updateInterface()
+}
+function updateInterface(){
+ hpFill.style.width=(hero.hp/hero.maxHp*100)+"%";energyFill.style.width=(hero.energy/hero.maxEnergy*100)+"%";xpFill.style.width=(hero.xp/hero.xpNeeded*100)+"%";
+ hpText.textContent=Math.ceil(hero.hp)+" / "+hero.maxHp;energyText.textContent=Math.floor(hero.energy)+" / "+hero.maxEnergy;
+ const h=heroData[game.heroType];heroName.textContent=h.icon+" "+h.name+" • "+(hero.skin?.name||"Skin");
+ levelText.textContent="Nível "+hero.level+" • XP "+Math.floor(hero.xp)+" / "+hero.xpNeeded;
+ waveText.textContent="Onda "+game.wave+" • "+formatTime(game.waveTime)+" / "+formatTime(game.waveDuration);
+ mission.textContent="Sobreviva: "+formatTime(Math.max(0,game.waveDuration-game.waveTime))+" • Monstros derrotados: "+game.defeated;
+ updateWeaponHud();
+}
+function updateWeaponHud(){const w=currentWeapon();weaponNameHud.textContent=w.icon+" "+w.name;weaponAmmoHud.textContent=w.type+" • "+w.count+" projétil(is)"+(w.energy?` • custo ${w.energy}`:"")}
+function formatTime(t){const m=Math.floor(t/60),s=Math.floor(t%60);return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0")}
+
+function drawBackground(){
+ ctx.fillStyle="#07111e";ctx.fillRect(0,0,canvas.width,canvas.height);
+ ctx.strokeStyle="rgba(90,130,180,.09)";ctx.lineWidth=1;
+ for(let x=0;x<canvas.width;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke()}
+ for(let y=0;y<canvas.height;y+=50){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke()}
+ ctx.beginPath();ctx.arc(canvas.width/2,canvas.height/2,155,0,Math.PI*2);ctx.fillStyle="rgba(40,110,160,.07)";ctx.fill();
+}
+function drawHero(){
+ if(hero.invulnerable>0&&Math.floor(hero.invulnerable*15)%2===0)return;
+ const s=hero.skin||skins[selectedHero][0];
+ const w=currentWeapon();
+ ctx.save();ctx.translate(hero.x,hero.y);
+ // Aura da skin
+ ctx.beginPath();ctx.arc(0,0,hero.radius+18,0,Math.PI*2);ctx.fillStyle=s.main+"22";ctx.fill();
+ // Corpo/armadura da skin
+ ctx.beginPath();ctx.arc(0,0,hero.radius+2,0,Math.PI*2);ctx.fillStyle=s.main;ctx.fill();
+ ctx.lineWidth=4;ctx.strokeStyle=s.accent;ctx.stroke();
+ // Capacete/visor: muda conforme a skin
+ ctx.beginPath();ctx.arc(0,-5,hero.radius*.72,Math.PI,Math.PI*2);ctx.fillStyle=s.accent+"66";ctx.fill();
+ ctx.strokeStyle=s.accent;ctx.lineWidth=2;ctx.stroke();
+ // Emblema central diferente para cada skin
+ ctx.font="bold 21px Arial";ctx.textAlign="center";ctx.textBaseline="middle";
+ ctx.fillStyle="#07111e";ctx.fillText(game.heroType==="amoxicilina"?"+":"W",0,2);
+ // Detalhes de roupa/armadura
+ ctx.strokeStyle=s.accent;ctx.lineWidth=3;
+ ctx.beginPath();ctx.moveTo(-hero.radius*.7,hero.radius*.55);ctx.lineTo(-hero.radius*.25,hero.radius*.85);ctx.lineTo(hero.radius*.25,hero.radius*.85);ctx.lineTo(hero.radius*.7,hero.radius*.55);ctx.stroke();
+ // Mini-arma visível na mão direita
+ ctx.save();ctx.rotate(Math.atan2((findClosestEnemy()?.y||hero.y)-hero.y,(findClosestEnemy()?.x||hero.x)-hero.x));
+ ctx.fillStyle="#20283b";ctx.strokeStyle=w.color;ctx.lineWidth=2;
+ ctx.fillRect(hero.radius*.45,-6,22,12);ctx.strokeRect(hero.radius*.45,-6,22,12);
+ ctx.fillStyle=w.color;ctx.fillRect(hero.radius*1.12,-3,13,6);
+ ctx.fillStyle="#151a27";ctx.fillRect(hero.radius*.65,5,8,10);
+ // efeito especial da arma
+ if(w.id==="laser"){ctx.fillStyle=w.color+"99";ctx.fillRect(hero.radius*1.12,-2,24,4)}
+ if(w.id==="orbit"){ctx.strokeStyle=w.color+"aa";ctx.beginPath();ctx.arc(0,0,hero.radius+25,-.8,.8);ctx.stroke()}
+ ctx.restore();
+ // Nome da skin + arma sobre o personagem
+ ctx.font="bold 12px Arial";ctx.fillStyle=s.accent;ctx.fillText(s.name,0,-47);
+ ctx.font="10px Arial";ctx.fillStyle=w.color;ctx.fillText(w.name,0,hero.radius+30);
+ ctx.restore();
+}
+function drawEnemies(){
+ game.enemies.forEach(e=>{
+  const wob=Math.sin(e.wobble)*3;
+  ctx.save();ctx.translate(e.x,e.y+wob);
+  ctx.beginPath();ctx.ellipse(0,e.radius+7,e.radius*.8,6,0,0,Math.PI*2);ctx.fillStyle="#0006";ctx.fill();
+  ctx.beginPath();ctx.arc(0,0,e.radius,0,Math.PI*2);ctx.fillStyle=e.hitFlash>0?"#fff":e.color;ctx.fill();
+  ctx.lineWidth=3;ctx.strokeStyle="#241522";ctx.stroke();
+  // "skin" de monstro: espinhos, chifres e detalhes diferentes por classe
+  ctx.strokeStyle=e.color;ctx.lineWidth=4;
+  const spikes=e.style+5;
+  for(let k=0;k<spikes;k++){const a=Math.PI*2*k/spikes;ctx.beginPath();ctx.moveTo(Math.cos(a)*e.radius,Math.sin(a)*e.radius);ctx.lineTo(Math.cos(a)*(e.radius+9+(e.style*2)),Math.sin(a)*(e.radius+9+(e.style*2)));ctx.stroke()}
+  ctx.font=Math.max(17,e.radius*.85)+"px Arial";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillStyle="#fff";ctx.fillText(e.icon,0,1);
+  // olhos de monstro
+  ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(-e.radius*.32,-e.radius*.15,3,0,Math.PI*2);ctx.arc(e.radius*.32,-e.radius*.15,3,0,Math.PI*2);ctx.fill();
+  ctx.restore();
+  const bw=e.radius*2,hp=Math.max(0,e.hp/e.maxHp);
+  ctx.fillStyle="#171b27";ctx.fillRect(e.x-bw/2,e.y-e.radius-18,bw,6);ctx.fillStyle="#ff5068";ctx.fillRect(e.x-bw/2,e.y-e.radius-18,bw*hp,6);
+  ctx.font="11px Arial";ctx.textAlign="center";ctx.fillStyle="#d9e1f1";ctx.fillText(e.name,e.x,e.y+e.radius+20);
+ });
+}
+function drawProjectiles(){
+ game.projectiles.forEach(p=>{
+  ctx.beginPath();ctx.arc(p.x,p.y,p.radius,0,Math.PI*2);ctx.fillStyle=p.color;ctx.fill();
+  ctx.beginPath();ctx.arc(p.x,p.y,p.radius+5,0,Math.PI*2);ctx.strokeStyle=p.color+"55";ctx.stroke();
+ });
+}
+function drawParticles(){
+ game.particles.forEach(p=>{ctx.globalAlpha=Math.max(0,p.life);ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fillStyle=p.color;ctx.fill()});ctx.globalAlpha=1;
+}
+function draw(){
+ ctx.save();if(game.shake>0)ctx.translate((Math.random()-.5)*game.shake,(Math.random()-.5)*game.shake);
+ drawBackground();drawProjectiles();drawEnemies();drawHero();drawParticles();ctx.restore();
+}
+function finishGame(victory){
+ if(game.finished)return;game.finished=true;game.running=false;resultScreen.style.display="flex";
+ if(victory){
+  resultTitle.textContent="🏆 ONDA CONCLUÍDA!";
+  resultDescription.textContent=`Você sobreviveu à onda ${game.wave} com ${heroData[game.heroType].name}.`;
+  resultStats.innerHTML=`<b>Skin:</b> ${hero.skin.name}<br><b>Arma:</b> ${currentWeapon().name}<br><b>Nível:</b> ${hero.level}<br><b>Monstros derrotados:</b> ${game.defeated}<br><b>Pontuação:</b> ${game.score}<br><b>Tempo:</b> ${formatTime(game.waveDuration)}`;
+  document.getElementById("nextWaveText").textContent=`Próxima onda: ${game.wave+1} — duração ${formatTime(22+game.wave*7)}.`;
+  document.getElementById("continueBtn").style.display="inline-block";
+ }else{
+  resultTitle.textContent="💀 HERÓI DERROTADO";
+  resultDescription.textContent="Os monstros dominaram a arena. Ajuste sua arma e tente novamente.";
+  resultStats.innerHTML=`<b>Onda:</b> ${game.wave}<br><b>Skin:</b> ${hero.skin.name}<br><b>Arma:</b> ${currentWeapon().name}<br><b>Monstros derrotados:</b> ${game.defeated}<br><b>Pontuação:</b> ${game.score}`;
+  document.getElementById("nextWaveText").textContent="";
+  document.getElementById("continueBtn").style.display="none";
+ }
+}
+function gameLoop(t){
+ let dt=(t-(game.lastTime||t))/1000;game.lastTime=t;if(dt>.05)dt=.05;update(dt);draw();requestAnimationFrame(gameLoop)
+}
+requestAnimationFrame(t=>{game.lastTime=t;gameLoop(t)});
+</script>
+</body>
+</html>

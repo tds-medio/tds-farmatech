@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farmatec - Desafio Mestre da Dispensação</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome para Ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        pharmacy: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        },
+                        clinical: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%);
+            min-height: 100vh;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-option {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .btn-option:active {
+            transform: translateY(0);
+        }
+
+        @keyframes pulse-light {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.9; }
+        }
+
+        .pulse-heart {
+            animation: pulse-light 1.5s infinite;
+        }
+
+        /* Custom Scrollbar for Modal */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="font-sans text-slate-800 antialiased flex flex-col min-h-screen">
+
+    <!-- Header Farmatec -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-pharmacy-600 text-white p-2.5 rounded-xl shadow-md flex items-center justify-center">
+                    <i class="fa-solid fa-prescription-bottle-medical text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-xl text-slate-800 leading-tight">FARMATEC</h1>
+                    <p class="text-xs font-semibold text-pharmacy-600 tracking-wider uppercase">Plataforma Interativa de Atendimento</p>
+                </div>
+            </div>
+
+            <!-- Botão de Manual / Guia Rápido -->
+            <button onclick="togglePharmacopeiaModal()" class="flex items-center space-x-2 bg-clinical-50 hover:bg-clinical-100 text-clinical-700 px-4 py-2 rounded-lg font-medium text-sm transition-colors border border-clinical-200">
+                <i class="fa-solid fa-book-medical text-clinical-600"></i>
+                <span class="hidden sm:inline">Manual de Consulta</span>
+                <span class="sm:hidden">Guia</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-grow max-w-5xl w-full mx-auto p-4 md:p-6 flex flex-col justify-center">
+
+        <!-- TELA INICIAL / MENU -->
+        <section id="start-screen" class="glass-card rounded-2xl p-6 md:p-10 text-center max-w-2xl mx-auto my-auto shadow-xl">
+            <div class="w-20 h-20 bg-pharmacy-100 text-pharmacy-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                <i class="fa-solid fa-user-doctor text-4xl"></i>
+            </div>
+            
+            <h2 class="text-2xl md:text-3xl font-extrabold text-slate-800 mb-3">
+                Desafio Mestre da Dispensação
+            </h2>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Assuma o balcão da <strong class="text-pharmacy-700">Farmatec</strong> e atenda pacientes com casos clínicos reais focados em dois medicamentos de alto alerta: <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-semibold text-sm">Levotiroxina</span> e <span class="bg-rose-100 text-rose-800 px-2 py-0.5 rounded font-semibold text-sm">Varfarina</span>.
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 text-left">
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-start space-x-3">
+                    <i class="fa-solid fa-bullseye text-pharmacy-600 text-xl mt-1"></i>
+                    <div>
+                        <h3 class="font-bold text-sm text-slate-800">8 Casos Clínicos</h3>
+                        <p class="text-xs text-slate-500">Situações de manejo e orientação no balcão.</p>
+                    </div>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-start space-x-3">
+                    <i class="fa-solid fa-heart-pulse text-rose-500 text-xl mt-1"></i>
+                    <div>
+                        <h3 class="font-bold text-sm text-slate-800">Sistema de Vidas</h3>
+                        <p class="text-xs text-slate-500">Mantenha os pacientes em segurança!</p>
+                    </div>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-start space-x-3">
+                    <i class="fa-solid fa-award text-amber-500 text-xl mt-1"></i>
+                    <div>
+                        <h3 class="font-bold text-sm text-slate-800">Pontuação & XP</h3>
+                        <p class="text-xs text-slate-500">Acumule pontos e atinja o grau máximo.</p>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="startGame()" class="w-full sm:w-auto bg-pharmacy-600 hover:bg-pharmacy-700 text-white font-bold text-lg px-8 py-3.5 rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 active:translate-y-0">
+                <i class="fa-solid fa-play mr-2"></i> Iniciar Plantão Farmacêutico
+            </button>
+        </section>
+
+        <!-- TELA DO JOGO (GAMEPLAY) -->
+        <section id="game-screen" class="hidden flex-col gap-6">
+            
+            <!-- Painel de Status / Top Bar -->
+            <div class="glass-card rounded-xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+                <!-- Vidas / Saúde -->
+                <div class="flex items-center space-x-2">
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Segurança do Paciente:</span>
+                    <div id="lives-container" class="flex space-x-1 text-rose-500 text-lg">
+                        <i class="fa-solid fa-heart pulse-heart"></i>
+                        <i class="fa-solid fa-heart pulse-heart"></i>
+                        <i class="fa-solid fa-heart pulse-heart"></i>
+                    </div>
+                </div>
+
+                <!-- Barra de Progresso de Nível -->
+                <div class="flex-1 min-w-[200px] max-w-xs mx-auto">
+                    <div class="flex justify-between text-xs font-semibold text-slate-600 mb-1">
+                        <span>Progresso do Plantão</span>
+                        <span id="progress-text">Caso 1 de 8</span>
+                    </div>
+                    <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+                        <div id="progress-bar" class="bg-pharmacy-600 h-full transition-all duration-300 w-0"></div>
+                    </div>
+                </div>
+
+                <!-- Pontuação (XP) e Combo -->
+                <div class="flex items-center space-x-4">
+                    <div class="text-right">
+                        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Pontuação</div>
+                        <div id="score-text" class="text-lg font-black text-pharmacy-700">0 XP</div>
+                    </div>
+                    <div id="combo-badge" class="hidden bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-full border border-amber-300 animate-bounce">
+                        <i class="fa-solid fa-fire mr-1"></i><span id="combo-count">2x</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cartão do Atendimento / Paciente -->
+            <div class="glass-card rounded-2xl p-6 md:p-8 shadow-md">
+                
+                <!-- Informações do Paciente -->
+                <div class="flex items-start gap-4 mb-6 pb-6 border-b border-slate-100">
+                    <div id="patient-avatar" class="w-16 h-16 md:w-20 md:w-20 rounded-2xl bg-clinical-100 text-clinical-700 flex items-center justify-center text-2xl md:text-3xl shrink-0 shadow-inner">
+                        <i class="fa-solid fa-user-injured"></i>
+                    </div>
+                    <div class="flex-grow">
+                        <div class="flex flex-wrap items-center gap-2 mb-1">
+                            <h3 id="patient-name" class="font-bold text-lg md:text-xl text-slate-800">Maria Silva</h3>
+                            <span id="patient-age" class="text-xs bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full font-semibold">58 anos</span>
+                            <span id="medication-badge" class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">Levotiroxina</span>
+                        </div>
+                        <p id="patient-history" class="text-sm text-slate-500 italic mb-2">Histórico: Hipotireoidismo primário em tratamento há 2 anos.</p>
+                        
+                        <!-- Balão de fala do Paciente -->
+                        <div class="bg-slate-50 border-l-4 border-clinical-500 p-3.5 rounded-r-xl text-slate-700 text-sm md:text-base leading-relaxed relative">
+                            <i class="fa-solid fa-quote-left text-clinical-300 text-xs mr-2"></i>
+                            <span id="patient-dialogue" class="font-medium">"Doutor, o médico aumentou minha dose de Levotiroxina porque meus exames não melhoraram. Mas eu tomo certinho com meu café da manhã e tomo minhas vitaminas de ferro juntas!"</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pergunta da Conduta Farmacêutica -->
+                <div class="mb-6">
+                    <h4 class="text-xs font-bold text-pharmacy-700 uppercase tracking-wider mb-2 flex items-center">
+                        <i class="fa-solid fa-clipboard-question mr-1.5"></i> Conduta Farmacêutica Recomendada
+                    </h4>
+                    <p id="case-question" class="text-slate-800 font-semibold text-base md:text-lg">
+                        Qual orientação a equipe da Farmatec deve fornecer a este paciente?
+                    </p>
+                </div>
+
+                <!-- Opções de Resposta -->
+                <div id="options-container" class="grid grid-cols-1 gap-3">
+                    <!-- Gerado via JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <!-- TELA DE RESULTADO / FIM DE JOGO -->
+        <section id="end-screen" class="hidden glass-card rounded-2xl p-6 md:p-10 text-center max-w-2xl mx-auto my-auto shadow-xl">
+            <div id="end-icon-container" class="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                <i id="end-icon" class="text-5xl"></i>
+            </div>
+
+            <h2 id="end-title" class="text-2xl md:text-3xl font-extrabold text-slate-800 mb-2">Plantão Concluído!</h2>
+            <p id="end-subtitle" class="text-slate-600 mb-6">Confira o seu desempenho nas orientações de balcão da Farmatec.</p>
+
+            <!-- Card de Estatísticas -->
+            <div class="grid grid-cols-3 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
+                <div>
+                    <span class="block text-xs font-semibold text-slate-500">Pontuação Final</span>
+                    <span id="final-score" class="text-xl md:text-2xl font-black text-pharmacy-700">0 XP</span>
+                </div>
+                <div>
+                    <span class="block text-xs font-semibold text-slate-500">Acertos</span>
+                    <span id="final-accuracy" class="text-xl md:text-2xl font-black text-slate-800">0/8</span>
+                </div>
+                <div>
+                    <span class="block text-xs font-semibold text-slate-500">Classificação</span>
+                    <span id="final-rank" class="text-sm md:text-base font-bold text-clinical-600 mt-1 block">Estagiário</span>
+                </div>
+            </div>
+
+            <!-- Descrição da Performance -->
+            <div id="end-message" class="bg-blue-50 border border-blue-200 text-blue-900 p-4 rounded-xl text-sm mb-8 text-left">
+                <!-- Preenchido via JS -->
+            </div>
+
+            <button onclick="startGame()" class="w-full sm:w-auto bg-pharmacy-600 hover:bg-pharmacy-700 text-white font-bold text-lg px-8 py-3.5 rounded-xl shadow-lg transition-all">
+                <i class="fa-solid fa-rotate-right mr-2"></i> Iniciar Novo Plantão
+            </button>
+        </section>
+
+    </main>
+
+    <!-- MODAL DE FEEDBACK CLÍNICO (Exibido após responder) -->
+    <div id="feedback-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl transform transition-all border border-slate-100 flex flex-col max-h-[90vh]">
+            
+            <div class="flex items-center space-x-3 mb-4">
+                <div id="feedback-badge" class="w-12 h-12 rounded-xl flex items-center justify-center text-xl shrink-0">
+                    <i id="feedback-icon" class="fa-solid"></i>
+                </div>
+                <div>
+                    <h3 id="feedback-title" class="font-bold text-lg text-slate-800">Resposta Correta!</h3>
+                    <p id="feedback-points" class="text-xs font-semibold text-pharmacy-600">+100 XP obtidos</p>
+                </div>
+            </div>
+
+            <div class="overflow-y-auto mb-6 pr-1">
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-3">
+                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Manejo Farmacológico & Explicação:</h4>
+                    <p id="feedback-explanation" class="text-sm text-slate-700 leading-relaxed">
+                        Explication text goes here...
+                    </p>
+                </div>
+            </div>
+
+            <button onclick="nextCase()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-4 rounded-xl transition-all flex items-center justify-center space-x-2">
+                <span>Próximo Atendimento</span>
+                <i class="fa-solid fa-arrow-right text-sm"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL DE MANIFESTO / FARMACOPEIA GUIA RÁPIDO -->
+    <div id="pharmacopeia-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 flex flex-col max-h-[85vh]">
+            
+            <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+                <div class="flex items-center space-x-2 text-pharmacy-700">
+                    <i class="fa-solid fa-book-medical text-2xl"></i>
+                    <h3 class="font-extrabold text-xl">Guia de Balcão Farmatec</h3>
+                </div>
+                <button onclick="togglePharmacopeiaModal()" class="text-slate-400 hover:text-slate-600 p-2 rounded-lg">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <div class="overflow-y-auto my-4 space-y-6 pr-2">
+                
+                <!-- Guia Levotiroxina -->
+                <div class="bg-emerald-50/60 border border-emerald-200 rounded-xl p-4">
+                    <div class="flex items-center space-x-2 text-emerald-800 font-bold text-lg mb-2">
+                        <i class="fa-solid fa-pills"></i>
+                        <h4>Levotiroxina (Hormônio Tireoidiano)</h4>
+                    </div>
+                    <ul class="text-sm text-slate-700 space-y-2 list-disc list-inside">
+                        <li><strong>Modo de Uso:</strong> Pela manhã, em jejum, com copo cheio de água (30 a 60 min antes do café).</li>
+                        <li><strong>Interações Redutoras de Absorção:</strong> Alimentos (café, leite), suplementos de Cálcio e Ferro, e antiácidos (hidróxido de alumínio). Dar intervalo mínimo de 4 horas!</li>
+                        <li><strong>Dose Esquecida:</strong> Tomar assim que lembrar (se no mesmo dia). Nunca dobrar a dose no dia seguinte.</li>
+                        <li><strong>Sinais de Hiperdosagem:</strong> Palpitações, taquicardia, insônia, tremores, ansiedade e perda de peso inexplicável.</li>
+                    </ul>
+                </div>
+
+                <!-- Guia Varfarina -->
+                <div class="bg-rose-50/60 border border-rose-200 rounded-xl p-4">
+                    <div class="flex items-center space-x-2 text-rose-800 font-bold text-lg mb-2">
+                        <i class="fa-solid fa-vial"></i>
+                        <h4>Varfarina (Anticoagulante Oral)</h4>
+                    </div>
+                    <ul class="text-sm text-slate-700 space-y-2 list-disc list-inside">
+                        <li><strong>Estreita Margem Terapêutica:</strong> Requer monitoramento contínuo do INR/TAP (Alvo comum: 2.0 a 3.0).</li>
+                        <li><strong>Interação com AINEs:</strong> Ibuprofeno, Aspirina, Diclofenaco e Nimesulida aumentam drasticamente o risco de hemorragias gastrointestinais. Usar Paracetamol/Dipirona sob orientação.</li>
+                        <li><strong>Dieta & Vitamina K:</strong> Vegetais verde-escuros (couve, espinafre, brócolis) contêm Vitamina K e inibem o efeito do remédio. Não é proibido, mas o consumo deve ser <strong>regular e constante</strong>.</li>
+                        <li><strong>Sinais de Alarme (Sangramento):</strong> Gengivorragia grave, manchas roxas na pele (equimoses), fezes pretas/com sangue, hematúria.</li>
+                        <li><strong>Cirurgias/Dentista:</strong> Sempre notificar o profissional de saúde para ajuste/suspensão prévia e exame de INR recente.</li>
+                    </ul>
+                </div>
+
+            </div>
+
+            <button onclick="togglePharmacopeiaModal()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-2.5 rounded-xl transition-all">
+                Fechar Guia
+            </button>
+        </div>
+    </div>
+
+    <script>
+        /* BASE DE DADOS DOS CASOS CLÍNICOS */
+        const cases = [
+            {
+                id: 1,
+                patientName: "Dona Maria Silva",
+                patientAge: "58 anos",
+                medication: "Levotiroxina",
+                medicationType: "levo",
+                history: "Diagnóstico de Hipotireoidismo primário. Apresentou TSH elevado na última consulta.",
+                dialogue: "Doutor, o médico aumentou minha dose de Levotiroxina porque meus exames não melhoraram. Mas eu tomo certinho todo dia de manhã com meu café com leite e suplemento de ferro!",
+                question: "Qual a orientação correta sobre a administração do medicamento?",
+                options: [
+                    {
+                        text: "Aumentar a ingestão de leite para ajudar na absorção do hormônio sintético.",
+                        correct: false
+                    },
+                    {
+                        text: "Tomar em jejum com água, aguardando de 30 a 60 minutos para tomar café e dar um intervalo de pelo menos 4 horas para o ferro.",
+                        correct: true
+                    },
+                    {
+                        text: "Mudar a dose para o horário do almoço e tomar juntamente com o ferro.",
+                        correct: false
+                    },
+                    {
+                        text: "Dobrar a dose aos finais de semana para compensar a falta de absorção.",
+                        correct: false
+                    }
+                ],
+                explanation: "A Levotiroxina requer meio ácido no estômago e jejum rigoroso para absorção adequada. Alimentos como leite e café, e minerais como Ferro e Cálcio, se ligam ao fármaco no trato gastrointestinal, reduzindo drasticamente sua biodisponibilidade e fazendo parecer que a dose prescrita é insuficiente."
+            },
+            {
+                id: 2,
+                patientName: "Seu Antônio Rocha",
+                patientAge: "65 anos",
+                medication: "Varfarina",
+                medicationType: "varf",
+                history: "Uso contínuo de Varfarina 5mg por Fibrilação Atrial.",
+                dialogue: "Estou com uma dor forte no joelho e o vizinho me indicou tomar Ibuprofeno de 600mg. Posso tomar sem problemas?",
+                question: "Qual deve ser a conduta farmacêutica diante do pedido do paciente?",
+                options: [
+                    {
+                        text: "Aprovar o uso, pois o Ibuprofeno é um analgésico comum e seguro.",
+                        correct: false
+                    },
+                    {
+                        text: "Orientar a não tomar Ibuprofeno. Anti-inflamatórios (AINEs) e anticoagulantes aumentam gravemente o risco de ulceração e sangramento gastrointestinal.",
+                        correct: true
+                    },
+                    {
+                        text: "Sugerir dobrar a dose de Varfarina nos dias em que tomar o Ibuprofeno.",
+                        correct: false
+                    },
+                    {
+                        text: "Orientar a tomar o Ibuprofeno com suco de laranja para neutralizar o efeito sanguíneo.",
+                        correct: false
+                    }
+                ],
+                explanation: "Anti-inflamatórios Não Esteroides (AINEs) como o Ibuprofeno inibem a agregação plaquetária e causam irritação na mucosa gástrica. Combinados com a Varfarina (anticoagulante), elevam em várias vezes o risco de hemorragia grave. Para dor leve/moderada, Paracetamol ou Dipirona em doses adequadas são opções mais seguras."
+            },
+            {
+                id: 3,
+                patientName: "Carlos Eduardo",
+                patientAge: "42 anos",
+                medication: "Levotiroxina",
+                medicationType: "levo",
+                history: "Tratamento de hipotireoidismo pós-tireoidectomia.",
+                dialogue: "Ontem fiquei até tarde no trabalho e esqueci completamente de tomar minha Levotiroxina pela manhã. O que devo fazer hoje?",
+                question: "Qual a recomendação correta para doses esquecidas de Levotiroxina?",
+                options: [
+                    {
+                        text: "Tomar duas pílulas no dia seguinte para compensar o dia perdido.",
+                        correct: false
+                    },
+                    {
+                        text: "Tomar a dose normal do dia em jejum e nunca dobrar a dose para compensar esquecimentos.",
+                        correct: true
+                    },
+                    {
+                        text: "Suspender o uso por 3 dias para reajustar o organismo.",
+                        correct: false
+                    },
+                    {
+                        text: "Tomar a dose esquecida junto com o jantar do dia seguinte.",
+                        correct: false
+                    }
+                ],
+                explanation: "A Levotiroxina possui uma meia-vida longa (cerca de 7 dias). O esquecimento ocasional de uma dose deve ser corrigido mantendo o esquema normal no dia seguinte. NUNCA se deve dobrar a dose para compensar, pois isso pode provocar picos plasmáticos e sintomas de tireotoxicose (como arritmias)."
+            },
+            {
+                id: 4,
+                patientName: "Helena Castro",
+                patientAge: "71 anos",
+                medication: "Varfarina",
+                medicationType: "varf",
+                history: "Prótese de valva cardíaca mecânica.",
+                dialogue: "Resolvi entrar em uma dieta saudável e passei a comer uma grande tigela de couve, espinafre e brócolis no almoço e no jantar todos os dias!",
+                question: "Como o consumo maciço de vegetais verdes afeta a terapia com Varfarina?",
+                options: [
+                    {
+                        text: "Aumenta o efeito do remédio, provocando hemorragias.",
+                        correct: false
+                    },
+                    {
+                        text: "Vegetais verde-escuros são ricos em Vitamina K, que antagoniza a Varfarina, reduzindo a anticoagulação e aumentando o risco de coágulos/trombose.",
+                        correct: true
+                    },
+                    {
+                        text: "Não causa nenhum impacto, pois vegetais só trazem benefícios ao sangue.",
+                        correct: false
+                    },
+                    {
+                        text: "Potencializa a absorção da Varfarina no fígado.",
+                        correct: false
+                    }
+                ],
+                explanation: "A Varfarina age inibindo os fatores de coagulação dependentes da Vitamina K. Vegetais folhosos verde-escuros são fontes abundantes de Vitamina K. Alterações bruscas na ingestão desses alimentos interferem diretamente na eficácia da Varfarina. O paciente não precisa banir os vegetais, mas deve manter o consumo CONSTANTE e moderado."
+            },
+            {
+                id: 5,
+                patientName: "Roberto Lima",
+                patientAge: "50 anos",
+                medication: "Levotiroxina",
+                medicationType: "levo",
+                history: "Aumento recente de dosagem prescrita por endocrinologista.",
+                dialogue: "Estou me sentindo muito agitado ultimamente, com o coração acelerado (palpitação), tremores nas mãos e dificuldades para dormir.",
+                question: "O que esses sintomas podem indicar em relação à dose de Levotiroxina?",
+                options: [
+                    {
+                        text: "Sinais claros de subdosagem (falta do remédio).",
+                        correct: false
+                    },
+                    {
+                        text: "Sinais de superdosagem/tireotoxicose iatrogênica (excesso de hormônio no sangue), exigindo reavaliação médica.",
+                        correct: true
+                    },
+                    {
+                        text: "Efeito colateral normal que desaparece ao tomar café concentrado.",
+                        correct: false
+                    },
+                    {
+                        text: "Alergia grave aos excipientes da fórmula comprimida.",
+                        correct: false
+                    }
+                ],
+                explanation: "Sintomas como taquicardia, palpitações, ansiedade, tremores, intolerância ao calor e insônia indicam excesso de hormônio tireoidiano (sintomas de hipertireoidismo/superdosagem). O farmacêutico deve orientar o paciente a entrar em contato com o médico para exames de TSH/T4L e reajuste da dose."
+            },
+            {
+                id: 6,
+                patientName: "Dona Lúcia Mendes",
+                patientAge: "68 anos",
+                medication: "Varfarina",
+                medicationType: "varf",
+                history: "Histórico de Trombose Venosa Profunda (TVP).",
+                dialogue: "Vou precisar extrair um dente no dentista na semana que vem. Preciso fazer alguma coisa em relação ao meu remédio do sangue?",
+                question: "Qual é a conduta adequada para pacientes em uso de Varfarina antes de procedimentos invasivos?",
+                options: [
+                    {
+                        text: "Suspender a Varfarina por conta própria 10 dias antes sem avisar ninguém.",
+                        correct: false
+                    },
+                    {
+                        text: "Informar o dentista e o médico prescritor para avaliar o valor recente de RNI (INR) e decidir sobre a manutenção ou ajuste temporário da Varfarina.",
+                        correct: true
+                    },
+                    {
+                        text: "Tomar uma dose extra de Varfarina logo após a cirurgia para cicatrizar mais rápido.",
+                        correct: false
+                    },
+                    {
+                        text: "Não dizer nada ao dentista, pois pequenas extrações não sangram.",
+                        correct: false
+                    }
+                ],
+                explanation: "Qualquer procedimento cirúrgico ou odontológico invasivo em usuários de Varfarina requer avaliação do RNI/INR recente (geralmente realizado 24 a 48h antes). O médico e o dentista alinham a necessidade de ponte de heparina ou se o nível de anticoagulação permite o procedimento com técnicas de hemostasia local."
+            },
+            {
+                id: 7,
+                patientName: "Paulo Souza",
+                patientAge: "60 anos",
+                medication: "Varfarina",
+                medicationType: "varf",
+                history: "Uso de Varfarina há 3 anos.",
+                dialogue: "Notei que minhas gengivas estão sangrando ao escovar e surgiram umas manchas roxas no meu braço sem eu ter me machucado.",
+                question: "Qual o nível de gravidade desse relato e qual a ação imediata do farmacêutico?",
+                options: [
+                    {
+                        text: "Trata-se de um evento leve; basta trocar a escova de dentes por uma mais macia.",
+                        correct: false
+                    },
+                    {
+                        text: "São sinais de alarme para risco de hemorragia por hipercoagulação/INR muito alto. O paciente deve realizar exame de INR e procurar atendimento médico urgente.",
+                        correct: true
+                    },
+                    {
+                        text: "Orientar o paciente a tomar vitamina C em altas doses para parar o sangramento.",
+                        correct: false
+                    },
+                    {
+                        text: "Recomendar tomar um anti-inflamatório para desinflamar a gengiva.",
+                        correct: false
+                    }
+                ],
+                explanation: "Gengivorragia espontânea, equimoses (manchas roxas) sem trauma, sangramento nasal, sangue na urina ou fezes escuras são sinais de que o sangue pode estar 'muito fino' (INR elevado/acima da faixa terapêutica). É uma situação de alto risco que necessita de avaliação médica imediata e dosagem de INR."
+            },
+            {
+                id: 8,
+                patientName: "Marcos Vinícius",
+                patientAge: "35 anos",
+                medication: "Levotiroxina",
+                medicationType: "levo",
+                history: "Tratamento de hipotireoidismo subclínico.",
+                dialogue: "Estou com muita azia e refluxo. Comprei um antiácido à base de Hidróxido de Alumínio. Posso tomar junto com a minha Levotiroxina de manhã?",
+                question: "Existe interação relevante entre antiácidos e a Levotiroxina?",
+                options: [
+                    {
+                        text: "Não, antiácidos ajudam a dissolver a Levotiroxina mais rápido.",
+                        correct: false
+                    },
+                    {
+                        text: "Sim, antiácidos com alumínio/magnésio reduzem significativamente a absorção da Levotiroxina. Deve haver um intervalo de pelo menos 4 horas entre eles.",
+                        correct: true
+                    },
+                    {
+                        text: "Deve-se misturar o antiácido na água junto com a Levotiroxina.",
+                        correct: false
+                    },
+                    {
+                        text: "A Levotiroxina perde o efeito se não for tomada acompanhada de antiácidos.",
+                        correct: false
+                    }
+                ],
+                explanation: "Antiácidos contendo Alumínio, Magnésio ou Carbonato de Cálcio neutralizam a acidez gástrica necessária para a absorção da Levotiroxina e podem formar quelatos insolúveis com o hormônio, anulando sua eficácia terapêutica. O intervalo de administração recomendado é de 4 horas."
+            }
+        ];
+
+        /* ESTADO DO JOGO */
+        let currentCaseIndex = 0;
+        let score = 0;
+        let lives = 3;
+        let correctAnswersCount = 0;
+        let combo = 0;
+
+        /* INICIALIZAÇÃO */
+        function startGame() {
+            currentCaseIndex = 0;
+            score = 0;
+            lives = 3;
+            correctAnswersCount = 0;
+            combo = 0;
+
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('game-screen').classList.add('flex');
+
+            renderCase();
+            updateHeaderUI();
+        }
+
+        /* ATUALIZA A INTERFACE DE STATUS */
+        function updateHeaderUI() {
+            // Atualizar Vidas
+            const livesContainer = document.getElementById('lives-container');
+            livesContainer.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                if (i < lives) {
+                    livesContainer.innerHTML += `<i class="fa-solid fa-heart pulse-heart"></i>`;
+                } else {
+                    livesContainer.innerHTML += `<i class="fa-regular fa-heart text-slate-300"></i>`;
+                }
+            }
+
+            // Atualizar Barra de Progresso
+            const progressPercent = ((currentCaseIndex) / cases.length) * 100;
+            document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+            document.getElementById('progress-text').innerText = `Caso ${currentCaseIndex + 1} de ${cases.length}`;
+
+            // Atualizar Score e Combo
+            document.getElementById('score-text').innerText = `${score} XP`;
+
+            const comboBadge = document.getElementById('combo-badge');
+            if (combo > 1) {
+                comboBadge.classList.remove('hidden');
+                document.getElementById('combo-count').innerText = `${combo}x Combo!`;
+            } else {
+                comboBadge.classList.add('hidden');
+            }
+        }
+
+        /* RENDERIZA O CASO ATUAL */
+        function renderCase() {
+            const currentCase = cases[currentCaseIndex];
+
+            // Detalhes do Paciente
+            document.getElementById('patient-name').innerText = currentCase.patientName;
+            document.getElementById('patient-age').innerText = currentCase.patientAge;
+            
+            const medBadge = document.getElementById('medication-badge');
+            medBadge.innerText = currentCase.medication;
+            if (currentCase.medicationType === 'levo') {
+                medBadge.className = "text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300";
+            } else {
+                medBadge.className = "text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300";
+            }
+
+            document.getElementById('patient-history').innerText = `Histórico: ${currentCase.history}`;
+            document.getElementById('patient-dialogue').innerText = `"${currentCase.dialogue}"`;
+            document.getElementById('case-question').innerText = currentCase.question;
+
+            // Opções
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+
+            const letters = ['A', 'B', 'C', 'D'];
+
+            currentCase.options.forEach((opt, idx) => {
+                const button = document.createElement('button');
+                button.className = "btn-option w-full text-left bg-white hover:bg-slate-50 border border-slate-200 hover:border-pharmacy-500 rounded-xl p-4 flex items-start space-x-3 transition-all";
+                button.onclick = () => handleOptionSelect(opt.correct);
+
+                button.innerHTML = `
+                    <span class="bg-slate-100 text-slate-700 font-bold text-xs px-2.5 py-1 rounded-lg border border-slate-200 mt-0.5">${letters[idx]}</span>
+                    <span class="text-sm md:text-base text-slate-700 font-medium leading-snug flex-grow">${opt.text}</span>
+                `;
+
+                optionsContainer.appendChild(button);
+            });
+
+            updateHeaderUI();
+        }
+
+        /* MANEJO DAS RESPOSTAS */
+        function handleOptionSelect(isCorrect) {
+            const currentCase = cases[currentCaseIndex];
+            const modal = document.getElementById('feedback-modal');
+            const badge = document.getElementById('feedback-badge');
+            const icon = document.getElementById('feedback-icon');
+            const title = document.getElementById('feedback-title');
+            const points = document.getElementById('feedback-points');
+            const explanation = document.getElementById('feedback-explanation');
+
+            if (isCorrect) {
+                combo++;
+                correctAnswersCount++;
+                const gainedPoints = 100 * combo;
+                score += gainedPoints;
+
+                badge.className = "w-12 h-12 rounded-xl flex items-center justify-center text-xl shrink-0 bg-emerald-100 text-emerald-600";
+                icon.className = "fa-solid fa-circle-check";
+                title.innerText = "Excelente Conduta!";
+                title.className = "font-bold text-lg text-emerald-800";
+                points.innerText = `+${gainedPoints} XP (Combo ${combo}x)`;
+            } else {
+                combo = 0;
+                lives--;
+
+                badge.className = "w-12 h-12 rounded-xl flex items-center justify-center text-xl shrink-0 bg-rose-100 text-rose-600";
+                icon.className = "fa-solid fa-circle-xmark";
+                title.innerText = "Atenção: Conduta Incorreta";
+                title.className = "font-bold text-lg text-rose-800";
+                points.innerText = "0 XP obtidos (Perdeu 1 Vida de Segurança)";
+            }
+
+            explanation.innerText = currentCase.explanation;
+            modal.classList.remove('hidden');
+            updateHeaderUI();
+        }
+
+        /* PRÓXIMO CASO OU FIM DE JOGO */
+        function nextCase() {
+            document.getElementById('feedback-modal').classList.add('hidden');
+
+            if (lives <= 0 || currentCaseIndex >= cases.length - 1) {
+                showEndScreen();
+            } else {
+                currentCaseIndex++;
+                renderCase();
+            }
+        }
+
+        /* TELA DE RESULTADOS FINALS */
+        function showEndScreen() {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.remove('hidden');
+
+            const endIconContainer = document.getElementById('end-icon-container');
+            const endIcon = document.getElementById('end-icon');
+            const endTitle = document.getElementById('end-title');
+            const endSubtitle = document.getElementById('end-subtitle');
+            const finalScore = document.getElementById('final-score');
+            const finalAccuracy = document.getElementById('final-accuracy');
+            const finalRank = document.getElementById('final-rank');
+            const endMessage = document.getElementById('end-message');
+
+            finalScore.innerText = `${score} XP`;
+            finalAccuracy.innerText = `${correctAnswersCount}/${cases.length}`;
+
+            if (lives > 0 && correctAnswersCount >= 6) {
+                endIconContainer.className = "w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner bg-emerald-100 text-emerald-600";
+                endIcon.className = "fa-solid fa-award text-5xl";
+                endTitle.innerText = "Parabéns, Mestre Farmacêutico!";
+                endSubtitle.innerText = "Sua conduta clínica garante a máxima segurança dos pacientes da Farmatec.";
+                finalRank.innerText = "Especialista Farmatec";
+                finalRank.className = "text-sm md:text-base font-bold text-emerald-600 mt-1 block";
+
+                endMessage.className = "bg-emerald-50 border border-emerald-200 text-emerald-900 p-4 rounded-xl text-sm mb-8 text-left";
+                endMessage.innerHTML = `
+                    <h5 class="font-bold mb-1"><i class="fa-solid fa-star text-amber-500 mr-1"></i> Desempenho Excepcional</h5>
+                    Você demonstrou domínio completo sobre a dispensação segura de <strong>Levotiroxina</strong> e <strong>Varfarina</strong>. Conhece perfeitamente os limites de dose, interações alimentares, medicamentosas e condutas de urgência!
+                `;
+            } else if (lives > 0 && correctAnswersCount >= 4) {
+                endIconContainer.className = "w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner bg-amber-100 text-amber-600";
+                endIcon.className = "fa-solid fa-user-doctor text-5xl";
+                endTitle.innerText = "Bom Trabalho!";
+                endSubtitle.innerText = "Você atendeu os pacientes com bom nível de conhecimento.";
+                finalRank.innerText = "Farmacêutico Pleno";
+                finalRank.className = "text-sm md:text-base font-bold text-amber-600 mt-1 block";
+
+                endMessage.className = "bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded-xl text-sm mb-8 text-left";
+                endMessage.innerHTML = `
+                    <h5 class="font-bold mb-1"><i class="fa-solid fa-circle-info text-amber-600 mr-1"></i> Quase lá!</h5>
+                    Seu desempenho foi satisfatório, mas é importante reforçar o estudo sobre interações de minerais com Levotiroxina e a constante de Vitamina K para usuários de Varfarina. Use nosso <strong>Manual de Consulta</strong>!
+                `;
+            } else {
+                endIconContainer.className = "w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner bg-rose-100 text-rose-600";
+                endIcon.className = "fa-solid fa-triangle-exclamation text-5xl";
+                endTitle.innerText = "Atenção Necessária!";
+                endSubtitle.innerText = "O plantão apresentou falhas críticas de segurança aos pacientes.";
+                finalRank.innerText = "Estagiário em Treinamento";
+                finalRank.className = "text-sm md:text-base font-bold text-rose-600 mt-1 block";
+
+                endMessage.className = "bg-rose-50 border border-rose-200 text-rose-900 p-4 rounded-xl text-sm mb-8 text-left";
+                endMessage.innerHTML = `
+                    <h5 class="font-bold mb-1"><i class="fa-solid fa-triangle-exclamation text-rose-600 mr-1"></i> Revisão Recomendada</h5>
+                    Medicamentos como Varfarina e Levotiroxina possuem margem estreita e alto risco de eventos adversos. Revise o <strong>Manual de Consulta Rápida</strong> no topo da tela e tente novamente!
+                `;
+            }
+        }
+
+        /* TOGGLE MANUAL DO FARMACÊUTICO */
+        function togglePharmacopeiaModal() {
+            const modal = document.getElementById('pharmacopeia-modal');
+            modal.classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>

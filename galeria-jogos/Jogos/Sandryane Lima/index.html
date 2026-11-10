@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Desafio do Alendronato</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #b8e5dc, #d9f3ed);
+    text-align: center;
+    padding: 20px;
+}
+
+.container {
+    background: white;
+    max-width: 450px;
+    margin: 30px auto;
+    padding: 25px;
+    border-radius: 20px;
+    box-shadow: 0 4px 12px #888;
+}
+
+h1 {
+    color: #168675;
+}
+
+button {
+    display: block;
+    width: 100%;
+    padding: 13px;
+    margin: 10px 0;
+    border: none;
+    border-radius: 10px;
+    background: #27a992;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #167c6c;
+}
+
+#resultado {
+    font-weight: bold;
+    margin: 15px;
+}
+
+#proxima {
+    background: #3867b0;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>💊 Desafio do Alendronato</h1>
+
+<p>Teste seus conhecimentos sobre esse medicamento!</p>
+
+<h3 id="pergunta"></h3>
+
+<div id="opcoes"></div>
+
+<p id="resultado"></p>
+
+<p id="pontos">Pontuação: 0</p>
+
+<button id="proxima" onclick="proximaPergunta()" style="display:none">
+Próxima pergunta
+</button>
+
+</div>
+
+<script>
+
+const perguntas = [
+{
+pergunta: "1. Para que serve o Alendronato?",
+opcoes: [
+"Tratar a osteoporose",
+"Tratar a gripe",
+"Combater infecções"
+],
+correta: 0
+},
+{
+pergunta: "2. A qual classe de medicamentos pertence?",
+opcoes: [
+"Antibióticos",
+"Bisfosfonatos",
+"Analgésicos"
+],
+correta: 1
+},
+{
+pergunta: "3. Qual é a principal função do medicamento?",
+opcoes: [
+"Diminuir a pressão arterial",
+"Auxiliar na proteção dos ossos",
+"Melhorar a visão"
+],
+correta: 1
+},
+{
+pergunta: "4. Quem deve orientar o uso do Alendronato?",
+opcoes: [
+"Um profissional de saúde",
+"Qualquer amigo",
+"Ninguém"
+],
+correta: 0
+},
+{
+pergunta: "5. O medicamento deve ser utilizado de que maneira?",
+opcoes: [
+"Sem seguir orientações",
+"Conforme a prescrição médica",
+"Em qualquer quantidade"
+],
+correta: 1
+}
+];
+
+let atual = 0;
+let pontos = 0;
+
+function mostrarPergunta() {
+    document.getElementById("resultado").innerHTML = "";
+    document.getElementById("proxima").style.display = "none";
+
+    let p = perguntas[atual];
+
+    document.getElementById("pergunta").innerHTML = p.pergunta;
+
+    let html = "";
+
+    p.opcoes.forEach((opcao, index) => {
+        html += `<button onclick="responder(${index})">${opcao}</button>`;
+    });
+
+    document.getElementById("opcoes").innerHTML = html;
+}
+
+function responder(escolha) {
+    let correta = perguntas[atual].correta;
+    let botoes = document.querySelectorAll("#opcoes button");
+
+    botoes.forEach(botao => botao.disabled = true);
+
+    if (escolha === correta) {
+        pontos++;
+        document.getElementById("resultado").innerHTML =
+        "🎉 Parabéns! Você acertou!";
+    } else {
+        document.getElementById("resultado").innerHTML =
+        "❌ Não foi dessa vez! A resposta correta é: " +
+        perguntas[atual].opcoes[correta];
+    }
+
+    document.getElementById("pontos").innerHTML =
+    "Pontuação: " + pontos;
+
+    document.getElementById("proxima").style.display = "block";
+}
+
+function proximaPergunta() {
+    atual++;
+
+    if (atual < perguntas.length) {
+        mostrarPergunta();
+    } else {
+        document.querySelector(".container").innerHTML =
+        `<h1>🏆 Fim do jogo!</h1>
+        <h2>Você fez ${pontos} de 5 pontos!</h2>
+        <p>Continue aprendendo sobre os medicamentos!</p>
+        <button onclick="location.reload()">Jogar novamente</button>`;
+    }
+}
+
+mostrarPergunta();
+
+</script>
+
+</body>
+</html>
+

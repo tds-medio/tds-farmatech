@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TDS Farmatech — Catálogo de Jogos (27 Jogos)</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,300;1,9..144,400&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+
+  <!-- Transição e Estilos do seu projeto -->
+  <link rel="stylesheet" href="transicao.css">
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+    .catalog-hero { padding: 50px 0 30px; }
+
+    .catalog-banner {
+      position: relative;
+      border-radius: var(--radius-lg, 16px);
+      background: linear-gradient(135deg, var(--blue-deep, #071527), var(--blue, #0d2341));
+      color: white;
+      padding: 40px;
+      overflow: hidden;
+      box-shadow: var(--shadow-lg, 0 10px 25px rgba(0,0,0,0.15));
+    }
+
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      margin-top: 28px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .search-input {
+      flex: 1;
+      min-width: 260px;
+      padding: 12px 20px;
+      border-radius: 999px;
+      border: 1px solid var(--line, #e2e8f0);
+      background: white;
+      color: var(--text, #1e293b);
+      outline: none;
+      font-size: 0.95rem;
+    }
+
+    .search-input:focus { border-color: var(--blue-2, #1b4980); }
+
+    .filter-btn {
+      padding: 8px 18px;
+      border-radius: 999px;
+      border: 1px solid var(--line, #cbd5e1);
+      background: white;
+      color: var(--blue, #0d2341);
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .filter-btn.active, .filter-btn:hover {
+      background: var(--blue, #0d2341);
+      color: white;
+    }
+
+    .counter-badge {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.85rem;
+      color: var(--muted, #64748b);
+      margin-top: 15px;
+    }
+
+    .game-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+      gap: 24px;
+      margin-top: 20px;
+    }
+
+    .game-card {
+      background: white;
+      border: 1px solid var(--line, #e2e8f0);
+      border-radius: var(--radius-lg, 16px);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm, 0 2px 5px rgba(0,0,0,0.05));
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .game-card:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--shadow-lg, 0 12px 24px rgba(0,0,0,0.12));
+    }
+
+    .game-thumb {
+      position: relative;
+      width: 100%;
+      height: 160px;
+      background: #0d2341;
+      overflow: hidden;
+    }
+
+    .game-thumb::before {
+      content: attr(data-emoji);
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.2rem;
+      background: linear-gradient(135deg, #0d2341, #1b4980);
+    }
+
+    .game-thumb a { position: relative; z-index: 1; display: block; width: 100%; height: 100%; }
+
+    .game-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+
+    .game-card:hover .game-thumb img { transform: scale(1.05); }
+
+    .game-tag {
+      z-index: 2;
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(13, 35, 65, 0.88);
+      backdrop-filter: blur(6px);
+      color: white;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-family: "JetBrains Mono", monospace;
+      text-transform: uppercase;
+    }
+
+    .game-info {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+      justify-content: space-between;
+    }
+
+    .game-title {
+      font-family: "Fraunces", Georgia, serif;
+      font-size: 1.15rem;
+      color: var(--blue, #0d2341);
+      margin-bottom: 4px;
+    }
+
+    .game-author {
+      font-size: 0.78rem;
+      color: #64748b;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .game-desc {
+      color: #475569;
+      font-size: 0.84rem;
+      line-height: 1.45;
+      margin-bottom: 16px;
+    }
+
+    .btn-play {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 9px;
+      border-radius: 999px;
+      background: var(--blue, #0d2341);
+      color: white;
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-decoration: none;
+      transition: 0.2s ease;
+    }
+
+    .btn-play:hover { background: #1b4980; }
+  </style>
+  <script src="../feedback.js"></script>
+</head>
+<body>
+
+  <div id="progress-bar" style="position:fixed;top:0;left:0;height:4px;width:0;background:linear-gradient(90deg,#0e3a6e,#0e6e47);z-index:9999;"></div>
+
+  <!-- NAVBAR -->
+  <header class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="../TDS-FarmaTech.html" class="brand">
+        <img src="images/logo-dark.png" alt="TDS Farmatech" onerror="this.onerror=null;this.src='../public/images/logo.png'"/>   
+        <div class="brand-name">TDS <span>Farmatech</span></div>
+      </a>
+
+      <div class="nav-actions">
+        <a href="../TDS-FarmaTech.html" class="nav-btn">← Voltar ao Início</a>
+        <div class="nav-static">CATÁLOGO DE JOGOS</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- SEÇÃO PRINCIPAL -->
+  <section class="catalog-hero">
+    <div class="container">
+      
+      <div class="catalog-banner reveal">
+        <span class="eyebrow" style="background:rgba(255,255,255,0.15); border-color:rgba(255,255,255,0.25); color:#fff;">
+          PROJETO INTERDISCIPLINAR
+        </span>
+        <h1 class="hero-title" style="color:#fff; margin-top:8px;">
+          Catálogo de <em>Jogos FarmaTech</em>
+        </h1>
+        <p style="color:rgba(255,255,255,0.8); max-width: 650px; margin-top:8px; font-size:0.95rem;">
+          Explore os 27 jogos educativos criados pelos alunos de Desenvolvimento de Sistemas e Farmácia.
+        </p>
+      </div>
+
+      <!-- BUSCA E FILTROS -->
+      <div class="filter-bar reveal">
+        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Buscar por nome do jogo, aluno ou tema..." oninput="filtrarGeral()">
+        <button class="filter-btn active" onclick="filtrarCat('todos', this)">Todos</button>
+        <button class="filter-btn" onclick="filtrarCat('quiz', this)">Quizzes</button>
+        <button class="filter-btn" onclick="filtrarCat('caca-palavras', this)">Caça-Palavras & Forca</button>
+        <button class="filter-btn" onclick="filtrarCat('acao', this)">Ação & Runner</button>
+        <button class="filter-btn" onclick="filtrarCat('memoria', this)">Memória & Labirinto</button>
+        <button class="filter-btn" onclick="filtrarCat('simulacao', this)">Simulação & RPG</button>
+      </div>
+
+      <div class="counter-badge" id="counterText">Exibindo 28 de 28 jogos</div>
+
+      <!-- GRID DOS 27 JOGOS -->
+      <div class="game-grid" id="gameGrid">
+
+        <!-- 1. André -->
+        <article class="game-card reveal" data-cat="acao">
+          <div class="game-thumb" data-emoji="☕">
+            <a href="galeria-jogos/Jogos/Andr%C3%A9%20/taquecardiaco.html"><img src="Jogos/Andr%C3%A9/Captura%20de%20tela%20de%202026-10-19%2008-58-32.png" alt="Clonazepam vs Café — Sobreviva!" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">Ação</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">Clonazepam vs Café — Sobreviva!</h3>
+              <div class="game-author">Criado por: André</div>
+              <p class="game-desc">Equilibre sono e agitação entre o clonazepam e o café, desvie das camas e fuja da taquicardia.</p>
+            </div>
+            <a href="Jogos/Andr%C3%A9%20/taquecardiaco.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+        <!-- 2. Benjamim -->
+        <article class="game-card reveal" data-cat="memoria">
+          <div class="game-thumb" data-emoji="🧭">
+            <a href="galeria-jogos/Jogos/benjamim/jogo2.0.html"><img src="Jogos/benjamim/Captura%20de%20tela%20de%202026-10-19%2008-39-15.png" alt="Labirinto da Farmacologia" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">Labirinto</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">Labirinto da Farmacologia</h3>
+              <div class="game-author">Criado por: Benjamim</div>
+              <p class="game-desc">Guie o remédio pelo labirinto até o seu local de ação no organismo usando as setas do teclado.</p>
+            </div>
+            <a href="Jogos/benjamim/jogo2.0.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+        <!-- 3. Brenda Sabin -->
+        <article class="game-card reveal" data-cat="caca-palavras">
+          <div class="game-thumb" data-emoji="🎀">
+            <a href="galeria-jogos/Jogos/BrendaSabin/labirinto.html"><img src="Jogos/BrendaSabin/print.jpg" alt="Caça-Palavras Quiz: Levotiroxina" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">Caça-Palavras + Quiz</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">Caça-Palavras Quiz: Levotiroxina</h3>
+              <div class="game-author">Criado por: Brenda Sabin</div>
+              <p class="game-desc">Responda 15 perguntas sobre a Levotiroxina para liberar o caça-palavras e ganhar pontos extras.</p>
+            </div>
+            <a href="Jogos/BrendaSabin/labirinto.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+        <!-- 4. Bryan Iago -->
+        <article class="game-card reveal" data-cat="simulacao">
+          <div class="game-thumb" data-emoji="🏥">
+            <a href="galeria-jogos/Jogos/Bryan%20Iago/Amor_hospitalar_cartoon.html"><img src="Jogos/Bryan%20Iago/1790171472149.png" alt="Hospital dos Enigmas" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">RPG</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">Hospital dos Enigmas</h3>
+              <div class="game-author">Criado por: Bryan Iago</div>
+              <p class="game-desc">Pequeno RPG de investigação hospitalar: atenda três pacientes e escolha a conduta adequada.</p>
+            </div>
+            <a href="Jogos/Bryan%20Iago/Amor_hospitalar_cartoon.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+        <!-- 5. Carlos Henrique -->
+        <article class="game-card reveal" data-cat="acao">
+          <div class="game-thumb" data-emoji="💊">
+            <a href="galeria-jogos/Jogos/Carlos%20Henrique/Qwen_html_20260921_kgi5bwgb6.html"><img src="Jogos/Carlos%20Henrique/Screenshot_2026-09-23-08-14-37-730_com.android.chrome.jpg" alt="Flappy Cure — A Fuga dos Efeitos" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">Ação</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">Flappy Cure — A Fuga dos Efeitos</h3>
+              <div class="game-author">Criado por: Carlos Henrique</div>
+              <p class="game-desc">Escolha seu remédio, voe entre os obstáculos e fuja dos efeitos colaterais coletando água e antídotos.</p>
+            </div>
+            <a href="Jogos/Carlos%20Henrique/Qwen_html_20260921_kgi5bwgb6.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+        <!-- 6. Erick -->
+        <article class="game-card reveal" data-cat="acao">
+          <div class="game-thumb" data-emoji="🩸">
+            <a href="Jogos/Erick/VARFARINA-BATALHA.html"><img src="Jogos/Erick/Captura%20de%20tela%20de%202026-10-07%2008-11-56.png" alt="Varfarina — Equilíbrio no Sangue" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">Ação</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">Varfarina — Equilíbrio no Sangue</h3>
+              <div class="game-author">Criado por: Erick</div>
+              <p class="game-desc">Entre na corrente sanguínea e enfrente coágulos, mutações e chefes fase a fase.</p>
+            </div>
+            <a href="Jogos/Erick/VARFARINA-BATALHA.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+        <!-- 7. gabriel felipe -->
+        <article class="game-card reveal" data-cat="quiz">
+          <div class="game-thumb" data-emoji="🔤">
+            <a href="galeria-jogos/Jogos/gabriel%20felipe/voce_sabe.html/quiz_medicamento_comida.html"><img src="Jogos/gabriel%20felipe/voce_sabe.html/Captura%20de%20tela%20de%202026-10-07%2008-28-38.png" alt="Jogo da Forca: Levotiroxina" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">Quizz</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">Quizz: Medicamento e comida</h3>
+              <div class="game-author">Criado por: Gabriel Felipe</div>
+              <p class="game-desc">Aprenda mais sobre a interação do alimento e medicamento nesse quizz.</p>
+            </div>
+            <a href="Jogos/gabriel%20felipe/voce_sabe.html/quiz_medicamento_comida.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+        <!-- 7. Gabriel Henrique -->
+        <article class="game-card reveal" data-cat="caca-palavras">
+          <div class="game-thumb" data-emoji="🔤">
+            <a href="Jogos/Gabriel%20Henrique/Levotiroxina.html"><img src="Jogos/Gabriel%20Henrique/Captura%20de%20tela%20de%202026-09-22%2012-38-12.png" alt="Jogo da Forca: Levotiroxina" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">Forca</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">Jogo da Forca: Levotiroxina</h3>
+              <div class="game-author">Criado por: Gabriel Henrique</div>
+              <p class="game-desc">Descubra as palavras ligadas à Levotiroxina com a ajuda de dicas e acumule pontos.</p>
+            </div>
+            <a href="Jogos/Gabriel%20Henrique/Levotiroxina.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+        <!-- 8. Guilherme Henrique -->
+        <article class="game-card reveal" data-cat="acao">
+          <div class="game-thumb" data-emoji="💉">
+            <a href="Jogos/Guilherme%20Henrique/jump2.html"><img src="Jogos/Guilherme%20Henrique/guilherme.png" alt="Jogo da Forca: Levotiroxina" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">Plataforma</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">Missão remédio</h3>
+              <div class="game-author">Criado por: Guilherme Henrique</div>
+              <p class="game-desc">Pule, atire e colete seringas para derrotar o Chefão Virusão. Controles: setas, espaço e X.</p>
+            </div>
+            <a href="Jogos/Guilherme%20Henrique/jump2.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+        <!-- 9. Igor Leão -->
+        <article class="game-card reveal" data-cat="simulacao">
+          <div class="game-thumb" data-emoji="🔎">
+            <a href="Jogos/Igor%20Le%C3%A3o/Varfarina%2BAINE.html"><img src="Jogos/Igor%20Le%C3%A3o/Digitalizado_20260923-1028.png" alt="Varfarina — Controle de Acesso" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">Simulação</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">Varfarina — Controle de Acesso</h3>
+              <div class="game-author">Criado por: Igor Leão</div>
+              <p class="game-desc">Controle a entrada de pacientes numa clínica: examine documentos e identifique inconsistências.</p>
+            </div>
+            <a href="Jogos/Igor%20Le%C3%A3o/Varfarina%2BAINE.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+        <!-- 10. Isabella M. -->
+        <article class="game-card reveal" data-cat="simulacao">
+          <div class="game-thumb" data-emoji="🛡️">
+            <a href="Jogos/isabella-manini/manini.html"><img src="Jogos/isabella-manini/Captura%20de%20tela%20de%202026-09-22%2012-10-43.png" alt="Bio-Survival: Mundo Aberto RPG" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">RPG</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">Bio-Survival: Mundo Aberto RPG</h3>
+              <div class="game-author">Criado por: Isabella M.</div>
+              <p class="game-desc">Sobreviva num mundo aberto controlando amoxicilina, varfarina, vitamina K e o nível de INR.</p>
+            </div>
+            <a href="Jogos/isabella-manini/manini.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+        <!-- 11. Isabelle Beltran -->
+        <article class="game-card reveal" data-cat="quiz">
+          <div class="game-thumb" data-emoji="💊">
+            <a href="Jogos/Isabelle%20beltran/amoxilina_x_varafina.html"><img src="Jogos/Isabelle%20beltran/Digitalizado_20260923-0824.png" alt="Desafio: Amoxicilina × Varfarina" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">Quiz</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">Desafio: Amoxicilina × Varfarina</h3>
+              <div class="game-author">Criado por: Isabelle Beltran</div>
+              <p class="game-desc">Perguntas sobre a interação entre a amoxicilina e a varfarina, com pontuação a cada acerto.</p>
+            </div>
+            <a href="Jogos/Isabelle%20beltran/amoxilina_x_varafina.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+        <!-- 12. Josué Messias -->
+        <article class="game-card reveal" data-cat="simulacao">
+          <div class="game-thumb" data-emoji="🧪">
+            <a href="Jogos/Josu%C3%A9%20Messias/index.html.html"><img src="Jogos/Josu%C3%A9%20Messias/Captura%20de%20tela%202026-09-23%20143516.png" alt="Lab: Interações Perigosas" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">Laboratório</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">Lab: Interações Perigosas</h3>
+              <div class="game-author">Criado por: Josué Messias</div>
+              <p class="game-desc">Combine dois elementos na máquina de análise e descubra 10 interações fármaco-fármaco e alimento-fármaco.</p>
+            </div>
+            <a href="Jogos/Josu%C3%A9%20Messias/index.html.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+        <!-- 13. Leonardo Kauan -->
+        <article class="game-card reveal" data-cat="caca-palavras">
+          <div class="game-thumb" data-emoji="🔍">
+            <a href="Jogos/Leonardo%20kauan/caca_palavras_dos_remedios.html"><img src="Jogos/Leonardo%20kauan/Screenshot_20261007-083052.Chrome%20%281%29.png" alt="Caça-Palavras do FarmaTech" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">Caça-Palavras</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">Caça-Palavras do FarmaTech</h3>
+              <div class="game-author">Criado por: Leonardo Kauan</div>
+              <p class="game-desc">Encontre quatro medicamentos escondidos na grade, em qualquer direção, em até 8 minutos.</p>
+            </div>
+            <a href="Jogos/Leonardo%20kauan/caca_palavras_dos_remedios.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+         <!-- 13. Lucas Miguel -->
+        <article class="game-card reveal" data-cat="RPG">
+          <div class="game-thumb" data-emoji="🔍">
+            <a href="Jogos/lucas%20miguel/Medic_Heroes_RPG_Skins_Armas_FIX.html"><img src="Jogos/lucas%20miguel/Captura%20de%20tela%20de%202026-10-06%2012-40-32.png" alt="Caça-Palavras do FarmaTech" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">RPG</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">Medico Heróis RPG</h3>
+              <div class="game-author">Criado por: Lucas Miguel</div>
+              <p class="game-desc">Participe de uma aventura em um RPG do conhecimento sobre os remédios.</p>
+            </div>
+            <a href="Jogos/lucas%20miguel/Medic_Heroes_RPG_Skins_Armas_FIX.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+
+        <!-- 14. Maicon -->
+        <article class="game-card reveal" data-cat="caca-palavras">
+          <div class="game-thumb" data-emoji="🔤">
+            <a href="Jogos/Maicon/jogo_da_forca.html"><img src="Jogos/Maicon/Digitalizado_20260923-1203.png" alt="Jogo da Forca: Ranitidina" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">Forca</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">Jogo da Forca: Ranitidina</h3>
+              <div class="game-author">Criado por: Maicon</div>
+              <p class="game-desc">Forca sobre interações medicamentosas e a farmacologia da Ranitidina, com dicas.</p>
+            </div>
+            <a href="Jogos/Maicon/jogo_da_forca.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+        <!-- 15. Marcos -->
+        <article class="game-card reveal" data-cat="simulacao">
+          <div class="game-thumb" data-emoji="🏪">
+            <a href="Jogos/Marcos/desafio_farmatec_mestre_da_dispensa_o.html"><img src="Jogos/Marcos/Captura%20de%20tela%202026-09-23%20204857.png" alt="Desafio Mestre da Dispensação" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">Simulação</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">Desafio Mestre da Dispensação</h3>
+              <div class="game-author">Criado por: Marcos</div>
+              <p class="game-desc">Assuma o balcão e resolva 8 casos clínicos de Levotiroxina e Varfarina, com vidas e XP.</p>
+            </div>
+            <a href="Jogos/Marcos/desafio_farmatec_mestre_da_dispensa_o.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+        <!-- 16. Maria Eduarda -->
+        <article class="game-card reveal" data-cat="acao">
+          <div class="game-thumb" data-emoji="🏃">
+            <a href="Jogos/Maria%20Eduarda/Pharma%20runner.%20MariaE/jogo%20HTML.html"><img src="Jogos/Maria%20Eduarda/Captura%20de%20Tela%20%2854%29.png" alt="Pharma Runner" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">Runner</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">Pharma Runner</h3>
+              <div class="game-author">Criado por: Maria Eduarda</div>
+              <p class="game-desc">Corra coletando Levotiroxina, Alendronato e Varfarina e desvie de leite e excesso de vitamina K.</p>
+            </div>
+            <a href="Jogos/Maria%20Eduarda/Pharma%20runner.%20MariaE/jogo%20HTML.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+        <!-- 17. Matheus -->
+        <article class="game-card reveal" data-cat="acao">
+          <div class="game-thumb" data-emoji="⚕️">
+            <a href="Jogos/Matheus/amoxilina.html"><img src="Jogos/Matheus/amoxilina.png" alt="Farmácia Rush: Amoxicilina × Varfarina" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">Ação</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">Farmácia Rush: Amoxicilina × Varfarina</h3>
+              <div class="game-author">Criado por: Matheus</div>
+              <p class="game-desc">Controle a cápsula pelo tratamento e evite situações que aumentam o risco de sangramento (INR).</p>
+            </div>
+            <a href="Jogos/Matheus/amoxilina.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+        <!-- 18. Miguel Felipe -->
+        <article class="game-card reveal" data-cat="memoria">
+          <div class="game-thumb" data-emoji="🧠">
+            <a href="Jogos/Miguel%20Felipe/jogomemoria-1.html"><img src="Jogos/Miguel%20Felipe/WhatsApp%20Image%202026-09-23%20at%2012.21.22.jpeg" alt="Jogo da Memória: Ranitidina" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">Memória</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">Jogo da Memória: Ranitidina</h3>
+              <div class="game-author">Criado por: Miguel Felipe</div>
+              <p class="game-desc">Memorize as cartas e responda 10 perguntas para aprender tudo sobre a Ranitidina.</p>
+            </div>
+            <a href="Jogos/Miguel%20Felipe/jogomemoria-1.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+        <!-- 19. Murilo José -->
+        <article class="game-card reveal" data-cat="caca-palavras">
+          <div class="game-thumb" data-emoji="🔍">
+            <a href="Jogos/Murilo%20Jos%C3%A9/caca_%20palavras_Alendronato.html"><img src="Jogos/Murilo%20José/Design%20sem%20nome.png" alt="Caça-Palavras: Alendronato" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">Caça-Palavras</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">Caça-Palavras: Alendronato</h3>
+              <div class="game-author">Criado por: Murilo José</div>
+              <p class="game-desc">Ache 10 palavras sobre o uso correto do Alendronato: jejum, água, esôfago e mais.</p>
+            </div>
+            <a href="Jogos/Murilo%20Jos%C3%A9/caca_%20palavras_Alendronato.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+        <!-- 20. Murilo Vieira -->
+        <article class="game-card reveal" data-cat="acao">
+          <div class="game-thumb" data-emoji="💧">
+            <a href="Jogos/Murilo%20Vieira/jogo.html"><img src="Jogos/Murilo%20Vieira/murilo.jpg" alt="OsteoÁgua: Alendronato, Só Água" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">Ação</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">OsteoÁgua: Alendronato, Só Água!</h3>
+              <div class="game-author">Criado por: Murilo Vieira</div>
+              <p class="game-desc">Pegue a água e deixe passar as outras bebidas: só a água pura não anula o Alendronato.</p>
+            </div>
+            <a href="Jogos/Murilo%20Vieira/jogo.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+        <!-- 21. Nicolas Alexandre -->
+        <article class="game-card reveal" data-cat="quiz">
+          <div class="game-thumb" data-emoji="💊">
+            <a href="Jogos/Nicolas%20Alexandre/varfina.html"><img src="Jogos/Nicolas%20Alexandre/Digitalizado_20260923-0815.png" alt="Desafio da Varfarina" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">Quiz</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">Desafio da Varfarina</h3>
+              <div class="game-author">Criado por: Nicolas Alexandre</div>
+              <p class="game-desc">Teste seus conhecimentos sobre varfarina e vitamina K: +10 por acerto, −10 por erro.</p>
+            </div>
+            <a href="Jogos/Nicolas%20Alexandre/varfina.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+        <!-- 23. Pedro Henrique -->
+        <article class="game-card reveal" data-cat="caca-palavras">
+          <div class="game-thumb" data-emoji="🔍">
+            <a href="Jogos/Pedro%20Henrique/Index.html"><img src="Jogos/Pedro%20Henrique/PedroHenrique.jpg" alt="Desafio dos Medicamentos" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">Caça-Palavras</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">Caça-Palavras Farmacológico</h3>
+              <div class="game-author">Criado por: Pedro Henrique</div>
+              <p class="game-desc">Caça-palavras com dicas sobre Varfarina, Alendronato e outros medicamentos.</p>
+            </div>
+            <a href="Jogos/Pedro%20Henrique/Index.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+      
+
+        <!-- 24. Samuel -->
+        <article class="game-card reveal" data-cat="simulacao">
+          <div class="game-thumb" data-emoji="🩸">
+            <a href="Jogos/Samuel/jornadadavarfarina.html"><img src="Jogos/Samuel/Screenshot_20260928-084100~2.jpg" alt="A Jornada da Varfarina" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">Aventura</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">A Jornada da Varfarina</h3>
+              <div class="game-author">Criado por: Samuel</div>
+              <p class="game-desc">Encontre a Porta da Saúde, enfrente o Guardião da Varfarina e vença 6 desafios de perguntas.</p>
+            </div>
+            <a href="Jogos/Samuel/jornadadavarfarina.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+        <!-- 25. Sandryane Lima -->
+        <article class="game-card reveal" data-cat="quiz">
+          <div class="game-thumb" data-emoji="💊">
+            <a href="Jogos/Sandryane%20Lima/index.html"><img src="Jogos/Sandryane%20Lima/Sandryane.png" alt="Quiz do Alendronato 70 mg" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">Quiz</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">Desafio do alendronato</h3>
+              <div class="game-author">Criado por: Sandryane Lima</div>
+              <p class="game-desc">Teste seus conhecimentos sobre o uso correto do Alendronato 70 mg.</p>
+            </div>
+            <a href="Jogos/Sandryane%20Lima/index.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+        <!-- 26. Victoria Del Valle -->
+        <article class="game-card reveal" data-cat="simulacao">
+          <div class="game-thumb" data-emoji="🏥">
+            <a href="Jogos/Victoria%20Del%20Valle/farmaciahospitalarjogo.html"><img src="Jogos/Victoria%20Del%20Valle/IMG_20260928_093931.jpg" alt="Farmácia Hospitalar: Dispensação" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">Simulação</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">Farmácia Hospitalar: Dispensação</h3>
+              <div class="game-author">Criado por: Victoria Del Valle</div>
+              <p class="game-desc">Leia a bula ao passar o mouse e arraste cada medicamento para o paciente certo.</p>
+            </div>
+            <a href="Jogos/Victoria%20Del%20Valle/farmaciahospitalarjogo.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+        <!-- 27. Vinicius -->
+        <article class="game-card reveal" data-cat="caca-palavras">
+          <div class="game-thumb" data-emoji="🔍">
+            <a href="Jogos/Vinicius/CaCa_Palavras_Levotiroxina.html"><img src="Jogos/Vinicius/IMG_20260923_084627.jpg" alt="Caça-Palavras: Levotiroxina" loading="lazy" onerror="this.remove()"></a>
+            <span class="game-tag">Caça-Palavras</span>
+          </div>
+          <div class="game-info">
+            <div>
+              <h3 class="game-title">Caça-Palavras: Levotiroxina</h3>
+              <div class="game-author">Criado por: Vinicius</div>
+              <p class="game-desc">Encontre 12 termos sobre a Levotiroxina em 2 minutos; acertos somam e erros descontam pontos.</p>
+            </div>
+            <a href="Jogos/Vinicius/CaCa_Palavras_Levotiroxina.html" class="btn-play">Jogar Agora ▶</a>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- SCRIPT DE FILTROS E BUSCA -->
+  <script src="transicao.js"></script>
+  <script>
+    let categoriaAtual = 'todos';
+
+    function filtrarGeral() {
+      const termo = document.getElementById('searchInput').value.toLowerCase();
+      const cards = document.querySelectorAll('.game-card');
+      let visiveis = 0;
+
+      cards.forEach(card => {
+        const textoCard = card.textContent.toLowerCase();
+        const bateCategoria = (categoriaAtual === 'todos' || card.getAttribute('data-cat') === categoriaAtual);
+        const bateTexto = textoCard.includes(termo);
+
+        if (bateCategoria && bateTexto) {
+          card.style.display = "flex";
+          visiveis++;
+        } else {
+          card.style.display = "none";
+        }
+      });
+
+      document.getElementById('counterText').textContent = `Exibindo ${visiveis} de ${cards.length} jogos`;
+    }
+
+    function filtrarCat(cat, btn) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      categoriaAtual = cat;
+      filtrarGeral();
+    }
+
+    // Animação Reveal
+    const obs = new IntersectionObserver(e => {
+      e.forEach(x => { if (x.isIntersecting) x.target.classList.add('visible'); });
+    }, { threshold: .08 });
+    document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+  </script>
+
+  <!-- JOGO DO PEDRO HENRIQUE (embutido: os arquivos dele vieram como .docx e não rodam no navegador) -->
+  <script>
+    const PEDRO_GAME_B64 = `
+PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9InB0LUJSIj4KPGhlYWQ+CiAgICA8bWV0YSBjaGFyc2V0PSJVVEYtOCI+CiAgICA8
+bWV0YSBuYW1lPSJ2aWV3cG9ydCIgY29udGVudD0id2lkdGg9ZGV2aWNlLXdpZHRoLCBpbml0aWFsLXNjYWxlPTEuMCI+CiAgICA8
+dGl0bGU+Q2HDp2EtUGFsYXZyYXMgRmFybWFjb2zDs2dpY288L3RpdGxlPgogICAgPCEtLSBUYWlsd2luZCBDU1MgQ0ROIC0tPgog
+ICAgPHNjcmlwdCBzcmM9Imh0dHBzOi8vY2RuLnRhaWx3aW5kY3NzLmNvbSI+PC9zY3JpcHQ+CiAgICA8IS0tIEx1Y2lkZSBJY29u
+cyAtLT4KICAgIDxzY3JpcHQgc3JjPSJodHRwczovL3VucGtnLmNvbS9sdWNpZGVAbGF0ZXN0Ij48L3NjcmlwdD4KICAgIAogICAg
+CjxzdHlsZT4KQGltcG9ydCB1cmwoJ2h0dHBzOi8vZm9udHMuZ29vZ2xlYXBpcy5jb20vY3NzP2ZhbWlseT1JbnRlcjp3Z2h0QDQw
+MDs2MDA7NzAwOzgwMCZkaXNwbGF5PXN3YXAnKTsKCmJvZHkgewogICAgZm9udC1mYW1pbHk6ICdJbnRlcicsIHNhbnMtc2VyaWY7
+CiAgICB1c2VyLXNlbGVjdDogbm9uZTsKfQoKLmdyaWQtY2VsbCB7CiAgICBhc3BlY3QtcmF0aW86IDE7CiAgICB0cmFuc2l0aW9u
+OiBhbGwgMC4xNXMgZWFzZTsKfQoKLmdyaWQtY2VsbC5zZWxlY3RlZCB7CiAgICBiYWNrZ3JvdW5kLWNvbG9yOiAjM2I4MmY2ICFp
+bXBvcnRhbnQ7CiAgICBjb2xvcjogI2ZmZmZmZiAhaW1wb3J0YW50OwogICAgdHJhbnNmb3JtOiBzY2FsZSgwLjk1KTsKfQoKLmdy
+aWQtY2VsbC5mb3VuZCB7CiAgICBiYWNrZ3JvdW5kLWNvbG9yOiAjMTBiOTgxICFpbXBvcnRhbnQ7CiAgICBjb2xvcjogI2ZmZmZm
+ZiAhaW1wb3J0YW50OwogICAgZm9udC13ZWlnaHQ6IGJvbGQ7Cn0KCjwvc3R5bGU+CjwvaGVhZD4KPGJvZHkgY2xhc3M9ImJnLXNs
+YXRlLTk1MCB0ZXh0LXNsYXRlLTEwMCBtaW4taC1zY3JlZW4gZmxleCBmbGV4LWNvbCBqdXN0aWZ5LWJldHdlZW4iPgogICAgPCEt
+LSBIZWFkZXIgLS0+CiAgICA8aGVhZGVyIGNsYXNzPSJib3JkZXItYiBib3JkZXItc2xhdGUtODAwIGJnLXNsYXRlLTkwMC85MCBi
+YWNrZHJvcC1ibHVyIHN0aWNreSB0b3AtMCB6LTUwIj4KICAgICAgICA8ZGl2IGNsYXNzPSJtYXgtdy01eGwgbXgtYXV0byBweC00
+IHB5LTMgZmxleCBqdXN0aWZ5LWJldHdlZW4gaXRlbXMtY2VudGVyIj4KICAgICAgICAgICAgPGRpdiBjbGFzcz0iZmxleCBpdGVt
+cy1jZW50ZXIgZ2FwLTMiPgogICAgICAgICAgICAgICAgPGRpdiBjbGFzcz0iYmctYmx1ZS02MDAgcC0yIHJvdW5kZWQteGwgdGV4
+dC13aGl0ZSBzaGFkb3ctbGcgc2hhZG93LWJsdWUtNTAwLzMwIj4KICAgICAgICAgICAgICAgICAgICA8aSBkYXRhLWx1Y2lkZT0i
+cGlsbCI+PC9pPgogICAgICAgICAgICAgICAgPC9kaXY+CiAgICAgICAgICAgICAgICA8ZGl2PgogICAgICAgICAgICAgICAgICAg
+IDxoMSBjbGFzcz0iZm9udC1ib2xkIHRleHQtbGcgbGVhZGluZy10aWdodCB0ZXh0LXdoaXRlIj5DYcOnYS1QYWxhdnJhcyBDbMOt
+bmljbzwvaDE+CiAgICAgICAgICAgICAgICAgICAgPHAgY2xhc3M9InRleHQteHMgdGV4dC1zbGF0ZS00MDAiPkRlc2FmaW8gZGUg
+RsOhcm1hY28gw5puaWNvPC9wPgogICAgICAgICAgICAgICAgPC9kaXY+CiAgICAgICAgICAgIDwvZGl2PgogICAgICAgICAgICA8
+IS0tIFN0YXRzIEJhciAtLT4KICAgICAgICAgICAgPGRpdiBjbGFzcz0iZmxleCBpdGVtcy1jZW50ZXIgZ2FwLTMgdGV4dC1zbSI+
+CiAgICAgICAgICAgICAgICA8ZGl2IGNsYXNzPSJiZy1zbGF0ZS04MDAgcHgtMyBweS0xLjUgcm91bmRlZC1sZyBib3JkZXIgYm9y
+ZGVyLXNsYXRlLTcwMCBmbGV4IGl0ZW1zLWNlbnRlciBnYXAtMiI+CiAgICAgICAgICAgICAgICAgICAgPGkgZGF0YS1sdWNpZGU9
+InRyb3BoeSIgY2xhc3M9InRleHQteWVsbG93LTQwMCB3LTQgaC00Ij48L2k+CiAgICAgICAgICAgICAgICAgICAgPHNwYW4gY2xh
+c3M9InRleHQtc2xhdGUtNDAwIHRleHQteHMiPlBvbnRvczo8L3NwYW4+CiAgICAgICAgICAgICAgICAgICAgPHNwYW4gaWQ9InNj
+b3JlIiBjbGFzcz0iZm9udC1ib2xkIHRleHQteWVsbG93LTQwMCI+MDwvc3Bhbj4KICAgICAgICAgICAgICAgIDwvZGl2PgogICAg
+ICAgICAgICAgICAgPGRpdiBjbGFzcz0iYmctc2xhdGUtODAwIHB4LTMgcHktMS41IHJvdW5kZWQtbGcgYm9yZGVyIGJvcmRlci1z
+bGF0ZS03MDAgZmxleCBpdGVtcy1jZW50ZXIgZ2FwLTIiPgogICAgICAgICAgICAgICAgICAgIDxpIGRhdGEtbHVjaWRlPSJjaGVj
+ay1jaXJjbGUtMiIgY2xhc3M9InRleHQtZW1lcmFsZC00MDAgdy00IGgtNCI+PC9pPgogICAgICAgICAgICAgICAgICAgIDxzcGFu
+IGlkPSJmb3VuZC1jb3VudCIgY2xhc3M9ImZvbnQtYm9sZCB0ZXh0LWVtZXJhbGQtNDAwIj4wIC8gMDwvc3Bhbj4KICAgICAgICAg
+ICAgICAgIDwvZGl2PgogICAgICAgICAgICAgICAgPGRpdiBjbGFzcz0iYmctc2xhdGUtODAwIHB4LTMgcHktMS41IHJvdW5kZWQt
+bGcgYm9yZGVyIGJvcmRlci1zbGF0ZS03MDAgZmxleCBpdGVtcy1jZW50ZXIgZ2FwLTIiPgogICAgICAgICAgICAgICAgICAgIDxp
+IGRhdGEtbHVjaWRlPSJjbG9jayIgY2xhc3M9InRleHQtYmx1ZS00MDAgdy00IGgtNCI+PC9pPgogICAgICAgICAgICAgICAgICAg
+IDxzcGFuIGlkPSJ0aW1lciIgY2xhc3M9ImZvbnQtbW9ubyBmb250LWJvbGQgdGV4dC1ibHVlLTQwMCI+MDA6MDA8L3NwYW4+CiAg
+ICAgICAgICAgICAgICA8L2Rpdj4KICAgICAgICAgICAgPC9kaXY+CiAgICAgICAgPC9kaXY+CiAgICA8L2hlYWRlcj4KCiAgICA8
+IS0tIE1haW4gQXJlYSAtLT4KICAgIDxtYWluIGNsYXNzPSJtYXgtdy01eGwgbXgtYXV0byBweC00IHB5LTYgZmxleC1ncm93IHct
+ZnVsbCBncmlkIGdyaWQtY29scy0xIG1kOmdyaWQtY29scy0zIGdhcC02IGl0ZW1zLXN0YXJ0Ij4KICAgICAgICA8IS0tIFRhYnVs
+ZWlybyAoR3JhZGUgZG8gQ2HDp2EtUGFsYXZyYXMpIC0tPgogICAgICAgIDxkaXYgY2xhc3M9Im1kOmNvbC1zcGFuLTIgYmctc2xh
+dGUtOTAwIGJvcmRlciBib3JkZXItc2xhdGUtODAwIHJvdW5kZWQtMnhsIHAtNCBtZDpwLTYgc2hhZG93LTJ4bCBmbGV4IGZsZXgt
+Y29sIGl0ZW1zLWNlbnRlciI+CiAgICAgICAgICAgIDwhLS0gRmljaGEgZG8gTWVkaWNhbWVudG8gZGEgUm9kYWRhIC0tPgogICAg
+ICAgICAgICA8ZGl2IGNsYXNzPSJ3LWZ1bGwgYmctc2xhdGUtOTUwIHAtNCByb3VuZGVkLXhsIGJvcmRlciBib3JkZXItYmx1ZS01
+MDAvMzAgbWItNCI+CiAgICAgICAgICAgICAgICA8ZGl2IGNsYXNzPSJmbGV4IGl0ZW1zLWNlbnRlciBqdXN0aWZ5LWJldHdlZW4g
+bWItMSI+CiAgICAgICAgICAgICAgICAgICAgPHNwYW4gY2xhc3M9InRleHQteHMgZm9udC1zZW1pYm9sZCB0ZXh0LWJsdWUtNDAw
+IHVwcGVyY2FzZSB0cmFja2luZy13aWRlciBmbGV4IGl0ZW1zLWNlbnRlciBnYXAtMS41Ij4KICAgICAgICAgICAgICAgICAgICAg
+ICAgPGkgZGF0YS1sdWNpZGU9InN0ZXRob3Njb3BlIiBjbGFzcz0idy0zLjUgaC0zLjUiPjwvaT4gRsOhcm1hY28gZW0gRXN0dWRv
+CiAgICAgICAgICAgICAgICAgICAgPC9zcGFuPgogICAgICAgICAgICAgICAgICAgIDxzcGFuIGlkPSJkcnVnLWNsYXNzLWJhZGdl
+IiBjbGFzcz0idGV4dC1bMTBweF0gYmctYmx1ZS05MDAvNjAgdGV4dC1ibHVlLTIwMCBweC0yIHB5LTAuNSByb3VuZGVkLWZ1bGwg
+Ym9yZGVyIGJvcmRlci1ibHVlLTcwMC81MCI+CiAgICAgICAgICAgICAgICAgICAgICAgIENsYXNzZQogICAgICAgICAgICAgICAg
+ICAgIDwvc3Bhbj4KICAgICAgICAgICAgICAgIDwvZGl2PgogICAgICAgICAgICAgICAgPGgyIGlkPSJkcnVnLXRpdGxlIiBjbGFz
+cz0idGV4dC14bCBmb250LWJvbGQgdGV4dC13aGl0ZSI+LS08L2gyPgogICAgICAgICAgICAgICAgPHAgaWQ9ImRydWctZGVzY3Jp
+cHRpb24iIGNsYXNzPSJ0ZXh0LXhzIHRleHQtc2xhdGUtMzAwIG10LTEgbGVhZGluZy1yZWxheGVkIj4tLTwvcD4KICAgICAgICAg
+ICAgPC9kaXY+CiAgICAgICAgICAgIDxwIGNsYXNzPSJ0ZXh0LXhzIHRleHQtc2xhdGUtNDAwIG1iLTQgdGV4dC1jZW50ZXIiPgog
+ICAgICAgICAgICAgICAgQ2xpcXVlIG5hIDxzcGFuIGNsYXNzPSJ0ZXh0LWJsdWUtNDAwIGZvbnQtc2VtaWJvbGQiPnByaW1laXJh
+IGxldHJhPC9zcGFuPiBlIGRlcG9pcyBuYQogICAgICAgICAgICAgICAgPHNwYW4gY2xhc3M9InRleHQtYmx1ZS00MDAgZm9udC1z
+ZW1pYm9sZCI+w7psdGltYSBsZXRyYTwvc3Bhbj4gZGEgY2FyYWN0ZXLDrXN0aWNhIHBhcmEgc2VsZWNpb25hci4KICAgICAgICAg
+ICAgPC9wPgogICAgICAgICAgICA8ZGl2IGlkPSJ3b3JkLWdyaWQiIGNsYXNzPSJncmlkIGdyaWQtY29scy0xMSBnYXAtMS41IHct
+ZnVsbCBtYXgtdy1tZCBtZDptYXgtdy1sZyBiZy1zbGF0ZS05NTAgcC0zIHJvdW5kZWQteGwgYm9yZGVyIGJvcmRlci1zbGF0ZS04
+MDAiPgogICAgICAgICAgICAgICAgPCEtLSBHcmFkZSBnZXJhZGEgdmlhIEpTIC0tPgogICAgICAgICAgICA8L2Rpdj4KICAgICAg
+ICA8L2Rpdj4KCiAgICAgICAgPCEtLSBMaXN0YSBkZSBDYXJhY3RlcsOtc3RpY2FzIE9jdWx0YXMgLS0+CiAgICAgICAgPGRpdiBj
+bGFzcz0iYmctc2xhdGUtOTAwIGJvcmRlciBib3JkZXItc2xhdGUtODAwIHJvdW5kZWQtMnhsIHAtNSBzaGFkb3cteGwgc3BhY2Ut
+eS00Ij4KICAgICAgICAgICAgPGRpdiBjbGFzcz0iZmxleCBpdGVtcy1jZW50ZXIganVzdGlmeS1iZXR3ZWVuIGJvcmRlci1iIGJv
+cmRlci1zbGF0ZS04MDAgcGItMyI+CiAgICAgICAgICAgICAgICA8aDIgY2xhc3M9ImZvbnQtYm9sZCB0ZXh0LXNsYXRlLTIwMCBm
+bGV4IGl0ZW1zLWNlbnRlciBnYXAtMiI+CiAgICAgICAgICAgICAgICAgICAgPGkgZGF0YS1sdWNpZGU9InNlYXJjaCIgY2xhc3M9
+InctNCBoLTQgdGV4dC1ibHVlLTQwMCI+PC9pPiBDYXJhY3RlcsOtc3RpY2FzCiAgICAgICAgICAgICAgICA8L2gyPgogICAgICAg
+ICAgICAgICAgPGJ1dHRvbiBpZD0iYnRuLXJlc2V0IiBjbGFzcz0icC0xLjUgaG92ZXI6Ymctc2xhdGUtODAwIHRleHQtc2xhdGUt
+NDAwIGhvdmVyOnRleHQtd2hpdGUgcm91bmRlZC1sZyB0cmFuc2l0aW9uLWNvbG9ycyIgdGl0bGU9Ik5vdm8gTWVkaWNhbWVudG8i
+PgogICAgICAgICAgICAgICAgICAgIDxpIGRhdGEtbHVjaWRlPSJyb3RhdGUtY2N3IiBjbGFzcz0idy00IGgtNCI+PC9pPgogICAg
+ICAgICAgICAgICAgPC9idXR0b24+CiAgICAgICAgICAgIDwvZGl2PgogICAgICAgICAgICA8dWwgaWQ9IndvcmQtbGlzdCIgY2xh
+c3M9InNwYWNlLXktMiI+CiAgICAgICAgICAgICAgICA8IS0tIExpc3RhIGdlcmFkYSB2aWEgSlMgLS0+CiAgICAgICAgICAgIDwv
+dWw+CiAgICAgICAgICAgIDxkaXYgY2xhc3M9ImJnLXNsYXRlLTk1MC82MCBwLTMgcm91bmRlZC14bCBib3JkZXIgYm9yZGVyLXNs
+YXRlLTgwMCB0ZXh0LXhzIHRleHQtc2xhdGUtNDAwIGxlYWRpbmctcmVsYXhlZCI+CiAgICAgICAgICAgICAgICA8c3Ryb25nPlBv
+bnR1YcOnw6NvOjwvc3Ryb25nPiArMTUwIHBvbnRvcyBwb3IgY2FyYWN0ZXLDrXN0aWNhIGVuY29udHJhZGEuIELDs251cyBkZSB2
+ZWxvY2lkYWRlIGFvIGNvbmNsdWlyIQogICAgICAgICAgICA8L2Rpdj4KICAgICAgICA8L2Rpdj4KICAgIDwvbWFpbj4KCiAgICA8
+IS0tIFZpY3RvcnkgTW9kYWwgLS0+CiAgICA8ZGl2IGlkPSJ2aWN0b3J5LW1vZGFsIiBjbGFzcz0iZml4ZWQgaW5zZXQtMCBiZy1z
+bGF0ZS05NTAvODAgYmFja2Ryb3AtYmx1ci1tZCBmbGV4IGl0ZW1zLWNlbnRlciBqdXN0aWZ5LWNlbnRlciBwLTQgaGlkZGVuIHot
+NTAiPgogICAgICAgIDxkaXYgY2xhc3M9ImJnLXNsYXRlLTkwMCBib3JkZXIgYm9yZGVyLXNsYXRlLTgwMCByb3VuZGVkLTJ4bCBw
+LTggbWF4LXctc20gdy1mdWxsIHRleHQtY2VudGVyIHNoYWRvdy0yeGwgc3BhY2UteS00Ij4KICAgICAgICAgICAgPGRpdiBjbGFz
+cz0idy0xNiBoLTE2IGJnLWVtZXJhbGQtNTAwLzEwIHRleHQtZW1lcmFsZC00MDAgYm9yZGVyIGJvcmRlci1lbWVyYWxkLTUwMC8y
+MCByb3VuZGVkLWZ1bGwgZmxleCBpdGVtcy1jZW50ZXIganVzdGlmeS1jZW50ZXIgbXgtYXV0byI+CiAgICAgICAgICAgICAgICA8
+aSBkYXRhLWx1Y2lkZT0iYXdhcmQiIGNsYXNzPSJ3LTggaC04Ij48L2k+CiAgICAgICAgICAgIDwvZGl2PgogICAgICAgICAgICA8
+aDMgY2xhc3M9InRleHQtMnhsIGZvbnQtYm9sZCB0ZXh0LXdoaXRlIj5BbsOhbGlzZSBDb25jbHXDrWRhITwvaDM+CiAgICAgICAg
+ICAgIDxwIGNsYXNzPSJ0ZXh0LXNtIHRleHQtc2xhdGUtMzAwIj5Eb21pbm91IHRvZGFzIGFzIGNhcmFjdGVyw61zdGljYXMgZG8g
+bWVkaWNhbWVudG8hPC9wPgogICAgICAgICAgICA8ZGl2IGNsYXNzPSJiZy1zbGF0ZS05NTAgcC00IHJvdW5kZWQteGwgYm9yZGVy
+IGJvcmRlci1zbGF0ZS04MDAgc3BhY2UteS0yIHRleHQtbGVmdCI+CiAgICAgICAgICAgICAgICA8ZGl2IGNsYXNzPSJmbGV4IGp1
+c3RpZnktYmV0d2VlbiB0ZXh0LXhzIj4KICAgICAgICAgICAgICAgICAgICA8c3BhbiBjbGFzcz0idGV4dC1zbGF0ZS00MDAiPlBv
+bnR1YcOnw6NvIFRvdGFsOjwvc3Bhbj4KICAgICAgICAgICAgICAgICAgICA8c3BhbiBpZD0iZmluYWwtc2NvcmUiIGNsYXNzPSJm
+b250LWJvbGQgdGV4dC15ZWxsb3ctNDAwIj4wPC9zcGFuPgogICAgICAgICAgICAgICAgPC9kaXY+CiAgICAgICAgICAgICAgICA8
+ZGl2IGNsYXNzPSJmbGV4IGp1c3RpZnktYmV0d2VlbiB0ZXh0LXhzIj4KICAgICAgICAgICAgICAgICAgICA8c3BhbiBjbGFzcz0i
+dGV4dC1zbGF0ZS00MDAiPlRlbXBvIERlY29ycmlkbzo8L3NwYW4+CiAgICAgICAgICAgICAgICAgICAgPHNwYW4gaWQ9ImZpbmFs
+LXRpbWUiIGNsYXNzPSJmb250LWJvbGQgdGV4dC1ibHVlLTQwMCI+MDA6MDA8L3NwYW4+CiAgICAgICAgICAgICAgICA8L2Rpdj4K
+ICAgICAgICAgICAgPC9kaXY+CiAgICAgICAgICAgIDxidXR0b24gaWQ9ImJ0bi1wbGF5LWFnYWluIiBjbGFzcz0idy1mdWxsIHB5
+LTMgYmctZW1lcmFsZC02MDAgaG92ZXI6YmctZW1lcmFsZC01MDAgdGV4dC13aGl0ZSBmb250LWJvbGQgcm91bmRlZC14bCB0cmFu
+c2l0aW9uLWNvbG9ycyBmbGV4IGl0ZW1zLWNlbnRlciBqdXN0aWZ5LWNlbnRlciBnYXAtMiI+CiAgICAgICAgICAgICAgICA8aSBk
+YXRhLWx1Y2lkZT0icGxheSIgY2xhc3M9InctNCBoLTQiPjwvaT4gUHLDs3hpbW8gTWVkaWNhbWVudG8KICAgICAgICAgICAgPC9i
+dXR0b24+CiAgICAgICAgPC9kaXY+CiAgICA8L2Rpdj4KCiAgICA8IS0tIEZvb3RlciAtLT4KICAgIDxmb290ZXIgY2xhc3M9ImJv
+cmRlci10IGJvcmRlci1zbGF0ZS04MDAgcHktMyB0ZXh0LWNlbnRlciB0ZXh0LXhzIHRleHQtc2xhdGUtNTAwIj4KICAgICAgICBD
+YcOnYS1QYWxhdnJhcyBJbnRlcmF0aXZvIEZhcm1hY29sw7NnaWNvCiAgICA8L2Zvb3Rlcj4KCiAgICAKICAgIAo8c2NyaXB0Pgpj
+b25zdCBHUklEX1NJWkUgPSAxMTsKCi8vIEJhbmNvIGRlIGRhZG9zIGRlIG1lZGljYW1lbnRvcyBpbmRpdmlkdWFpcyBlIHN1YXMg
+Y2FyYWN0ZXLDrXN0aWNhcwpjb25zdCBEUlVHU19EQVRBQkFTRSA9IFsKICAgIHsKICAgICAgICBuYW1lOiAiVkFSRkFSSU5BIiwK
+ICAgICAgICBiYWRnZTogIkFudGljb2FndWxhbnRlIE9yYWwiLAogICAgICAgIGRlc2NyaXB0aW9uOiAiQW50aWNvYWd1bGFudGUg
+YW50YWdvbmlzdGEgZGEgVml0YW1pbmEgSyB1c2FkbyBuYSBwcmV2ZW7Dp8OjbyBkZSB0cm9tYm9lbWJvbGlzbW9zLiBFeGlnZSBt
+b25pdG9yaXphw6fDo28gZG8gSU5SLiIsCiAgICAgICAgZmVhdHVyZXM6IFsKICAgICAgICAgICAgeyB3b3JkOiAiVkFSRkFSSU5B
+IiwgaGludDogIk5vbWUgZG8gbWVkaWNhbWVudG8iIH0sCiAgICAgICAgICAgIHsgd29yZDogIlZJVEFNSU5BSyIsIGhpbnQ6ICJJ
+bmliZSBhIHPDrW50ZXNlIGRlc3RhIHZpdGFtaW5hIiB9LAogICAgICAgICAgICB7IHdvcmQ6ICJJTlIiLCBoaW50OiAiRXhhbWUg
+ZGUgbW9uaXRvcml6YcOnw6NvIGRvIFRQIiB9LAogICAgICAgICAgICB7IHdvcmQ6ICJIRU1PUlJBR0lBIiwgaGludDogIlByaW5j
+aXBhbCByaXNjbyBkZSB0b3hpY2lkYWRlIiB9LAogICAgICAgICAgICB7IHdvcmQ6ICJFTUJPTElBIiwgaGludDogIkluZGljYcOn
+w6NvIGRlIHByZXZlbsOnw6NvIiB9CiAgICAgICAgXQogICAgfSwKICAgIHsKICAgICAgICBuYW1lOiAiQUxFTkRST05BVE8iLAog
+ICAgICAgIGJhZGdlOiAiQmlzZm9zZm9uYXRvIiwKICAgICAgICBkZXNjcmlwdGlvbjogIkluaWJpZG9yIGRhIHJlYWJzb3LDp8Oj
+byDDs3NzZWEgb3N0ZW9jbMOhc3RpY2EgcGFyYSB0cmF0YW1lbnRvIGRhIG9zdGVvcG9yb3NlLiBFeGlnZSBqZWp1bSBlIHBvc2nD
+p8OjbyBlcmV0YS4iLAogICAgICAgIGZlYXR1cmVzOiBbCiAgICAgICAgICAgIHsgd29yZDogIkFMRU5EUk9OQVRPIiwgaGludDog
+Ik5vbWUgZG8gbWVkaWNhbWVudG8iIH0sCiAgICAgICAgICAgIHsgd29yZDogIk9TVEVPUE9ST1NFIiwgaGludDogIkRvZW7Dp2Eg
+w7Nzc2VhIHRyYXRhZGEiIH0sCiAgICAgICAgICAgIHsgd29yZDogIkpFSlVNIiwgaGludDogIlJlcXVpc2l0byBlc3RyaXRvIGRl
+IHRvbWFkYSIgfSwKICAgICAgICAgICAgeyB3b3JkOiAiRVNPRkFHSVRFIiwgaGludDogIlJpc2NvIGRlIGlycml0YcOnw6NvIG11
+Y29zw6FsIiB9LAogICAgICAgICAgICB7IHdvcmQ6ICJDQUxDSU8iLCBoaW50OiAiTWluZXJhbCBxdWUgcXVlbGF0YSBvIGbDoXJt
+YWNvIiB9CiAgICAgICAgXQogICAgfSwKICAgIHsKICAgICAgICBuYW1lOiAiUkFOSVRJRElOQSIsCiAgICAgICAgYmFkZ2U6ICJB
+bnRhZ29uaXN0YSBIMiIsCiAgICAgICAgZGVzY3JpcHRpb246ICJCbG9xdWVpYSBjb21wZXRpdGl2YW1lbnRlIG9zIHJlY2VwdG9y
+ZXMgSDIgZGUgaGlzdGFtaW5hIG5hcyBjw6lsdWxhcyBwYXJpZXRhaXMsIHJlZHV6aW5kbyBvIHN1Y28gZ8Ohc3RyaWNvLiIsCiAg
+ICAgICAgZmVhdHVyZXM6IFsKICAgICAgICAgICAgeyB3b3JkOiAiUkFOSVRJRElOQSIsIGhpbnQ6ICJOb21lIGRvIG1lZGljYW1l
+bnRvIiB9LAogICAgICAgICAgICB7IHdvcmQ6ICJISVNUQU1JTkEiLCBoaW50OiAiTWVkaWFkb3IgYmxvcXVlYWRvIG5vIHJlY2Vw
+dG9yIiB9LAogICAgICAgICAgICB7IHdvcmQ6ICJBQ0lERVoiLCBoaW50OiAiRmF0b3IgcmVkdXppZG8gbm8gZXN0w7RtYWdvIiB9
+LAogICAgICAgICAgICB7IHdvcmQ6ICJVTENFUkEiLCBoaW50OiAiTGVzw6NvIHDDqXB0aWNhIHRyYXRhZGEiIH0sCiAgICAgICAg
+ICAgIHsgd29yZDogIlBBUklFVEFMIiwgaGludDogIkPDqWx1bGEgZ8Ohc3RyaWNhIGFsdm8iIH0KICAgICAgICBdCiAgICB9LAog
+ICAgewogICAgICAgIG5hbWU6ICJBTFBSQVpPTEFNIiwKICAgICAgICBiYWRnZTogIkJlbnpvZGlhemVww61uaWNvIiwKICAgICAg
+ICBkZXNjcmlwdGlvbjogIkFueGlvbMOtdGljbyBkZSBhw6fDo28gcsOhcGlkYSBxdWUgYXR1YSBwb3RlbmNpYWxpemFuZG8gYSBu
+ZXVyb3RyYW5zbWlzc8OjbyBkbyBHQUJBIG5vIHNpc3RlbWEgbmVydm9zbyBjZW50cmFsLiIsCiAgICAgICAgZmVhdHVyZXM6IFsK
+ICAgICAgICAgICAgeyB3b3JkOiAiQUxQUkFaT0xBTSIsIGhpbnQ6ICJOb21lIGRvIG1lZGljYW1lbnRvIiB9LAogICAgICAgICAg
+ICB7IHdvcmQ6ICJHQUJBIiwgaGludDogIk5ldXJvdHJhbnNtaXNzb3IgcG90ZW5jaWFsaXphZG8iIH0sCiAgICAgICAgICAgIHsg
+d29yZDogIlBBTklDTyIsIGhpbnQ6ICJUcmFuc3Rvcm5vIHRyYXRhZG8gYWd1ZGFtZW50ZSIgfSwKICAgICAgICAgICAgeyB3b3Jk
+OiAiU0VEQUNBTyIsIGhpbnQ6ICJFZmVpdG8gZGVwcmVzc29yIGRvIFNOQyIgfSwKICAgICAgICAgICAgeyB3b3JkOiAiVE9MRVJB
+TkNJQSIsIGhpbnQ6ICJSaXNjbyBubyB1c28gcHJvbG9uZ2FkbyIgfQogICAgICAgIF0KICAgIH0KXTsKCmxldCBjdXJyZW50RHJ1
+Z0luZGV4ID0gMDsKbGV0IGdyaWQgPSBBcnJheShHUklEX1NJWkUpLmZpbGwobnVsbCkubWFwKCgpID0+IEFycmF5KEdSSURfU0la
+RSkuZmlsbCgiIikpOwpsZXQgcGxhY2VkV29yZHMgPSBbXTsKbGV0IGZpcnN0U2VsZWN0ZWRDZWxsID0gbnVsbDsKbGV0IGZvdW5k
+V29yZHNDb3VudCA9IDA7CmxldCB0aW1lckludGVydmFsID0gbnVsbDsKbGV0IHNlY29uZHNFbGFwc2VkID0gMDsKbGV0IHNjb3Jl
+ID0gMDsKCi8vIEVsZW1lbnRvcyBET00KY29uc3QgZ3JpZEVsZW1lbnQgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnd29yZC1n
+cmlkJyk7CmNvbnN0IHdvcmRMaXN0RWxlbWVudCA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCd3b3JkLWxpc3QnKTsKY29uc3Qg
+Zm91bmRDb3VudEVsZW1lbnQgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnZm91bmQtY291bnQnKTsKY29uc3QgdGltZXJFbGVt
+ZW50ID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3RpbWVyJyk7CmNvbnN0IHNjb3JlRWxlbWVudCA9IGRvY3VtZW50LmdldEVs
+ZW1lbnRCeUlkKCdzY29yZScpOwpjb25zdCB2aWN0b3J5TW9kYWwgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgndmljdG9yeS1t
+b2RhbCcpOwpjb25zdCBmaW5hbFRpbWVFbGVtZW50ID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2ZpbmFsLXRpbWUnKTsKY29u
+c3QgZmluYWxTY29yZUVsZW1lbnQgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnZmluYWwtc2NvcmUnKTsKY29uc3QgZHJ1Z1Rp
+dGxlRWxlbWVudCA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdkcnVnLXRpdGxlJyk7CmNvbnN0IGRydWdCYWRnZUVsZW1lbnQg
+PSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnZHJ1Zy1jbGFzcy1iYWRnZScpOwpjb25zdCBkcnVnRGVzY3JpcHRpb25FbGVtZW50
+ID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2RydWctZGVzY3JpcHRpb24nKTsKCmRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdi
+dG4tcmVzZXQnKS5hZGRFdmVudExpc3RlbmVyKCdjbGljaycsICgpID0+IHsKICAgIGN1cnJlbnREcnVnSW5kZXggPSAoY3VycmVu
+dERydWdJbmRleCArIDEpICUgRFJVR1NfREFUQUJBU0UubGVuZ3RoOwogICAgaW5pdEdhbWUoKTsKfSk7Cgpkb2N1bWVudC5nZXRF
+bGVtZW50QnlJZCgnYnRuLXBsYXktYWdhaW4nKS5hZGRFdmVudExpc3RlbmVyKCdjbGljaycsICgpID0+IHsKICAgIGN1cnJlbnRE
+cnVnSW5kZXggPSAoY3VycmVudERydWdJbmRleCArIDEpICUgRFJVR1NfREFUQUJBU0UubGVuZ3RoOwogICAgaW5pdEdhbWUoKTsK
+fSk7CgpmdW5jdGlvbiBpbml0R2FtZSgpIHsKICAgIHZpY3RvcnlNb2RhbC5jbGFzc0xpc3QuYWRkKCdoaWRkZW4nKTsKICAgIGdy
+aWQgPSBBcnJheShHUklEX1NJWkUpLmZpbGwobnVsbCkubWFwKCgpID0+IEFycmF5KEdSSURfU0laRSkuZmlsbCgiIikpOwogICAg
+cGxhY2VkV29yZHMgPSBbXTsKICAgIGZpcnN0U2VsZWN0ZWRDZWxsID0gbnVsbDsKICAgIGZvdW5kV29yZHNDb3VudCA9IDA7CiAg
+ICBzZWNvbmRzRWxhcHNlZCA9IDA7CiAgICBzY29yZSA9IDA7CiAgICBzY29yZUVsZW1lbnQudGV4dENvbnRlbnQgPSBzY29yZTsK
+CiAgICBjb25zdCBhY3RpdmVEcnVnID0gRFJVR1NfREFUQUJBU0VbY3VycmVudERydWdJbmRleF07CgogICAgLy8gQXR1YWxpemFy
+IGNhYmXDp2FsaG8gZGEgRmljaGEgZG8gTWVkaWNhbWVudG8KICAgIGRydWdUaXRsZUVsZW1lbnQudGV4dENvbnRlbnQgPSBhY3Rp
+dmVEcnVnLm5hbWU7CiAgICBkcnVnQmFkZ2VFbGVtZW50LnRleHRDb250ZW50ID0gYWN0aXZlRHJ1Zy5iYWRnZTsKICAgIGRydWdE
+ZXNjcmlwdGlvbkVsZW1lbnQudGV4dENvbnRlbnQgPSBhY3RpdmVEcnVnLmRlc2NyaXB0aW9uOwogICAgZm91bmRDb3VudEVsZW1l
+bnQudGV4dENvbnRlbnQgPSBgMCAvICR7YWN0aXZlRHJ1Zy5mZWF0dXJlcy5sZW5ndGh9YDsKCiAgICBzdGFydFRpbWVyKCk7Cgog
+ICAgLy8gUG9zaWNpb25hciBjYXJhY3RlcsOtc3RpY2FzIG5vIGNhw6dhLXBhbGF2cmFzCiAgICBhY3RpdmVEcnVnLmZlYXR1cmVz
+LmZvckVhY2goaXRlbSA9PiB7CiAgICAgICAgcGxhY2VXb3JkSW5HcmlkKGl0ZW0ud29yZCwgaXRlbS5oaW50KTsKICAgIH0pOwoK
+ICAgIC8vIFByZWVuY2hlciBjw6lsdWxhcyB2YXppYXMgY29tIGxldHJhcyBhbGVhdMOzcmlhcwogICAgY29uc3QgYWxwaGFiZXQg
+PSAiQUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVoiOwogICAgZm9yIChsZXQgciA9IDA7IHIgPCBHUklEX1NJWkU7IHIrKykgewog
+ICAgICAgIGZvciAobGV0IGMgPSAwOyBjIDwgR1JJRF9TSVpFOyBjKyspIHsKICAgICAgICAgICAgaWYgKGdyaWRbcl1bY10gPT09
+ICIiKSB7CiAgICAgICAgICAgICAgICBncmlkW3JdW2NdID0gYWxwaGFiZXRbTWF0aC5mbG9vcihNYXRoLnJhbmRvbSgpICogYWxw
+aGFiZXQubGVuZ3RoKV07CiAgICAgICAgICAgIH0KICAgICAgICB9CiAgICB9CgogICAgcmVuZGVyR3JpZCgpOwogICAgcmVuZGVy
+V29yZExpc3QoKTsKICAgIGx1Y2lkZS5jcmVhdGVJY29ucygpOwp9CgpmdW5jdGlvbiBwbGFjZVdvcmRJbkdyaWQod29yZCwgaGlu
+dCkgewogICAgY29uc3QgZGlyZWN0aW9ucyA9IFsKICAgICAgICB7IHI6IDAsIGM6IDEgfSwgLy8gSG9yaXpvbnRhbAogICAgICAg
+IHsgcjogMSwgYzogMCB9LCAvLyBWZXJ0aWNhbAogICAgICAgIHsgcjogMSwgYzogMSB9ICAvLyBEaWFnb25hbAogICAgXTsKICAg
+IAogICAgbGV0IHBsYWNlZCA9IGZhbHNlOwogICAgbGV0IGF0dGVtcHRzID0gMDsKICAgIAogICAgd2hpbGUgKCFwbGFjZWQgJiYg
+YXR0ZW1wdHMgPCAxMjApIHsKICAgICAgICBhdHRlbXB0cysrOwogICAgICAgIGNvbnN0IGRpciA9IGRpcmVjdGlvbnNbTWF0aC5m
+bG9vcihNYXRoLnJhbmRvbSgpICogZGlyZWN0aW9ucy5sZW5ndGgpXTsKICAgICAgICBjb25zdCBzdGFydFIgPSBNYXRoLmZsb29y
+KE1hdGgucmFuZG9tKCkgKiBHUklEX1NJWkUpOwogICAgICAgIGNvbnN0IHN0YXJ0QyA9IE1hdGguZmxvb3IoTWF0aC5yYW5kb20o
+KSAqIEdSSURfU0laRSk7CiAgICAgICAgY29uc3QgZW5kUiA9IHN0YXJ0UiArIGRpci5yICogKHdvcmQubGVuZ3RoIC0gMSk7CiAg
+ICAgICAgY29uc3QgZW5kQyA9IHN0YXJ0QyArIGRpci5jICogKHdvcmQubGVuZ3RoIC0gMSk7CiAgICAgICAgCiAgICAgICAgaWYg
+KGVuZFIgPCBHUklEX1NJWkUgJiYgZW5kQyA8IEdSSURfU0laRSkgewogICAgICAgICAgICBsZXQgY2FuUGxhY2UgPSB0cnVlOwog
+ICAgICAgICAgICBmb3IgKGxldCBpID0gMDsgaSA8IHdvcmQubGVuZ3RoOyBpKyspIHsKICAgICAgICAgICAgICAgIGNvbnN0IGN1
+cnJSID0gc3RhcnRSICsgZGlyLnIgKiBpOwogICAgICAgICAgICAgICAgY29uc3QgY3VyckMgPSBzdGFydEMgKyBkaXIuYyAqIGk7
+CiAgICAgICAgICAgICAgICBpZiAoZ3JpZFtjdXJyUl1bY3VyckNdICE9PSAiIiAmJiBncmlkW2N1cnJSXVtjdXJyQ10gIT09IHdv
+cmRbaV0pIHsKICAgICAgICAgICAgICAgICAgICBjYW5QbGFjZSA9IGZhbHNlOwogICAgICAgICAgICAgICAgICAgIGJyZWFrOwog
+ICAgICAgICAgICAgICAgfQogICAgICAgICAgICB9CiAgICAgICAgICAgIAogICAgICAgICAgICBpZiAoY2FuUGxhY2UpIHsKICAg
+ICAgICAgICAgICAgIGNvbnN0IGNlbGxzID0gW107CiAgICAgICAgICAgICAgICBmb3IgKGxldCBpID0gMDsgaSA8IHdvcmQubGVu
+Z3RoOyBpKyspIHsKICAgICAgICAgICAgICAgICAgICBjb25zdCBjdXJyUiA9IHN0YXJ0UiArIGRpci5yICogaTsKICAgICAgICAg
+ICAgICAgICAgICBjb25zdCBjdXJyQyA9IHN0YXJ0QyArIGRpci5jICogaTsKICAgICAgICAgICAgICAgICAgICBncmlkW2N1cnJS
+XVtjdXJyQ10gPSB3b3JkW2ldOwogICAgICAgICAgICAgICAgICAgIGNlbGxzLnB1c2goeyByOiBjdXJyUiwgYzogY3VyckMgfSk7
+CiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICBwbGFjZWRXb3Jkcy5wdXNoKHsKICAgICAgICAgICAgICAgICAgICB3
+b3JkOiB3b3JkLAogICAgICAgICAgICAgICAgICAgIGhpbnQ6IGhpbnQsCiAgICAgICAgICAgICAgICAgICAgY2VsbHM6IGNlbGxz
+LAogICAgICAgICAgICAgICAgICAgIGZvdW5kOiBmYWxzZQogICAgICAgICAgICAgICAgfSk7CiAgICAgICAgICAgICAgICBwbGFj
+ZWQgPSB0cnVlOwogICAgICAgICAgICB9CiAgICAgICAgfQogICAgfQp9CgpmdW5jdGlvbiByZW5kZXJHcmlkKCkgewogICAgZ3Jp
+ZEVsZW1lbnQuaW5uZXJIVE1MID0gIiI7CiAgICBmb3IgKGxldCByID0gMDsgciA8IEdSSURfU0laRTsgcisrKSB7CiAgICAgICAg
+Zm9yIChsZXQgYyA9IDA7IGMgPCBHUklEX1NJWkU7IGMrKykgewogICAgICAgICAgICBjb25zdCBidG4gPSBkb2N1bWVudC5jcmVh
+dGVFbGVtZW50KCdidXR0b24nKTsKICAgICAgICAgICAgYnRuLmRhdGFzZXQucm93ID0gcjsKICAgICAgICAgICAgYnRuLmRhdGFz
+ZXQuY29sID0gYzsKICAgICAgICAgICAgYnRuLnRleHRDb250ZW50ID0gZ3JpZFtyXVtjXTsKICAgICAgICAgICAgYnRuLmNsYXNz
+TmFtZSA9ICdncmlkLWNlbGwgdGV4dC1zbSBtZDp0ZXh0LWJhc2UgZm9udC1zZW1pYm9sZCBiZy1zbGF0ZS04MDAgdGV4dC1zbGF0
+ZS0yMDAgcm91bmRlZC1sZyBob3ZlcjpiZy1zbGF0ZS03MDAgZmxleCBpdGVtcy1jZW50ZXIganVzdGlmeS1jZW50ZXIgYm9yZGVy
+IGJvcmRlci1zbGF0ZS03MDAvNTAnOwogICAgICAgICAgICBidG4uYWRkRXZlbnRMaXN0ZW5lcignY2xpY2snLCAoKSA9PiBoYW5k
+bGVDZWxsQ2xpY2sociwgYywgYnRuKSk7CiAgICAgICAgICAgIGdyaWRFbGVtZW50LmFwcGVuZENoaWxkKGJ0bik7CiAgICAgICAg
+fQogICAgfQp9CgpmdW5jdGlvbiByZW5kZXJXb3JkTGlzdCgpIHsKICAgIHdvcmRMaXN0RWxlbWVudC5pbm5lckhUTUwgPSAiIjsK
+ICAgIHBsYWNlZFdvcmRzLmZvckVhY2goaXRlbSA9PiB7CiAgICAgICAgY29uc3QgbGkgPSBkb2N1bWVudC5jcmVhdGVFbGVtZW50
+KCdsaScpOwogICAgICAgIGxpLmlkID0gYHdvcmQtaXRlbS0ke2l0ZW0ud29yZH1gOwogICAgICAgIGxpLmNsYXNzTmFtZSA9ICdw
+LTIuNSByb3VuZGVkLXhsIGJnLXNsYXRlLTk1MC80MCBib3JkZXIgYm9yZGVyLXNsYXRlLTgwMCBmbGV4IGp1c3RpZnktYmV0d2Vl
+biBpdGVtcy1jZW50ZXIgdHJhbnNpdGlvbi1hbGwnOwogICAgICAgIGxpLmlubmVySFRNTCA9IGAKICAgICAgICAgICAgPGRpdj4K
+ICAgICAgICAgICAgICAgIDxzcGFuIGNsYXNzPSJmb250LWJvbGQgdGV4dC1zbGF0ZS0yMDAgdGV4dC1zbSB0cmFja2luZy13aWRl
+ciI+JHtpdGVtLndvcmR9PC9zcGFuPgogICAgICAgICAgICAgICAgPHAgY2xhc3M9InRleHQteHMgdGV4dC1zbGF0ZS01MDAiPiR7
+aXRlbS5oaW50fTwvcD4KICAgICAgICAgICAgPC9kaXY+CiAgICAgICAgICAgIDxpIGRhdGEtbHVjaWRlPSJjaXJjbGUiIGNsYXNz
+PSJ3LTQgaC00IHRleHQtc2xhdGUtNjAwIHN0YXR1cy1pY29uIj48L2k+CiAgICAgICAgYDsKICAgICAgICB3b3JkTGlzdEVsZW1l
+bnQuYXBwZW5kQ2hpbGQobGkpOwogICAgfSk7Cn0KCmZ1bmN0aW9uIGhhbmRsZUNlbGxDbGljayhyLCBjLCBlbGVtZW50KSB7CiAg
+ICBpZiAoIWZpcnN0U2VsZWN0ZWRDZWxsKSB7CiAgICAgICAgZmlyc3RTZWxlY3RlZENlbGwgPSB7IHIsIGMsIGVsZW1lbnQgfTsK
+ICAgICAgICBlbGVtZW50LmNsYXNzTGlzdC5hZGQoJ3NlbGVjdGVkJyk7CiAgICB9IGVsc2UgewogICAgICAgIGNvbnN0IHN0YXJ0
+UiA9IGZpcnN0U2VsZWN0ZWRDZWxsLnI7CiAgICAgICAgY29uc3Qgc3RhcnRDID0gZmlyc3RTZWxlY3RlZENlbGwuYzsKICAgICAg
+ICBmaXJzdFNlbGVjdGVkQ2VsbC5lbGVtZW50LmNsYXNzTGlzdC5yZW1vdmUoJ3NlbGVjdGVkJyk7CiAgICAgICAgY2hlY2tTZWxl
+Y3Rpb24oc3RhcnRSLCBzdGFydEMsIHIsIGMpOwogICAgICAgIGZpcnN0U2VsZWN0ZWRDZWxsID0gbnVsbDsKICAgIH0KfQoKZnVu
+Y3Rpb24gY2hlY2tTZWxlY3Rpb24ocjEsIGMxLCByMiwgYzIpIHsKICAgIHBsYWNlZFdvcmRzLmZvckVhY2gocFdvcmQgPT4gewog
+ICAgICAgIGlmIChwV29yZC5mb3VuZCkgcmV0dXJuOwogICAgICAgIGNvbnN0IGZpcnN0Q2VsbCA9IHBXb3JkLmNlbGxzWzBdOwog
+ICAgICAgIGNvbnN0IGxhc3RDZWxsID0gcFdvcmQuY2VsbHNbcFdvcmQuY2VsbHMubGVuZ3RoIC0gMV07CiAgICAgICAgCiAgICAg
+ICAgY29uc3QgbWF0Y2hGb3J3YXJkID0gKGZpcnN0Q2VsbC5yID09PSByMSAmJiBmaXJzdENlbGwuYyA9PT0gYzEgJiYgbGFzdENl
+bGwuciA9PT0gcjIgJiYgbGFzdENlbGwuYyA9PT0gYzIpOwogICAgICAgIGNvbnN0IG1hdGNoQmFja3dhcmQgPSAoZmlyc3RDZWxs
+LnIgPT09IHIyICYmIGZpcnN0Q2VsbC5jID09PSBjMiAmJiBsYXN0Q2VsbC5yID09PSByMSAmJiBsYXN0Q2VsbC5jID09PSBjMSk7
+CiAgICAgICAgCiAgICAgICAgaWYgKG1hdGNoRm9yd2FyZCB8fCBtYXRjaEJhY2t3YXJkKSB7CiAgICAgICAgICAgIHBXb3JkLmZv
+dW5kID0gdHJ1ZTsKICAgICAgICAgICAgZm91bmRXb3Jkc0NvdW50Kys7CiAgICAgICAgICAgIAogICAgICAgICAgICAvLyBQb250
+dWHDp8OjbzogKzE1MCBwb250b3MgcG9yIHBhbGF2cmEgZW5jb250cmFkYQogICAgICAgICAgICBzY29yZSArPSAxNTA7CiAgICAg
+ICAgICAgIHNjb3JlRWxlbWVudC50ZXh0Q29udGVudCA9IHNjb3JlOwogICAgICAgICAgICAKICAgICAgICAgICAgcFdvcmQuY2Vs
+bHMuZm9yRWFjaChjZWxsID0+IHsKICAgICAgICAgICAgICAgIGNvbnN0IGNlbGxFbGVtID0gZ3JpZEVsZW1lbnQucXVlcnlTZWxl
+Y3RvcihgW2RhdGEtcm93PSIke2NlbGwucn0iXVtkYXRhLWNvbD0iJHtjZWxsLmN9Il1gKTsKICAgICAgICAgICAgICAgIGlmIChj
+ZWxsRWxlbSkgewogICAgICAgICAgICAgICAgICAgIGNlbGxFbGVtLmNsYXNzTGlzdC5hZGQoJ2ZvdW5kJyk7CiAgICAgICAgICAg
+ICAgICB9CiAgICAgICAgICAgIH0pOwogICAgICAgICAgICAKICAgICAgICAgICAgY29uc3QgbGlzdEl0ZW0gPSBkb2N1bWVudC5n
+ZXRFbGVtZW50QnlJZChgd29yZC1pdGVtLSR7cFdvcmQud29yZH1gKTsKICAgICAgICAgICAgaWYgKGxpc3RJdGVtKSB7CiAgICAg
+ICAgICAgICAgICBsaXN0SXRlbS5jbGFzc0xpc3QuYWRkKCdiZy1lbWVyYWxkLTk1MC8yMCcsICdib3JkZXItZW1lcmFsZC01MDAv
+MzAnKTsKICAgICAgICAgICAgICAgIGxpc3RJdGVtLnF1ZXJ5U2VsZWN0b3IoJ3NwYW4nKS5jbGFzc0xpc3QuYWRkKCdsaW5lLXRo
+cm91Z2gnLCAndGV4dC1lbWVyYWxkLTQwMCcpOwogICAgICAgICAgICAgICAgY29uc3QgaWNvbiA9IGxpc3RJdGVtLnF1ZXJ5U2Vs
+ZWN0b3IoJy5zdGF0dXMtaWNvbicpOwogICAgICAgICAgICAgICAgaWNvbi5zZXRBdHRyaWJ1dGUoJ2RhdGEtbHVjaWRlJywgJ2No
+ZWNrLWNpcmNsZS0yJyk7CiAgICAgICAgICAgICAgICBpY29uLmNsYXNzTmFtZSA9ICd3LTQgaC00IHRleHQtZW1lcmFsZC00MDAg
+c3RhdHVzLWljb24nOwogICAgICAgICAgICAgICAgbHVjaWRlLmNyZWF0ZUljb25zKCk7CiAgICAgICAgICAgIH0KICAgICAgICAg
+ICAgCiAgICAgICAgICAgIGZvdW5kQ291bnRFbGVtZW50LnRleHRDb250ZW50ID0gYCR7Zm91bmRXb3Jkc0NvdW50fSAvICR7cGxh
+Y2VkV29yZHMubGVuZ3RofWA7CiAgICAgICAgICAgIAogICAgICAgICAgICBpZiAoZm91bmRXb3Jkc0NvdW50ID09PSBwbGFjZWRX
+b3Jkcy5sZW5ndGgpIHsKICAgICAgICAgICAgICAgIHN0b3BUaW1lcigpOwogICAgICAgICAgICAgICAgLy8gQsOzbnVzIGRlIHZl
+bG9jaWRhZGUgKG1heCAzMDAgcHRzKQogICAgICAgICAgICAgICAgY29uc3QgdGltZUJvbnVzID0gTWF0aC5tYXgoMCwgMzAwIC0g
+KHNlY29uZHNFbGFwc2VkICogMykpOwogICAgICAgICAgICAgICAgc2NvcmUgKz0gdGltZUJvbnVzOwogICAgICAgICAgICAgICAg
+c2NvcmVFbGVtZW50LnRleHRDb250ZW50ID0gc2NvcmU7CiAgICAgICAgICAgICAgICBmaW5hbFNjb3JlRWxlbWVudC50ZXh0Q29u
+dGVudCA9IHNjb3JlOwogICAgICAgICAgICAgICAgZmluYWxUaW1lRWxlbWVudC50ZXh0Q29udGVudCA9IHRpbWVyRWxlbWVudC50
+ZXh0Q29udGVudDsKICAgICAgICAgICAgICAgIHZpY3RvcnlNb2RhbC5jbGFzc0xpc3QucmVtb3ZlKCdoaWRkZW4nKTsKICAgICAg
+ICAgICAgfQogICAgICAgIH0KICAgIH0pOwp9CgpmdW5jdGlvbiBzdGFydFRpbWVyKCkgewogICAgY2xlYXJJbnRlcnZhbCh0aW1l
+ckludGVydmFsKTsKICAgIHRpbWVySW50ZXJ2YWwgPSBzZXRJbnRlcnZhbCgoKSA9PiB7CiAgICAgICAgc2Vjb25kc0VsYXBzZWQr
+KzsKICAgICAgICBjb25zdCBtaW5zID0gTWF0aC5mbG9vcihzZWNvbmRzRWxhcHNlZCAvIDYwKS50b1N0cmluZygpLnBhZFN0YXJ0
+KDIsICcwJyk7CiAgICAgICAgY29uc3Qgc2VjcyA9IChzZWNvbmRzRWxhcHNlZCAlIDYwKS50b1N0cmluZygpLnBhZFN0YXJ0KDIs
+ICcwJyk7CiAgICAgICAgdGltZXJFbGVtZW50LnRleHRDb250ZW50ID0gYCR7bWluc306JHtzZWNzfWA7CiAgICB9LCAxMDAwKTsK
+fQoKZnVuY3Rpb24gc3RvcFRpbWVyKCkgewogICAgY2xlYXJJbnRlcnZhbCh0aW1lckludGVydmFsKTsKfQoKZG9jdW1lbnQuYWRk
+RXZlbnRMaXN0ZW5lcignRE9NQ29udGVudExvYWRlZCcsIGluaXRHYW1lKTsKCjwvc2NyaXB0Pgo8L2JvZHk+CjwvaHRtbD4K
+    `.replace(/\s+/g, '');
+
+    function abrirJogoPedro(ev) {
+      ev.preventDefault();
+      const bin = atob(PEDRO_GAME_B64);
+      const bytes = Uint8Array.from(bin, ch => ch.charCodeAt(0));
+      const url = URL.createObjectURL(new Blob([bytes], { type: 'text/html;charset=utf-8' }));
+      if (!window.open(url, '_blank')) window.location.href = url;
+    }
+  </script>
+</script>
+</body>
+</html>

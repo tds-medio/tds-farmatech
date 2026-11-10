@@ -1,0 +1,1019 @@
+<html lang="pt-BR"><head><style>
+:root { --primary:#2b6cb0; --bg:#f7fafc; --wall:#4a5568; --path:#ffffff; --accent:#48bb78; --danger:#e53e3e; --enemy:#805ad5; }
+* { box-sizing: border-box; }
+body { font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color:var(--bg); margin:0; padding:10px; min-height:100vh; display:flex; flex-direction:column; align-items:center; color:#2d3748; overscroll-behavior:contain; }
+h1 { margin:5px 0; font-size:1.6em; color:var(--primary); text-align:center; }
+.screen { width:100%; max-width:620px; text-align:center; }
+.welcome-card { background:white; padding:30px 20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05); border-top:8px solid var(--primary); margin-top:20px; }
+.welcome-card p { line-height:1.6; color:#4a5568; margin-bottom:25px; }
+.welcome-icon { font-size:3.5em; margin-bottom:15px; }
+.med-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:12px; margin-top:20px; }
+.med-btn { background:white; border:2px solid #e2e8f0; border-radius:8px; padding:12px; cursor:pointer; font-weight:bold; font-size:0.98em; color:#2d3748; }
+.med-btn:hover { border-color:var(--primary); background:#ebf8ff; }
+.mode-toggle-container { margin-top:20px; padding:15px; background:white; border-radius:8px; border:2px solid #e2e8f0; display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap; }
+.switch { position:relative; display:inline-block; width:50px; height:26px; flex:0 0 auto; }
+.switch input { opacity:0; width:0; height:0; }
+.slider { position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#cbd5e0; transition:.4s; border-radius:26px; }
+.slider:before { position:absolute; content:""; height:18px; width:18px; left:4px; bottom:4px; background-color:white; transition:.4s; border-radius:50%; }
+input:checked + .slider { background-color:var(--danger); }
+input:checked + .slider:before { transform:translateX(24px); }
+.toggle-label { font-weight:bold; font-size:0.95em; cursor:pointer; user-select:none; text-align:left; flex:1 1 210px; }
+
+/* --- AQUI COMEÇAM AS CORREÇÕES DAS DIMENSÕES TRAVADAS --- */
+#game-info { margin-bottom:10px; font-size:1em; background:white; padding:8px 15px; border-radius:20px; box-shadow:0 2px 4px rgba(0,0,0,0.05); }
+
+/* Mudamos para block, adicionamos rolagem se crescer demais e limitamos a altura máxima */
+#maze-container { 
+    position:relative; 
+    display:block; 
+    background:var(--wall); 
+    padding:8px; 
+    border-radius:8px; 
+    touch-action:none; 
+    max-width:100%; 
+    max-height:60vh; 
+    overflow:auto; 
+    margin: 0 auto;
+}
+
+/* O Canvas agora respeita as proporções corretas do jogo sem esticar artificialmente */
+canvas { 
+    display:block; 
+    background:var(--path); 
+    max-width:100%; 
+    height:auto !important; 
+    position:relative !important; 
+    margin:0 auto;
+}
+
+#instructions-pc { color:#718096; font-size:0.9em; }
+#danger-alert { display:none; margin-bottom:8px; background:#fff5f5; color:#c53030; border:2px solid #fc8181; border-radius:8px; padding:8px 12px; font-weight:bold; font-size:0.95em; }
+#danger-alert.on { display:block; animation:dangerPulse 0.9s infinite; }
+@keyframes dangerPulse { 0% { background:#fff5f5; box-shadow:0 0 0 0 rgba(229,62,62,0.55); } 50% { background:#fed7d7; box-shadow:0 0 0 10px rgba(229,62,62,0); } 100% { background:#fff5f5; box-shadow:0 0 0 0 rgba(229,62,62,0); } }
+#maze-container.danger { animation:containerPulse 0.9s infinite; }
+@keyframes containerPulse { 0% { box-shadow:0 0 0 0 rgba(229,62,62,0.55); } 50% { box-shadow:0 0 0 10px rgba(229,62,62,0); } 100% { box-shadow:0 0 0 0 rgba(229,62,62,0); } }
+</style><script data-seaactors-playable-guard="1">(function(){function memoryStore(){var data={};return{getItem:function(key){key=String(key);return Object.prototype.hasOwnProperty.call(data,key)?data[key]:null;},setItem:function(key,value){data[String(key)]=String(value);},removeItem:function(key){delete data[String(key)];},clear:function(){data={};},key:function(index){return Object.keys(data)[index]||null;},get length(){return Object.keys(data).length;}};}function wrapStorage(name){try{var storage=window[name];if(!storage){throw new Error("missing");}void storage.getItem("__seaactors_probe__");}catch(error){try{Object.defineProperty(window,name,{value:memoryStore(),configurable:true});}catch(defineError){window[name]=memoryStore();}}}wrapStorage("localStorage");wrapStorage("sessionStorage");})();</script><script data-seaactors-screenshot-bridge="1">(function(){var m="__seaverseAppScreenshotBridge",T="seaverse:capture_screenshot",E="seaverse:screenshot_result",C="seaverse:preview_ready",_="https://esm.sh/modern-screenshot@4.6.5?bundle",p="1.0.0";if(typeof window=="undefined"||typeof document=="undefined"||window[m]&&typeof window[m].destroy=="function")return;var n=window.SeaverseAppScreenshotBridgeConfig||{},o={backgroundColor:n.backgroundColor||null,emitReady:n.emitReady!==!1,libraryUrl:n.libraryUrl||_,maxHeight:Number(n.maxHeight)||600,maxWidth:Number(n.maxWidth)||800,pixelRatio:Number(n.pixelRatio)||1,quality:Number(n.quality)||.8,readyType:n.readyType||C,requestType:n.requestType||T,responseType:n.responseType||E,selector:n.selector||"",targetOrigin:n.targetOrigin||"*"},v=null;function w(){return Date.now?Date.now():new Date().getTime()}function N(e){return e&&typeof e.requestId=="string"?e.requestId:"screenshot_"+w()}function L(e){return e&&typeof e.format=="string"?e.format:"image/png"}function M(e){var t=e&&Number(e.quality);return t>0&&t<=1?t:o.quality}function c(e,t,a){var r=e&&Number(e[t]);return r>0?r:a}function g(e,t,a){var r=e&&Number(e[t]);return r>0?r:a}function H(e){var t=e&&e.selector||o.selector,a=t?document.querySelector(t):null;return a||document.documentElement||document.body}function A(e){return e&&e.hideScrollbars===!0}function D(){var e=document.createElement("style");return e.setAttribute("data-seaverse-screenshot-hide-scrollbars","true"),e.textContent="*{scrollbar-gutter:auto!important;scrollbar-width:none!important;-ms-overflow-style:none!important;}*::-webkit-scrollbar{display:none!important;width:0!important;height:0!important;}",(document.head||document.documentElement).appendChild(e),function(){e.parentNode&&e.parentNode.removeChild(e)}}function U(){return n.modernScreenshot?Promise.resolve(n.modernScreenshot):window.modernScreenshot?Promise.resolve(window.modernScreenshot):(v||(v=import(o.libraryUrl)),v)}function W(e,t,a){var r=e.width,d=e.height,s=Math.min(t/r,a/d,1),i,l;return!s||s>=1||(i=document.createElement("canvas"),i.width=Math.max(1,Math.round(r*s)),i.height=Math.max(1,Math.round(d*s)),l=i.getContext("2d"),!l)?e:(l.drawImage(e,0,0,i.width,i.height),i)}function y(e,t,a){var r={type:e,requestId:t,timestamp:w(),payload:a};try{window.parent!==window?window.parent.postMessage(r,o.targetOrigin):window.ReactNativeWebView&&window.ReactNativeWebView.postMessage&&window.ReactNativeWebView.postMessage(JSON.stringify(r))}catch(d){}}function f(){o.emitReady&&y(o.readyType,"preview_ready_"+w(),{ready:!0,screenshot:!0,version:p})}async function b(e){var t=H(e),a=c(e,"maxWidth",o.maxWidth),r=c(e,"maxHeight",o.maxHeight),d=g(e,"viewportWidth",a/c(e,"pixelRatio",o.pixelRatio)),s=g(e,"viewportHeight",r/c(e,"pixelRatio",o.pixelRatio)),i=L(e),l=M(e),h=await U(),x=h.domToCanvas||h.toCanvas||h.default&&(h.default.domToCanvas||h.default.toCanvas),u,R=A(e)?D():null;try{if(typeof x!="function")throw new Error("modern-screenshot domToCanvas is not available");return u=await x(t,{backgroundColor:e&&e.backgroundColor?e.backgroundColor:o.backgroundColor,height:s,scale:c(e,"pixelRatio",o.pixelRatio),type:i,width:d,quality:l}),u=W(u,a,r),{success:!0,data:u.toDataURL(i,l),width:u.width,height:u.height,version:p}}finally{R&&R()}}async function S(e){var t=e&&e.data,a,r;if(!(window.parent!==window&&e.source!==window.parent)&&!(!t||t.type!==o.requestType)){a=N(t);try{r=await b(t.payload||{})}catch(d){r={success:!1,error:d instanceof Error?d.message:"Screenshot capture failed",version:p}}y(o.responseType,a,r)}}window.addEventListener("message",S),window[m]={capture:b,destroy:function(){window.removeEventListener("message",S),delete window[m]},version:p},document.readyState==="loading"?document.addEventListener("DOMContentLoaded",f,{once:!0}):f()})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Labirinto da Farmacologia</title>
+<style>
+:root { --primary:#2b6cb0; --bg:#f7fafc; --wall:#4a5568; --path:#ffffff; --accent:#48bb78; --danger:#e53e3e; --enemy:#805ad5; }
+* { box-sizing: border-box; }
+body { font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color:var(--bg); margin:0; padding:10px; min-height:100vh; display:flex; flex-direction:column; align-items:center; color:#2d3748; overscroll-behavior:contain; }
+h1 { margin:5px 0; font-size:1.6em; color:var(--primary); text-align:center; }
+.screen { width:100%; max-width:620px; text-align:center; }
+.welcome-card { background:white; padding:30px 20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05); border-top:8px solid var(--primary); margin-top:20px; }
+.welcome-card p { line-height:1.6; color:#4a5568; margin-bottom:25px; }
+.welcome-icon { font-size:3.5em; margin-bottom:15px; }
+.med-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:12px; margin-top:20px; }
+.med-btn { background:white; border:2px solid #e2e8f0; border-radius:8px; padding:12px; cursor:pointer; font-weight:bold; font-size:0.98em; color:#2d3748; }
+.med-btn:hover { border-color:var(--primary); background:#ebf8ff; }
+.mode-toggle-container { margin-top:20px; padding:15px; background:white; border-radius:8px; border:2px solid #e2e8f0; display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap; }
+.switch { position:relative; display:inline-block; width:50px; height:26px; flex:0 0 auto; }
+.switch input { opacity:0; width:0; height:0; }
+.slider { position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#cbd5e0; transition:.4s; border-radius:26px; }
+.slider:before { position:absolute; content:""; height:18px; width:18px; left:4px; bottom:4px; background-color:white; transition:.4s; border-radius:50%; }
+input:checked + .slider { background-color:var(--danger); }
+input:checked + .slider:before { transform:translateX(24px); }
+.toggle-label { font-weight:bold; font-size:0.95em; cursor:pointer; user-select:none; text-align:left; flex:1 1 210px; }
+</style>
+</head>
+<body>
+<h1>Mecanismo de Ação: O Labirinto</h1>
+<style>
+#game-info { margin-bottom:10px; font-size:1em; background:white; padding:8px 15px; border-radius:20px; box-shadow:0 2px 4px rgba(0,0,0,0.05); }
+#maze-container { position:relative; display:inline-block; background:var(--wall); padding:8px; border-radius:8px; touch-action:none; max-width:100%; }
+canvas { display:block; background:var(--path); max-width:100%; height:auto; }
+#instructions-pc { color:#718096; font-size:0.9em; }
+#danger-alert { display:none; margin-bottom:8px; background:#fff5f5; color:#c53030; border:2px solid #fc8181; border-radius:8px; padding:8px 12px; font-weight:bold; font-size:0.95em; }
+#danger-alert.on { display:block; animation:dangerPulse 0.9s infinite; }
+@keyframes dangerPulse { 0% { background:#fff5f5; box-shadow:0 0 0 0 rgba(229,62,62,0.55); } 50% { background:#fed7d7; box-shadow:0 0 0 10px rgba(229,62,62,0); } 100% { background:#fff5f5; box-shadow:0 0 0 0 rgba(229,62,62,0); } }
+#maze-container.danger { animation:containerPulse 0.9s infinite; }
+@keyframes containerPulse { 0% { box-shadow:0 0 0 2px rgba(229,62,62,0.40); } 50% { box-shadow:0 0 0 8px rgba(229,62,62,0.90); } 100% { box-shadow:0 0 0 2px rgba(229,62,62,0.40); } }
+#mobile-controls { display:none; margin-top:15px; grid-template-areas:". up ." "left . right" ". down ."; gap:10px; justify-content:center; }
+.control-btn { width:60px; height:60px; background:#e2e8f0; border:2px solid #cbd5e0; border-radius:50%; font-size:1.5em; font-weight:bold; color:#4a5568; display:flex; align-items:center; justify-content:center; user-select:none; cursor:pointer; touch-action:none; }
+.control-btn:active { background:var(--primary); color:white; border-color:var(--primary); }
+#btn-up { grid-area:up; } #btn-down { grid-area:down; } #btn-left { grid-area:left; } #btn-right { grid-area:right; }
+.victory-card { background:white; padding:20px; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.1); border-top:8px solid var(--accent); margin-top:20px; }
+.fail-card { border-top:8px solid var(--danger); }
+.victory-card h2 { color:var(--accent); margin-top:0; font-size:1.4em; }
+.fail-card h2 { color:var(--danger); }
+.target-info { font-style:italic; color:#718096; margin-bottom:12px; }
+.desc-box { text-align:left; background:#f7fafc; padding:12px; border-radius:6px; line-height:1.5; font-size:0.95em; }
+button.action-btn { background:var(--primary); color:white; border:none; padding:12px 25px; border-radius:6px; font-size:1em; font-weight:bold; cursor:pointer; transition:background 0.2s; touch-action:manipulation; }
+button.action-btn:hover { background:#235282; }
+button.action-btn.ghost { background:#e2e8f0; color:#2d3748; }
+button.action-btn.ghost:hover { background:#cbd5e0; }
+.fail-card button.action-btn { background:var(--danger); }
+.fail-card button.action-btn:hover { background:#c53030; }
+.fail-card button.action-btn.ghost { background:#e2e8f0; color:#2d3748; }
+.btn-row { display:flex; gap:10px; margin-top:18px; flex-wrap:wrap; justify-content:center; }
+.legend { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; font-size:0.85em; color:#4a5568; margin-top:10px; }
+.legend span { display:flex; align-items:center; gap:6px; }
+.dot { width:14px; height:14px; border-radius:50%; display:inline-block; }
+@media (max-width:768px) { #mobile-controls { display:grid; } #instructions-pc { display:none; } }
+</style>
+
+<!-- TELA 1: BOAS VINDAS -->
+<div id="screen-welcome" class="screen" style="display: block;">
+    <div class="welcome-card">
+        <div class="welcome-icon">💊🧭</div>
+        <p>Bem-vindo ao jogo! Aqui você testará seus conhecimentos farmacológicos guiando diferentes medicamentos por um labirinto biológico até o seu local exato de ação no organismo.</p>
+        <button class="action-btn" id="btn-iniciar-direto">Iniciar Jogo</button>
+    </div>
+</div>
+
+<!-- TELA 2: SELEÇÃO -->
+<div id="screen-select" class="screen" style="display: none;">
+    <p>Selecione um medicamento abaixo para iniciar o percurso biológico:</p>
+
+    <div class="med-grid">
+        <button class="med-btn" onclick="selectMedication('varfarina')">Varfarina</button>
+        <button class="med-btn" onclick="selectMedication('ranitidina')">Ranitidina</button>
+        <button class="med-btn" onclick="selectMedication('cetoprofeno')">Cetoprofeno</button>
+        <button class="med-btn" onclick="selectMedication('aspirina')">Aspirina</button>
+        <button class="med-btn" onclick="selectMedication('amoxicilina')">Amoxicilina</button>
+        <button class="med-btn" onclick="selectMedication('alprazolam')">Alprazolam</button>
+        <button class="med-btn" onclick="selectMedication('clonazepam')">Clonazepam</button>
+    </div>
+
+    <div class="mode-toggle-container">
+        <label class="switch">
+            <input type="checkbox" id="terminalModeCheckbox">
+            <span class="slider"></span>
+        </label>
+        <span class="toggle-label" id="toggleLabelText">Ativar MODO ESTADO TERMINAL (Labirinto 4x maior + Anticorpo Caçador)</span>
+    </div>
+</div>
+
+<!-- TELA 3: JOGO -->
+<div id="screen-game" class="screen" style="display: none;">
+    <div id="game-info">Leve o remédio até: <strong id="current-target"></strong> · Passos: <strong id="move-count">0</strong></div>
+    <div id="maze-container">
+        <div id="danger-alert"></div>
+        <canvas id="mazeCanvas"></canvas>
+    </div>
+    <div class="legend">
+        <span><i class="dot" style="background:#2b6cb0"></i> Medicamento</span>
+        <span><i class="dot" style="background:#e53e3e;border-radius:2px"></i> Alvo biológico</span>
+        <span id="legend-enemy" style="display:none"><i class="dot" style="background:#805ad5"></i> Anticorpo Y</span>
+    </div>
+    <p id="instructions-pc" style="color:#718096;font-size:0.9em;">Use as setas do teclado (▲ ▼ ◀ ▶) ou clique nos botões virtuais.</p>
+
+    <div id="mobile-controls">
+        <div class="control-btn" id="btn-up">▲</div>
+        <div class="control-btn" id="btn-left">◀</div>
+        <div class="control-btn" id="btn-right">▶</div>
+        <div class="control-btn" id="btn-down">▼</div>
+    </div>
+</div>
+
+<!-- TELA 4: VITÓRIA -->
+<div id="screen-victory" class="screen" style="display: none;">
+    <div class="victory-card">
+        <div class="welcome-icon">✅</div>
+        <h2 id="victory-title">O medicamento chegou ao alvo!</h2>
+        <p class="target-info" id="victory-target"></p>
+        <div class="desc-box" id="victory-desc"></div>
+        <div class="btn-row">
+            <button class="action-btn" id="btn-replay">Jogar novamente</button>
+            <button class="action-btn ghost" id="btn-back">Trocar remédio</button>
+        </div>
+    </div>
+</div>
+
+<!-- TELA 5: DERROTA -->
+<div id="screen-gameover" class="screen" style="display: none;">
+    <div class="victory-card fail-card">
+        <div class="welcome-icon">☠️</div>
+        <h2>Anticorpo neutralizou o medicamento!</h2>
+        <p class="target-info" id="gameover-target"></p>
+        <div class="desc-box" id="gameover-desc"></div>
+        <div class="btn-row">
+            <button class="action-btn" id="btn-retry">Tentar novamente</button>
+            <button class="action-btn ghost" id="btn-back2">Trocar remédio</button>
+        </div>
+    </div>
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   BANCO DE DADOS FARMACOLÓGICO
+   ============================================================ */
+var MEDICATIONS = {
+  varfarina: {
+    nome: "Varfarina",
+    alvoCurto: "VKORC1 hepática",
+    alvo: "Inibição da vitamina K epóxido redutase (VKORC1) nos hepatócitos",
+    descricao: "A varfarina é um anticoagulante oral cumarínico. Ela bloqueia a enzima vitamina K epóxido redutase (VKORC1), impedindo a regeneração da vitamina K hidroquinona, que é o cofator essencial da gama-carboxilação. Sem essa carboxilação, os fatores de coagulação II, VII, IX e X e as proteínas C e S são sintetizados na forma inativa. O resultado é a queda progressiva da coagulação e o prolongamento do tempo de protrombina (INR), monitorado clinicamente."
+  },
+  ranitidina: {
+    nome: "Ranitidina",
+    alvoCurto: "Receptores H2 gástricos",
+    alvo: "Antagonismo dos receptores H2 da histamina nas células parietais gástricas",
+    descricao: "A ranitidina é um antagonista competitivo e reversível dos receptores H2 da histamina. Ao ocupar esses receptores na membrana basolateral da célula parietal, impede a ativação da adenilato ciclase e reduz o AMP cíclico intracelular. Com menos AMPc disponível, há menor estímulo da bomba de prótons H+/K+ ATPase, com redução da secreção basal e noturna de ácido clorídrico — base do tratamento da úlcera péptica e do refluxo."
+  },
+  cetoprofeno: {
+    nome: "Cetoprofeno",
+    alvoCurto: "COX-1 / COX-2",
+    alvo: "Inibição das ciclo-oxigenases COX-1 e COX-2 na cascata do ácido araquidônico",
+    descricao: "O cetoprofeno é um anti-inflamatório não esteroidal derivado do ácido propiônico. Ele inibe de forma reversível as isoformas COX-1 e COX-2, bloqueando a conversão do ácido araquidônico em prostaglandinas e tromboxanos. A menor produção de prostaglandinas reduz a sensibilização dos nociceptores (analgesia), o edema e a vasodilatação (efeito anti-inflamatório) e a febre (efeito antipirético)."
+  },
+  aspirina: {
+    nome: "Aspirina",
+    alvoCurto: "COX-1 plaquetária",
+    alvo: "Acetilação irreversível da COX-1 nas plaquetas",
+    descricao: "O ácido acetilsalicílico acetila covalentemente o resíduo de serina da COX-1 plaquetária, bloqueando o sítio catalítico de forma irreversível. Como a plaqueta não possui núcleo e não consegue sintetizar nova enzima, o efeito antiagregante persiste por toda a sua vida útil (7 a 10 dias). Sem a COX-1 funcional, há menor formação de tromboxano A2 e, portanto, menor agregação plaquetária e menor risco de trombose arterial."
+  },
+  amoxicilina: {
+    nome: "Amoxicilina",
+    alvoCurto: "PBP da parede bacteriana",
+    alvo: "Inibição das proteínas ligadoras de penicilina (PBP) na síntese do peptidoglicano",
+    descricao: "A amoxicilina é um antibiótico beta-lactâmico de amplo espectro. Ela se liga às proteínas ligadoras de penicilina (transpeptidases) presentes na membrana bacteriana e inibe a reação de transpeptidação responsável pelas ligações cruzadas do peptidoglicano. A parede celular fica fragilizada e a bactéria em divisão ativa sofre lise osmótica, geralmente com ação bactericida."
+  },
+  alprazolam: {
+    nome: "Alprazolam",
+    alvoCurto: "Receptor GABA-A",
+    alvo: "Sítio benzodiazepínico alostérico do receptor GABA-A",
+    descricao: "O alprazolam é uma benzodiazepina de ação ansiolítica e curta duração. Ele se liga ao sítio alostérico benzodiazepínico, situado entre as subunidades alfa e gama do receptor GABA-A, e aumenta a frequência de abertura do canal de cloreto. Com maior entrada de cloro, o neurônio se hiperpolariza e a neurotransmissão excitatória fica reduzida, produzindo efeito ansiolítico, sedativo, miorrelaxante e anticonvulsivante."
+  },
+  clonazepam: {
+    nome: "Clonazepam",
+    alvoCurto: "GABA-A (efeito anticonvulsivante)",
+    alvo: "Sítio benzodiazepínico do receptor GABA-A com ação anticonvulsivante",
+    descricao: "O clonazepam é uma benzodiazepina de longa duração, usada como anticonvulsivante e no transtorno do pânico. Ao potencializar a corrente de cloreto pelo receptor GABA-A, ele reduz a propagação de descargas neuronais anômalas nos focos epilépticos e eleva o limiar convulsivo. Também produz efeito ansiolítico, sedativo e miorrelaxante central, com risco de tolerância em uso prolongado."
+  }
+};
+
+/* ============================================================
+   CONSTANTES GLOBAIS (declaradas antes de qualquer uso)
+   ============================================================ */
+var COLS_NORMAL = 17;
+var ROWS_NORMAL = 17;
+var TILE_NORMAL = 26;
+var COLS_TERMINAL = 33;
+var ROWS_TERMINAL = 33;
+var TILE_TERMINAL = 14;
+
+var DIRS = [
+  { nome: "top", dc: 0, dr: -1 },
+  { nome: "right", dc: 1, dr: 0 },
+  { nome: "bottom", dc: 0, dr: 1 },
+  { nome: "left", dc: -1, dr: 0 }
+];
+
+var canvas = null;
+var ctx = null;
+
+var cols = COLS_NORMAL;
+var rows = ROWS_NORMAL;
+var tileSize = TILE_NORMAL;
+var grid = [];
+
+var player = { c: 0, r: 0 };
+var target = { c: 0, r: 0 };
+var enemy = null;
+var enemyTimer = null;
+
+var currentMed = null;
+var terminalMode = false;
+var gameActive = false;
+var passos = 0;
+
+/* Ritmo do anticorpo: tick fixo + atraso variável
+   (50% mais rápido: tempos por passo cortados pela metade) */
+var ENEMY_TICK = 40;
+var ENEMY_START_DELAY = 500;
+var ENEMY_MIN_DELAY = 140;
+var ENEMY_ACELERACAO = 48;
+var enemyAccum = 0;
+var enemyDelay = 500;
+
+/* Indicador de perigo: distância (em blocos) do anticorpo até o jogador */
+var PERIGO_BLOCOS = 5;
+var enemyDist = null;
+var dangerOn = false;
+
+/* Quantidade de rotas corretas desejada entre início e alvo */
+var ROTAS_DESEJADAS = 3;
+
+/* ============================================================
+   ALGORITMO DO LABIRINTO (DFS - busca em profundidade)
+   ============================================================ */
+function generateRandomMaze(totalCols, totalRows, tile) {
+  cols = totalCols;
+  rows = totalRows;
+  tileSize = tile;
+
+  grid = [];
+  for (var c = 0; c < cols; c++) {
+    var coluna = [];
+    for (var r = 0; r < rows; r++) {
+      coluna.push({ top: true, right: true, bottom: true, left: true, visited: false });
+    }
+    grid.push(coluna);
+  }
+
+  var pilha = [];
+  var atual = { c: 0, r: 0 };
+  grid[0][0].visited = true;
+  pilha.push(atual);
+
+  while (pilha.length > 0) {
+    var celula = pilha[pilha.length - 1];
+    var vizinhos = getUnvisitedNeighbors(celula.c, celula.r);
+    if (vizinhos.length === 0) {
+      pilha.pop();
+      continue;
+    }
+    var sorteio = Math.floor(Math.random() * vizinhos.length);
+    var escolhido = vizinhos[sorteio];
+    removeWalls(celula.c, celula.r, escolhido.c, escolhido.r);
+    grid[escolhido.c][escolhido.r].visited = true;
+    pilha.push(escolhido);
+  }
+
+  ensureMultiplePaths();
+}
+
+function getUnvisitedNeighbors(c, r) {
+  var lista = [];
+  for (var i = 0; i < DIRS.length; i++) {
+    var d = DIRS[i];
+    var nc = c + d.dc;
+    var nr = r + d.dr;
+    if (nc < 0 || nc >= cols || nr < 0 || nr >= rows) {
+      continue;
+    }
+    if (grid[nc][nr].visited) {
+      continue;
+    }
+    lista.push({ c: nc, r: nr });
+  }
+  return lista;
+}
+
+function removeWalls(c1, r1, c2, r2) {
+  var dc = c2 - c1;
+  var dr = r2 - r1;
+
+  if (dc === 1) {
+    grid[c1][r1].right = false;
+    grid[c2][r2].left = false;
+  } else if (dc === -1) {
+    grid[c1][r1].left = false;
+    grid[c2][r2].right = false;
+  } else if (dr === 1) {
+    grid[c1][r1].bottom = false;
+    grid[c2][r2].top = false;
+  } else if (dr === -1) {
+    grid[c1][r1].top = false;
+    grid[c2][r2].bottom = false;
+  }
+}
+
+function canMove(c, r, dir) {
+  if (c < 0 || c >= cols || r < 0 || r >= rows) {
+    return false;
+  }
+  if (dir === "up") { return r > 0 && !grid[c][r].top; }
+  if (dir === "down") { return r < rows - 1 && !grid[c][r].bottom; }
+  if (dir === "left") { return c > 0 && !grid[c][r].left; }
+  if (dir === "right") { return c < cols - 1 && !grid[c][r].right; }
+  return false;
+}
+
+/* ============================================================
+   ROTAS MÚLTIPLAS: transforma o labirinto perfeito (1 caminho)
+   em um labirinto com 2 a 3 caminhos corretos até o alvo
+   ============================================================ */
+function vizinhosAbertos(c, r) {
+  var lista = [];
+  if (r > 0 && !grid[c][r].top) { lista.push({ c: c, r: r - 1 }); }
+  if (r < rows - 1 && !grid[c][r].bottom) { lista.push({ c: c, r: r + 1 }); }
+  if (c > 0 && !grid[c][r].left) { lista.push({ c: c - 1, r: r }); }
+  if (c < cols - 1 && !grid[c][r].right) { lista.push({ c: c + 1, r: r }); }
+  return lista;
+}
+
+function paredesFechadas(c, r) {
+  var lista = [];
+  if (r > 0 && grid[c][r].top) { lista.push({ c: c, r: r - 1 }); }
+  if (r < rows - 1 && grid[c][r].bottom) { lista.push({ c: c, r: r + 1 }); }
+  if (c > 0 && grid[c][r].left) { lista.push({ c: c - 1, r: r }); }
+  if (c < cols - 1 && grid[c][r].right) { lista.push({ c: c + 1, r: r }); }
+  return lista;
+}
+
+/* Abre becos sem saída criando atalhos (braiding) */
+function braidDeadEnds() {
+  for (var c = 0; c < cols; c++) {
+    for (var r = 0; r < rows; r++) {
+      if (vizinhosAbertos(c, r).length >= 2) { continue; }
+      var opcoes = paredesFechadas(c, r);
+      if (opcoes.length === 0) { continue; }
+      var e = opcoes[Math.floor(Math.random() * opcoes.length)];
+      removeWalls(c, r, e.c, e.r);
+    }
+  }
+}
+
+/* Abre uma parede interna aleatória (cria novos laços e rotas) */
+function openRandomWall() {
+  for (var t = 0; t < 400; t++) {
+    var c = Math.floor(Math.random() * cols);
+    var r = Math.floor(Math.random() * rows);
+    var opcoes = paredesFechadas(c, r);
+    if (opcoes.length === 0) { continue; }
+    var e = opcoes[Math.floor(Math.random() * opcoes.length)];
+    removeWalls(c, r, e.c, e.r);
+    return true;
+  }
+  return false;
+}
+
+/* Conta caminhos simples do início (0,0) até o alvo, com teto */
+function countPaths(limite) {
+  var encontrados = 0;
+  var visitado = new Uint8Array(cols * rows);
+  var orcamento = 400000;
+  var fimC = cols - 1;
+  var fimR = rows - 1;
+
+  function busca(c, r) {
+    if (encontrados >= limite || orcamento <= 0) { return; }
+    orcamento = orcamento - 1;
+    if (c === fimC && r === fimR) {
+      encontrados = encontrados + 1;
+      return;
+    }
+    visitado[r * cols + c] = 1;
+    var viz = vizinhosAbertos(c, r);
+    for (var i = 0; i < viz.length; i++) {
+      if (visitado[viz[i].r * cols + viz[i].c]) { continue; }
+      busca(viz[i].c, viz[i].r);
+      if (encontrados >= limite) { break; }
+    }
+    visitado[r * cols + c] = 0;
+  }
+
+  busca(0, 0);
+  return encontrados;
+}
+
+/* Garante de 2 a 3 caminhos corretos no labirinto gerado */
+function ensureMultiplePaths() {
+  braidDeadEnds();
+
+  var tentativas = 0;
+  while (tentativas < 80 && countPaths(ROTAS_DESEJADAS + 1) < ROTAS_DESEJADAS) {
+    if (!openRandomWall()) { break; }
+    tentativas = tentativas + 1;
+  }
+
+  var reforco = 0;
+  while (reforco < 40 && countPaths(3) < 2) {
+    if (!openRandomWall()) { break; }
+    reforco = reforco + 1;
+  }
+}
+
+/* ============================================================
+   DESENHO NO CANVAS
+   ============================================================ */
+function drawMaze() {
+  if (!ctx) { return; }
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  var alvoX = target.c * tileSize;
+  var alvoY = target.r * tileSize;
+  ctx.fillStyle = "#e53e3e";
+  ctx.fillRect(alvoX + tileSize * 0.16, alvoY + tileSize * 0.16, tileSize * 0.68, tileSize * 0.68);
+
+  ctx.strokeStyle = "#4a5568";
+  ctx.lineWidth = Math.max(2, Math.round(tileSize * 0.14));
+  ctx.lineCap = "square";
+  ctx.beginPath();
+  for (var c = 0; c < cols; c++) {
+    for (var r = 0; r < rows; r++) {
+      var x = c * tileSize;
+      var y = r * tileSize;
+      var cel = grid[c][r];
+      if (cel.top) { ctx.moveTo(x, y); ctx.lineTo(x + tileSize, y); }
+      if (cel.right) { ctx.moveTo(x + tileSize, y); ctx.lineTo(x + tileSize, y + tileSize); }
+      if (cel.bottom) { ctx.moveTo(x, y + tileSize); ctx.lineTo(x + tileSize, y + tileSize); }
+      if (cel.left) { ctx.moveTo(x, y); ctx.lineTo(x, y + tileSize); }
+    }
+  }
+  ctx.stroke();
+
+  if (enemy) {
+    var ex = enemy.c * tileSize + tileSize / 2;
+    var ey = enemy.r * tileSize + tileSize / 2;
+    ctx.beginPath();
+    ctx.arc(ex, ey, tileSize * 0.38, 0, Math.PI * 2);
+    ctx.fillStyle = "#805ad5";
+    ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold " + Math.max(9, Math.round(tileSize * 0.52)) + "px Segoe UI, Tahoma, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("Y", ex, ey + 1);
+  }
+
+  var px = player.c * tileSize + tileSize / 2;
+  var py = player.r * tileSize + tileSize / 2;
+  ctx.beginPath();
+  ctx.arc(px, py, tileSize * 0.32, 0, Math.PI * 2);
+  ctx.fillStyle = "#2b6cb0";
+  ctx.fill();
+  ctx.strokeStyle = "#1a365d";
+  ctx.lineWidth = Math.max(1, Math.round(tileSize * 0.08));
+  ctx.stroke();
+
+  if (dangerOn) {
+    ctx.fillStyle = "rgba(229,62,62,0.14)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    var pulso = (Math.sin(Date.now() / 180) + 1) / 2;
+    ctx.beginPath();
+    ctx.arc(px, py, tileSize * (0.55 + pulso * 0.35), 0, Math.PI * 2);
+    ctx.strokeStyle = "rgba(229,62,62," + (0.45 + pulso * 0.5).toFixed(2) + ")";
+    ctx.lineWidth = Math.max(2, Math.round(tileSize * 0.16));
+    ctx.stroke();
+  }
+}
+
+/* ============================================================
+   MOVIMENTO DO JOGADOR
+   ============================================================ */
+function movePlayer(dir) {
+  if (!gameActive || !ctx) { return; }
+  if (!canMove(player.c, player.r, dir)) { return; }
+
+  if (dir === "up") { player.r = player.r - 1; }
+  else if (dir === "down") { player.r = player.r + 1; }
+  else if (dir === "left") { player.c = player.c - 1; }
+  else if (dir === "right") { player.c = player.c + 1; }
+
+  passos = passos + 1;
+  var contador = document.getElementById("move-count");
+  if (contador) { contador.textContent = String(passos); }
+
+  updateDangerIndicator();
+  drawMaze();
+
+  if (player.c === target.c && player.r === target.r) {
+    winGame();
+    return;
+  }
+  if (enemy && enemy.c === player.c && enemy.r === player.r) {
+    loseGame();
+  }
+}
+
+/* ============================================================
+   ANTICORPO ANTIFARMÁTICO (INIMIGO)
+   ============================================================ */
+function findEnemySpawn() {
+  var melhor = null;
+  var melhorDist = -1;
+  var limite = Math.floor((cols + rows) * 0.7);
+
+  for (var tentativa = 0; tentativa < 200; tentativa++) {
+    var c = Math.floor(Math.random() * cols);
+    var r = Math.floor(Math.random() * rows);
+    if (c === player.c && r === player.r) { continue; }
+    if (c === target.c && r === target.r) { continue; }
+    var dist = Math.abs(c - player.c) + Math.abs(r - player.r);
+    if (dist > melhorDist) {
+      melhorDist = dist;
+      melhor = { c: c, r: r };
+    }
+    if (melhorDist >= limite) { break; }
+  }
+
+  if (!melhor) {
+    melhor = { c: cols - 1, r: rows - 2 };
+  }
+  return melhor;
+}
+
+function startEnemy() {
+  var pos = findEnemySpawn();
+  enemy = { c: pos.c, r: pos.r };
+  var legenda = document.getElementById("legend-enemy");
+  if (legenda) { legenda.style.display = "flex"; }
+  stopEnemyTimer();
+  enemyAccum = 0;
+  enemyDelay = ENEMY_START_DELAY;
+  enemyTimer = setInterval(enemyTick, ENEMY_TICK);
+}
+
+function enemyTick() {
+  if (!gameActive || !enemy) { return; }
+  enemyAccum = enemyAccum + ENEMY_TICK;
+  if (enemyAccum < enemyDelay) { return; }
+  enemyAccum = 0;
+  enemyStep();
+  enemyDelay = Math.max(ENEMY_MIN_DELAY, Math.round(enemyDelay - ENEMY_ACELERACAO));
+}
+
+function stopEnemyTimer() {
+  if (enemyTimer !== null) {
+    clearInterval(enemyTimer);
+    enemyTimer = null;
+  }
+}
+
+function stopEnemy() {
+  stopEnemyTimer();
+  enemy = null;
+  var legenda = document.getElementById("legend-enemy");
+  if (legenda) { legenda.style.display = "none"; }
+}
+
+/* Caminho mais curto até o jogador via BFS (busca em largura) */
+function bfsNextStep() {
+  if (!enemy) { return null; }
+
+  var total = cols * rows;
+  var inicio = enemy.r * cols + enemy.c;
+  var fim = player.r * cols + player.c;
+  if (inicio === fim) { return null; }
+
+  var anterior = new Int32Array(total);
+  for (var i = 0; i < total; i++) { anterior[i] = -1; }
+  var visitado = new Uint8Array(total);
+
+  var fila = [inicio];
+  var cabeca = 0;
+  visitado[inicio] = 1;
+
+  while (cabeca < fila.length) {
+    var atual = fila[cabeca];
+    cabeca = cabeca + 1;
+    if (atual === fim) { break; }
+
+    var c = atual % cols;
+    var r = (atual - c) / cols;
+    var viz = vizinhosAbertos(c, r);
+    for (var v = 0; v < viz.length; v++) {
+      var idx = viz[v].r * cols + viz[v].c;
+      if (visitado[idx]) { continue; }
+      visitado[idx] = 1;
+      anterior[idx] = atual;
+      fila.push(idx);
+    }
+  }
+
+  if (!visitado[fim]) { return null; }
+
+  var passo = fim;
+  while (anterior[passo] !== inicio) {
+    passo = anterior[passo];
+    if (passo === -1) { return null; }
+  }
+  var pc = passo % cols;
+  var pr = (passo - pc) / cols;
+  return { c: pc, r: pr };
+}
+
+function enemyStep() {
+  if (!gameActive || !enemy) { return; }
+
+  var passo = bfsNextStep();
+  if (passo) {
+    enemy.c = passo.c;
+    enemy.r = passo.r;
+  } else {
+    moverInimigoAleatorio();
+  }
+
+  updateDangerIndicator();
+  drawMaze();
+
+  if (enemy && enemy.c === player.c && enemy.r === player.r) {
+    loseGame();
+  }
+}
+
+/* ============================================================
+   INDICADOR DE PERIGO: distância real no labirinto (BFS)
+   ============================================================ */
+function computeEnemyDistance() {
+  if (!enemy) { return null; }
+
+  var total = cols * rows;
+  var inicio = enemy.r * cols + enemy.c;
+  var fim = player.r * cols + player.c;
+  if (inicio === fim) { return 0; }
+
+  var dist = new Int32Array(total);
+  for (var i = 0; i < total; i++) { dist[i] = -1; }
+  dist[inicio] = 0;
+
+  var fila = [inicio];
+  var cabeca = 0;
+
+  while (cabeca < fila.length) {
+    var atual = fila[cabeca];
+    cabeca = cabeca + 1;
+    var c = atual % cols;
+    var r = (atual - c) / cols;
+    var viz = vizinhosAbertos(c, r);
+    for (var v = 0; v < viz.length; v++) {
+      var idx = viz[v].r * cols + viz[v].c;
+      if (dist[idx] !== -1) { continue; }
+      dist[idx] = dist[atual] + 1;
+      if (idx === fim) { return dist[idx]; }
+      fila.push(idx);
+    }
+  }
+
+  return null;
+}
+
+function updateDangerIndicator() {
+  var alerta = document.getElementById("danger-alert");
+  var container = document.getElementById("maze-container");
+
+  if (!gameActive || !enemy) {
+    enemyDist = null;
+    dangerOn = false;
+    if (alerta) { alerta.className = ""; alerta.textContent = ""; }
+    if (container) { container.className = ""; }
+    return;
+  }
+
+  enemyDist = computeEnemyDistance();
+  var perto = (enemyDist !== null && enemyDist > 0 && enemyDist <= PERIGO_BLOCOS);
+  dangerOn = perto;
+
+  if (alerta) {
+    if (perto) {
+      alerta.className = "on";
+      alerta.textContent = "⚠️ PERIGO: anticorpo a " + enemyDist +
+        (enemyDist === 1 ? " bloco" : " blocos") + " de você!";
+    } else {
+      alerta.className = "";
+      alerta.textContent = "";
+    }
+  }
+
+  if (container) {
+    container.className = perto ? "danger" : "";
+  }
+
+  if (perto && dangerAnimId === null) {
+    dangerAnimId = requestAnimationFrame(dangerAnimLoop);
+  }
+}
+
+var dangerAnimId = null;
+
+function dangerAnimLoop() {
+  if (!dangerOn || !gameActive) {
+    dangerAnimId = null;
+    return;
+  }
+  drawMaze();
+  dangerAnimId = requestAnimationFrame(dangerAnimLoop);
+}
+
+function moverInimigo(dc, dr) {
+  if (!enemy) { return false; }
+  if (dc === 0 && dr === 0) { return false; }
+
+  var nc = enemy.c + dc;
+  var nr = enemy.r + dr;
+  if (nc < 0 || nc >= cols || nr < 0 || nr >= rows) { return false; }
+
+  if (dc === 1 && grid[enemy.c][enemy.r].right) { return false; }
+  if (dc === -1 && grid[enemy.c][enemy.r].left) { return false; }
+  if (dr === 1 && grid[enemy.c][enemy.r].bottom) { return false; }
+  if (dr === -1 && grid[enemy.c][enemy.r].top) { return false; }
+
+  enemy.c = nc;
+  enemy.r = nr;
+  return true;
+}
+
+function moverInimigoAleatorio() {
+  var opcoes = [];
+  for (var i = 0; i < DIRS.length; i++) {
+    var d = DIRS[i];
+    if (moverInimigoValido(d.dc, d.dr)) {
+      opcoes.push(d);
+    }
+  }
+  if (opcoes.length === 0) { return; }
+  var sorteio = opcoes[Math.floor(Math.random() * opcoes.length)];
+  enemy.c = enemy.c + sorteio.dc;
+  enemy.r = enemy.r + sorteio.dr;
+}
+
+function moverInimigoValido(dc, dr) {
+  var nc = enemy.c + dc;
+  var nr = enemy.r + dr;
+  if (nc < 0 || nc >= cols || nr < 0 || nr >= rows) { return false; }
+  if (dc === 1 && grid[enemy.c][enemy.r].right) { return false; }
+  if (dc === -1 && grid[enemy.c][enemy.r].left) { return false; }
+  if (dr === 1 && grid[enemy.c][enemy.r].bottom) { return false; }
+  if (dr === -1 && grid[enemy.c][enemy.r].top) { return false; }
+  return true;
+}
+
+/* ============================================================
+   TROCA DE TELAS (estilo inline)
+   ============================================================ */
+var TELAS = ["screen-welcome", "screen-select", "screen-game", "screen-victory", "screen-gameover"];
+
+function showScreen(id) {
+  for (var i = 0; i < TELAS.length; i++) {
+    var el = document.getElementById(TELAS[i]);
+    if (!el) { continue; }
+    if (TELAS[i] === id) {
+      el.style.display = "block";
+    } else {
+      el.style.display = "none";
+    }
+  }
+}
+
+/* ============================================================
+   FLUXO DO JOGO
+   ============================================================ */
+function selectMedication(chave) {
+  var med = MEDICATIONS[chave];
+  if (!med) { return; }
+  currentMed = med;
+  startGame();
+}
+
+function startGame() {
+  if (!currentMed) { return; }
+
+  stopEnemy();
+  gameActive = false;
+
+  var caixa = document.getElementById("terminalModeCheckbox");
+  terminalMode = !!(caixa && caixa.checked);
+
+  var newCols = terminalMode ? COLS_TERMINAL : COLS_NORMAL;
+  var newRows = terminalMode ? ROWS_TERMINAL : ROWS_NORMAL;
+  var newTile = terminalMode ? TILE_TERMINAL : TILE_NORMAL;
+
+  generateRandomMaze(newCols, newRows, newTile);
+
+  canvas.width = cols * tileSize;
+  canvas.height = rows * tileSize;
+  ctx = canvas.getContext("2d");
+
+  player.c = 0;
+  player.r = 0;
+  target.c = cols - 1;
+  target.r = rows - 1;
+
+  passos = 0;
+  var contador = document.getElementById("move-count");
+  if (contador) { contador.textContent = "0"; }
+
+  var alvoTexto = document.getElementById("current-target");
+  if (alvoTexto) { alvoTexto.textContent = currentMed.nome + " (" + currentMed.alvoCurto + ")"; }
+
+  showScreen("screen-game");
+  gameActive = true;
+  updateDangerIndicator();
+  drawMaze();
+
+  if (terminalMode) {
+    startEnemy();
+    updateDangerIndicator();
+    drawMaze();
+  }
+}
+
+function winGame() {
+  gameActive = false;
+  stopEnemy();
+
+  var titulo = document.getElementById("victory-title");
+  var alvo = document.getElementById("victory-target");
+  var desc = document.getElementById("victory-desc");
+
+  if (titulo) { titulo.textContent = currentMed.nome + " chegou ao alvo!"; }
+  if (alvo) { alvo.textContent = "Local de ação: " + currentMed.alvo + " · Passos: " + passos; }
+  if (desc) { desc.textContent = currentMed.descricao; }
+
+  updateDangerIndicator();
+  drawMaze();
+  showScreen("screen-victory");
+}
+
+function loseGame() {
+  gameActive = false;
+  stopEnemy();
+
+  var alvo = document.getElementById("gameover-target");
+  var desc = document.getElementById("gameover-desc");
+
+  if (alvo) {
+    alvo.textContent = "O anticorpo antifármatico (Y) interceptou " + currentMed.nome +
+      " antes de ele alcançar " + currentMed.alvoCurto + ". Passos: " + passos + ".";
+  }
+  if (desc) {
+    desc.textContent = "Lembre-se do mecanismo: " + currentMed.descricao +
+      " Tente novamente traçando um caminho que mantenha distância do anticorpo caçador.";
+  }
+
+  updateDangerIndicator();
+  showScreen("screen-gameover");
+}
+
+function voltarSelecao() {
+  gameActive = false;
+  stopEnemy();
+  updateDangerIndicator();
+  showScreen("screen-select");
+}
+
+/* ============================================================
+   CONTROLES HÍBRIDOS (teclado + toque)
+   ============================================================ */
+function teclaPressionada(evento) {
+  var tecla = evento.key;
+  if (tecla !== "ArrowUp" && tecla !== "ArrowDown" && tecla !== "ArrowLeft" && tecla !== "ArrowRight") {
+    return;
+  }
+  evento.preventDefault();
+  if (!gameActive) { return; }
+
+  if (tecla === "ArrowUp") { movePlayer("up"); }
+  else if (tecla === "ArrowDown") { movePlayer("down"); }
+  else if (tecla === "ArrowLeft") { movePlayer("left"); }
+  else if (tecla === "ArrowRight") { movePlayer("right"); }
+}
+
+function ligarBotaoControle(id, dir) {
+  var el = document.getElementById(id);
+  if (!el) { return; }
+  el.addEventListener("pointerdown", function (evento) {
+    evento.preventDefault();
+    movePlayer(dir);
+  });
+}
+
+function ligarEventos() {
+  canvas = document.getElementById("mazeCanvas");
+  if (!canvas) { return; }
+  ctx = canvas.getContext("2d");
+
+  var btnIniciar = document.getElementById("btn-iniciar-direto");
+  if (btnIniciar) {
+    btnIniciar.addEventListener("click", function () { showScreen("screen-select"); });
+  }
+
+  var btnReplay = document.getElementById("btn-replay");
+  if (btnReplay) {
+    btnReplay.addEventListener("click", function () { startGame(); });
+  }
+
+  var btnRetry = document.getElementById("btn-retry");
+  if (btnRetry) {
+    btnRetry.addEventListener("click", function () { startGame(); });
+  }
+
+  var btnBack = document.getElementById("btn-back");
+  if (btnBack) {
+    btnBack.addEventListener("click", voltarSelecao);
+  }
+
+  var btnBack2 = document.getElementById("btn-back2");
+  if (btnBack2) {
+    btnBack2.addEventListener("click", voltarSelecao);
+  }
+
+  window.addEventListener("keydown", teclaPressionada, false);
+
+  ligarBotaoControle("btn-up", "up");
+  ligarBotaoControle("btn-down", "down");
+  ligarBotaoControle("btn-left", "left");
+  ligarBotaoControle("btn-right", "right");
+
+  showScreen("screen-welcome");
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", ligarEventos);
+} else {
+  ligarEventos();
+}
+</script>
+
+
+</body></html>

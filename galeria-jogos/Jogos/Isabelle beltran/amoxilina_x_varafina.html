@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desafio: Amoxicilina x Varfarina</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .jogo {
+            background: white;
+            width: 100%;
+            max-width: 650px;
+            padding: 35px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .subtitulo {
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        .progresso {
+            background: #ddd;
+            height: 10px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
+        .barra {
+            height: 100%;
+            width: 0%;
+            background: #2575fc;
+            transition: 0.3s;
+        }
+
+        #pontuacaoAtual {
+            font-size: 17px;
+            font-weight: bold;
+            color: #2575fc;
+            margin-bottom: 20px;
+        }
+
+        #pergunta {
+            font-size: 21px;
+            color: #222;
+            margin-bottom: 25px;
+        }
+
+        .alternativas {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        button {
+            border: none;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .alternativa {
+            background: #f0f0f0;
+            color: #222;
+            text-align: left;
+        }
+
+        .alternativa:hover:not(:disabled) {
+            background: #dce9ff;
+            transform: translateY(-2px);
+        }
+
+        .alternativa:disabled {
+            cursor: default;
+        }
+
+        .correta {
+            background: #4caf50 !important;
+            color: white !important;
+        }
+
+        .errada {
+            background: #f44336 !important;
+            color: white !important;
+        }
+
+        #proxima {
+            margin-top: 25px;
+            background: #2575fc;
+            color: white;
+            display: none;
+            width: 100%;
+        }
+
+        #proxima:hover {
+            background: #125bd1;
+        }
+
+        #resultado {
+            display: none;
+        }
+
+        #resultado h2 {
+            font-size: 30px;
+            margin-bottom: 15px;
+            color: #2575fc;
+        }
+
+        #pontuacao {
+            font-size: 22px;
+            margin-bottom: 20px;
+        }
+
+        .reiniciar {
+            background: #6a11cb;
+            color: white;
+            width: 100%;
+        }
+
+        .explicacao {
+            margin-top: 20px;
+            padding: 18px;
+            background: #eef5ff;
+            border-left: 5px solid #2575fc;
+            border-radius: 10px;
+            color: #333;
+            font-size: 15px;
+            line-height: 1.5;
+            display: none;
+            text-align: left;
+        }
+
+        .resultadoResposta {
+            font-size: 17px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="jogo">
+
+        <!-- ÁREA DO QUIZ -->
+        <div id="quiz">
+
+            <h1>💊 Desafio Farmacêutico</h1>
+
+            <p class="subtitulo">
+                Amoxicilina × Varfarina
+            </p>
+
+            <div class="progresso">
+                <div class="barra" id="barra"></div>
+            </div>
+
+            <p id="pontuacaoAtual">
+                ⭐ Pontuação: 0
+            </p>
+
+            <p id="numero"></p>
+
+            <h2 id="pergunta"></h2>
+
+            <div class="alternativas" id="alternativas"></div>
+
+            <!-- EXPLICAÇÃO APÓS RESPONDER -->
+            <div class="explicacao" id="explicacao"></div>
+
+            <button id="proxima" onclick="proximaPergunta()">
+                Próxima pergunta →
+            </button>
+
+        </div>
+
+
+        <!-- RESULTADO FINAL -->
+        <div id="resultado">
+
+            <h2>🎉 Fim do jogo!</h2>
+
+            <p id="pontuacao"></p>
+
+            <p id="mensagem"></p>
+
+            <br>
+
+            <button class="reiniciar" onclick="reiniciarJogo()">
+                Jogar novamente
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <script>
+
+        const perguntas = [
+
+            {
+                pergunta: "O que pode acontecer quando amoxicilina é usada junto com varfarina?",
+
+                alternativas: [
+                    "Pode aumentar o efeito anticoagulante",
+                    "Pode eliminar completamente o efeito da varfarina",
+                    "Não existe nenhuma possibilidade de interação",
+                    "Pode transformar a varfarina em antibiótico"
+                ],
+
+                correta: 0,
+
+                explicacao:
+                    "A associação pode aumentar o efeito anticoagulante da varfarina e elevar o risco de sangramento."
+            },
+
+
+            {
+                pergunta: "Por que a alteração da flora intestinal pode ser importante nesse caso?",
+
+                alternativas: [
+                    "Porque aumenta a produção de glicose",
+                    "Porque pode reduzir a disponibilidade de vitamina K",
+                    "Porque aumenta a pressão arterial",
+                    "Porque impede a absorção de água"
+                ],
+
+                correta: 1,
+
+                explicacao:
+                    "Alterações da flora intestinal podem reduzir a disponibilidade de vitamina K, que participa da coagulação."
+            },
+
+
+            {
+                pergunta: "Qual exame é utilizado para acompanhar o efeito da varfarina?",
+
+                alternativas: [
+                    "Hemograma apenas",
+                    "Glicemia",
+                    "INR",
+                    "Exame de urina"
+                ],
+
+                correta: 2,
+
+                explicacao:
+                    "O INR é utilizado para monitorar o efeito anticoagulante da varfarina."
+            },
+
+
+            {
+                pergunta: "Quando uma alteração do INR pode aparecer?",
+
+                alternativas: [
+                    "Somente antes de tomar o antibiótico",
+                    "Durante o tratamento e também após o término",
+                    "Somente meses depois",
+                    "Nunca ocorre alteração"
+                ],
+
+                correta: 1,
+
+                explicacao:
+                    "A alteração pode aparecer durante o tratamento e também alguns dias após o término do antibiótico."
+            },
+
+
+            {
+                pergunta: "Qual destes pode ser um sinal de sangramento?",
+
+                alternativas: [
+                    "Urina avermelhada",
+                    "Aumento da fome",
+                    "Sono após o almoço",
+                    "Sede leve"
+                ],
+
+                correta: 0,
+
+                explicacao:
+                    "Urina avermelhada pode indicar presença de sangue e merece atenção."
+            },
+
+
+            {
+                pergunta: "O que pode ser necessário durante o uso conjunto desses medicamentos?",
+
+                alternativas: [
+                    "Suspender todos os medicamentos por conta própria",
+                    "Aumentar a dose da varfarina",
+                    "Monitorar o INR com maior frequência, conforme orientação médica",
+                    "Parar de beber água"
+                ],
+
+                correta: 2,
+
+                explicacao:
+                    "Pode ser necessário acompanhar o INR mais frequentemente durante e após o tratamento."
+            }
+
+        ];
+
+
+        let perguntaAtual = 0;
+        let pontos = 0;
+
+
+        const pergunta =
+            document.getElementById("pergunta");
+
+        const alternativas =
+            document.getElementById("alternativas");
+
+        const numero =
+            document.getElementById("numero");
+
+        const barra =
+            document.getElementById("barra");
+
+        const proxima =
+            document.getElementById("proxima");
+
+        const explicacao =
+            document.getElementById("explicacao");
+
+        const pontuacaoAtual =
+            document.getElementById("pontuacaoAtual");
+
+
+        // CARREGAR PERGUNTA
+
+        function carregarPergunta() {
+
+            const atual = perguntas[perguntaAtual];
+
+            pergunta.textContent = atual.pergunta;
+
+            numero.textContent =
+                `Pergunta ${perguntaAtual + 1} de ${perguntas.length}`;
+
+            pontuacaoAtual.textContent =
+                `⭐ Pontuação: ${pontos}`;
+
+            barra.style.width =
+                ((perguntaAtual) / perguntas.length) * 100 + "%";
+
+            alternativas.innerHTML = "";
+
+            explicacao.style.display = "none";
+
+            proxima.style.display = "none";
+
+
+            atual.alternativas.forEach((opcao, indice) => {
+
+                const botao =
+                    document.createElement("button");
+
+                botao.textContent = opcao;
+
+                botao.classList.add("alternativa");
+
+                botao.onclick =
+                    () => responder(indice);
+
+                alternativas.appendChild(botao);
+
+            });
+        }
+
+
+        // RESPONDER QUESTÃO
+
+        function responder(indice) {
+
+            const atual = perguntas[perguntaAtual];
+
+            const botoes =
+                document.querySelectorAll(".alternativa");
+
+
+            // Impede responder novamente
+
+            botoes.forEach(botao => {
+                botao.disabled = true;
+            });
+
+
+            // VERIFICA RESPOSTA
+
+            if (indice === atual.correta) {
+
+                botoes[indice].classList.add("correta");
+
+                pontos++;
+
+                explicacao.innerHTML = `
+                    <div class="resultadoResposta">
+                        ✅ CORRETO! +1 ponto
+                    </div>
+
+                    <br>
+
+                    <strong>📖 Explicação:</strong>
+                    <br>
+                    ${atual.explicacao}
+
+                    <br><br>
+
+                    <strong>⭐ Pontuação atual: ${pontos}</strong>
+                `;
+
+            } else {
+
+                botoes[indice].classList.add("errada");
+
+                botoes[atual.correta]
+                    .classList.add("correta");
+
+
+                explicacao.innerHTML = `
+                    <div class="resultadoResposta">
+                        ❌ INCORRETO! +0 pontos
+                    </div>
+
+                    <br>
+
+                    <strong>📖 Explicação:</strong>
+                    <br>
+                    ${atual.explicacao}
+
+                    <br><br>
+
+                    <strong>⭐ Pontuação atual: ${pontos}</strong>
+                `;
+            }
+
+
+            // Mostra a explicação
+
+            explicacao.style.display = "block";
+
+
+            // Atualiza pontuação no topo
+
+            pontuacaoAtual.textContent =
+                `⭐ Pontuação: ${pontos}`;
+
+
+            // Mostra botão próxima
+
+            proxima.style.display = "block";
+        }
+
+
+        // PRÓXIMA PERGUNTA
+
+        function proximaPergunta() {
+
+            perguntaAtual++;
+
+
+            if (perguntaAtual < perguntas.length) {
+
+                carregarPergunta();
+
+            } else {
+
+                mostrarResultado();
+            }
+        }
+
+
+        // RESULTADO FINAL
+
+        function mostrarResultado() {
+
+            document.getElementById("quiz")
+                .style.display = "none";
+
+            document.getElementById("resultado")
+                .style.display = "block";
+
+
+            document.getElementById("pontuacao")
+                .textContent =
+                `Você acertou ${pontos} de ${perguntas.length} perguntas!`;
+
+
+            let mensagem;
+
+
+            if (pontos === perguntas.length) {
+
+                mensagem =
+                    "🏆 Excelente! Você dominou o assunto!";
+
+            }
+
+            else if (pontos >= 4) {
+
+                mensagem =
+                    "👏 Muito bom! Você conhece bem o tema.";
+
+            }
+
+            else if (pontos >= 2) {
+
+                mensagem =
+                    "📚 Bom começo! Vale revisar alguns conceitos.";
+
+            }
+
+            else {
+
+                mensagem =
+                    "💡 Que tal revisar o conteúdo e tentar novamente?";
+            }
+
+
+            document.getElementById("mensagem")
+                .textContent = mensagem;
+
+
+            barra.style.width = "100%";
+        }
+
+
+        // REINICIAR JOGO
+
+        function reiniciarJogo() {
+
+            perguntaAtual = 0;
+
+            pontos = 0;
+
+
+            document.getElementById("quiz")
+                .style.display = "block";
+
+
+            document.getElementById("resultado")
+                .style.display = "none";
+
+
+            carregarPergunta();
+        }
+
+
+        // INICIAR JOGO
+
+        carregarPergunta();
+
+    </script>
+
+</body>
+</html>

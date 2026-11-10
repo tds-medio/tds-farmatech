@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Farmácia Hospitalar - Desafio de Dispensação</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+      background-color: #eef5f8;
+      color: #333;
+      max-width: 750px;
+      margin: 30px auto;
+      padding: 20px;
+    }
+    header {
+      background: #0077b6;
+      color: white;
+      padding: 20px;
+      border-radius: 8px 8px 0 0;
+      text-align: center;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.8em;
+    }
+    header p {
+      margin: 5px 0 0 0;
+      opacity: 0.9;
+    }
+    .main-container {
+      background: white;
+      padding: 25px;
+      border-radius: 0 0 8px 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    /* BARRA DE STATUS E PONTOS */
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      background: #f1f5f9;
+      padding: 12px 20px;
+      border-radius: 8px;
+    }
+    .score-badge {
+      font-size: 1.2em;
+      font-weight: bold;
+      color: #0077b6;
+    }
+    .progress-bar-container {
+      flex-grow: 1;
+      margin-right: 20px;
+      background: #e2e8f0;
+      border-radius: 10px;
+      height: 14px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      background: #10b981;
+      height: 100%;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    /* ESTOQUE E TOOLTIP */
+    .pharmacy-stock {
+      background: #f8fafc;
+      border: 2px solid #cbd5e1;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 25px;
+    }
+    .stock-title {
+      font-weight: bold;
+      color: #0077b6;
+      margin-bottom: 12px;
+      display: block;
+    }
+    .remedy-container {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .draggable-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+    .draggable {
+      background: #0284c7;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: grab;
+      font-weight: bold;
+      user-select: none;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: background 0.2s;
+    }
+    .draggable:hover {
+      background: #0369a1;
+    }
+    
+    /* TOOLTIP */
+    .tooltip {
+      visibility: hidden;
+      width: 220px;
+      background-color: #1e293b;
+      color: #fff;
+      text-align: left;
+      border-radius: 6px;
+      padding: 10px;
+      position: absolute;
+      z-index: 10;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-size: 0.85em;
+      font-weight: normal;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      pointer-events: none;
+    }
+    .tooltip::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: #1e293b transparent transparent transparent;
+    }
+    .draggable-wrapper:hover .tooltip {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    /* CARDS DE JOGO */
+    .card-box {
+      border: 1px solid #e2e8f0;
+      border-top: 4px solid #0077b6;
+      padding: 20px;
+      border-radius: 6px;
+      background: #ffffff;
+    }
+    .card-box h3 {
+      margin-top: 0;
+      color: #1e293b;
+    }
+    .description-text {
+      background: #f1f5f9;
+      padding: 15px;
+      border-radius: 4px;
+      font-size: 1em;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .dropzone {
+      border: 2px dashed #94a3b8;
+      min-height: 55px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      font-size: 0.95em;
+      background: #fafafa;
+      transition: all 0.2s;
+    }
+    .dropzone.over {
+      background: #e0f2fe;
+      border-color: #0284c7;
+    }
+
+    /* BOTÃO PRINCIPAL E FEEDBACK */
+    .btn-verify {
+      width: 100%;
+      background: #10b981;
+      color: white;
+      border: none;
+      padding: 14px;
+      font-size: 1.1em;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    .btn-verify:hover {
+      background: #059669;
+    }
+    #feedback {
+      text-align: center;
+      font-size: 1.1em;
+      font-weight: bold;
+      margin-top: 15px;
+      min-height: 30px;
+    }
+    .victory-screen {
+      text-align: center;
+      padding: 20px;
+    }
+    .btn-restart {
+      background: #0284c7;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 1em;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🏥 Farmácia Hospitalar</h1>
+    <p>Desafio de Dispensação de Medicamentos</p>
+  </header>
+
+  <div class="main-container">
+    
+    <div class="status-bar">
+      <div class="progress-bar-container">
+        <div class="progress-fill" id="progress"></div>
+      </div>
+      <div class="score-badge">Pontos: <span id="score">0</span></div>
+    </div>
+
+    <!-- ESTOQUE DA FARMÁCIA -->
+    <div class="pharmacy-stock" id="stock-section">
+      <span class="stock-title">📦 Passe o mouse no remédio para ver a bula e arraste para o paciente:</span>
+      <div class="remedy-container" id="stock-container">
+        
+        <div class="draggable-wrapper">
+          <div class="draggable" draggable="true" id="med-varfarina">Varfarina</div>
+          <div class="tooltip"><b>Varfarina:</b> Anticoagulante que previne a formação de coágulos de sangue nas artérias e veias.</div>
+        </div>
+
+        <div class="draggable-wrapper">
+          <div class="draggable" draggable="true" id="med-tetraciclina">Tetraciclina</div>
+          <div class="tooltip"><b>Tetraciclina:</b> Antibiótico que combate e elimina infecções causadas por bactérias.</div>
+        </div>
+
+        <div class="draggable-wrapper">
+          <div class="draggable" draggable="true" id="med-alendronato">Alendronato</div>
+          <div class="tooltip"><b>Alendronato:</b> Bisfosfonato que atua na reconstrução óssea, indicado para tratar a osteoporose.</div>
+        </div>
+
+        <div class="draggable-wrapper">
+          <div class="draggable" draggable="true" id="med-levotiroxina">Levotiroxina</div>
+          <div class="tooltip"><b>Levotiroxina:</b> Hormônio sintético que substitui a falta de hormônio tireoidiano no hipotireoidismo.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ÁREA DE JOGO -->
+    <div id="game-stage">
+      <div class="card-box">
+        <h3 id="stage-title">Carregando...</h3>
+        <div class="description-text" id="stage-desc">...</div>
+        
+        <div id="drag-area">
+          <div class="dropzone" id="dropzone">Arraste o medicamento correto para cá</div>
+          <button class="btn-verify" onclick="checkAnswer()">Confirmar Medicamento</button>
+        </div>
+      </div>
+
+      <div id="feedback"></div>
+    </div>
+
+  </div>
+
+  <script>
+    const stages = [
+      {
+        title: "📋 Leito 101 - Hipotireoidismo",
+        desc: "O paciente apresenta cansaço excessivo e metabolismo lento. Os exames confirmaram que a glândula tireoide não produz hormônios suficientes.",
+        correct: "med-levotiroxina"
+      },
+      {
+        title: "📋 Leito 102 - Prevenção de Trombose",
+        desc: "O paciente está em pós-operatório e necessita de uma medicação anticoagulante para evitar a formação de coágulos sanguíneos perigosos.",
+        correct: "med-varfarina"
+      },
+      {
+        title: "📋 Leito 103 - Infecção Bacteriana",
+        desc: "O paciente foi diagnosticado com uma infecção grave na pele provocada por bactérias. Precisa de um tratamento antibacteriano.",
+        correct: "med-tetraciclina"
+      },
+      {
+        title: "📋 Leito 104 - Osteoporose",
+        desc: "A paciente idosa apresenta perda progressiva de massa óssea e alto risco de fraturas. Precisa de um remédio para fortalecer a estrutura dos ossos.",
+        correct: "med-alendronato"
+      }
+    ];
+
+    let currentStage = 0;
+    let score = 0;
+
+    const dropzone = document.getElementById('dropzone');
+    const stockContainer = document.getElementById('stock-container');
+    const scoreElement = document.getElementById('score');
+    const feedback = document.getElementById('feedback');
+
+    function updateScore(points) {
+      score += points;
+      if (score < 0) score = 0;
+      scoreElement.innerText = score;
+    }
+
+    function resetRemediesToStock() {
+      const wrappers = document.querySelectorAll('.draggable-wrapper');
+      wrappers.forEach(wrapper => {
+        stockContainer.appendChild(wrapper);
+      });
+    }
+
+    function loadStage() {
+      feedback.innerText = '';
+      
+      const progressPercent = ((currentStage + 1) / stages.length) * 100;
+      document.getElementById('progress').style.width = progressPercent + '%';
+
+      resetRemediesToStock();
+      const stage = stages[currentStage];
+      document.getElementById('stage-title').innerText = stage.title;
+      document.getElementById('stage-desc').innerText = stage.desc;
+
+      dropzone.style.borderColor = '#94a3b8';
+      dropzone.style.background = '#fafafa';
+      dropzone.innerText = 'Arraste o medicamento correto para cá';
+    }
+
+    function checkAnswer() {
+      const selectedMed = dropzone.querySelector('.draggable');
+
+      if (!selectedMed) {
+        feedback.style.color = '#ef4444';
+        feedback.innerText = '⚠️ Por favor, arraste um medicamento antes de confirmar.';
+        return;
+      }
+
+      const currentCorrect = stages[currentStage].correct;
+
+      if (selectedMed.id === currentCorrect) {
+        updateScore(100);
+        feedback.style.color = '#10b981';
+        feedback.innerText = '✅ Correto! (+100 Pontos)';
+
+        setTimeout(() => {
+          currentStage++;
+          if (currentStage >= stages.length) {
+            showVictoryScreen();
+          } else {
+            loadStage();
+          }
+        }, 1200);
+      } else {
+        updateScore(-30);
+        feedback.style.color = '#ef4444';
+        feedback.innerText = '❌ Medicamento incorreto! Devolvido ao estoque (-30 Pontos).';
+        dropzone.style.borderColor = '#ef4444';
+        dropzone.style.background = '#fef2f2';
+
+        setTimeout(() => {
+          resetRemediesToStock();
+          dropzone.innerText = 'Arraste o medicamento correto para cá';
+          dropzone.style.borderColor = '#94a3b8';
+          dropzone.style.background = '#fafafa';
+        }, 1200);
+      }
+    }
+
+    function showVictoryScreen() {
+      document.getElementById('stock-section').style.display = 'none';
+      document.getElementById('game-stage').innerHTML = `
+        <div class="victory-screen">
+          <h2>🏆 Desafio Finalizado com Sucesso!</h2>
+          <p style="font-size: 1.3em;">Sua pontuação final foi: <b>${score} pontos</b>!</p>
+          <p>Você atendeu corretamente todos os pacientes nos leitos hospitalares.</p>
+          <button class="btn-restart" onclick="location.reload()">Jogar Novamente</button>
+        </div>
+      `;
+    }
+
+    function initDragAndDrop() {
+      const draggables = document.querySelectorAll('.draggable');
+
+      draggables.forEach(draggable => {
+        draggable.addEventListener('dragstart', () => {
+          draggable.classList.add('dragging');
+        });
+
+        draggable.addEventListener('dragend', () => {
+          draggable.classList.remove('dragging');
+        });
+      });
+
+      dropzone.addEventListener('dragover', e => {
+        e.preventDefault();
+        dropzone.classList.add('over');
+      });
+
+      dropzone.addEventListener('dragleave', () => {
+        dropzone.classList.remove('over');
+      });
+
+      dropzone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropzone.classList.remove('over');
+        const dragging = document.querySelector('.dragging');
+        if (dragging) {
+          resetRemediesToStock();
+          dropzone.innerHTML = '';
+          dropzone.appendChild(dragging.parentElement);
+        }
+      });
+    }
+
+    initDragAndDrop();
+    loadStage();
+  </script>
+
+</body>
+</html>

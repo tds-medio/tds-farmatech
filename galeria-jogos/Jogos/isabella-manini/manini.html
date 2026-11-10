@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bio-Survival: Mundo Aberto RPG</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #050811;
+            color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        /* Interface Principal */
+        .game-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+            max-width: 850px;
+        }
+
+        /* AVISO DE SUPORTE PLATAFORMA */
+        .platform-badge {
+            background: linear-gradient(90deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid #38bdf8;
+            border-radius: 8px;
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #38bdf8;
+            font-weight: 600;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.1);
+        }
+
+        .platform-badge span.icon {
+            font-size: 14px;
+        }
+
+        /* Status Topo */
+        .status-panel {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+        }
+
+        .stat-card {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #94a3b8;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .bar-bg {
+            height: 10px;
+            background: #1e293b;
+            border-radius: 5px;
+            overflow: hidden;
+            border: 1px solid #334155;
+        }
+
+        .bar-fill {
+            height: 100%;
+            transition: width 0.2s ease;
+        }
+
+        /* Tela do Jogo */
+        .viewport {
+            position: relative;
+            width: 100%;
+            height: 480px;
+            background: #000;
+            border-radius: 12px;
+            border: 2px solid #334155;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            touch-action: none;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Joystick Analogico Mobile */
+        .joystick-container {
+            position: absolute;
+            bottom: 25px;
+            left: 25px;
+            width: 110px;
+            height: 110px;
+            background: rgba(15, 23, 42, 0.5);
+            border: 2px solid rgba(56, 189, 248, 0.4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: none;
+            z-index: 5;
+            backdrop-filter: blur(2px);
+        }
+
+        .joystick-knob {
+            width: 45px;
+            height: 45px;
+            background: radial-gradient(circle, #38bdf8 0%, #0284c7 100%);
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+            pointer-events: none;
+            transform: translate(0px, 0px);
+            transition: transform 0.05s ease-out;
+        }
+
+        /* Controles / Barra de Ação rápida */
+        .controls-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .btn-action {
+            background: #1e293b;
+            border: 1px solid #38bdf8;
+            color: #f8fafc;
+            padding: 12px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            transition: all 0.15s ease;
+            touch-action: manipulation;
+        }
+
+        .btn-action:hover:not(:disabled) {
+            background: #0284c7;
+            transform: translateY(-2px);
+        }
+
+        .btn-action:active:not(:disabled) {
+            transform: scale(0.95);
+            background: #0284c7;
+        }
+
+        .btn-action:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            border-color: #475569;
+        }
+
+        .btn-action span.key {
+            font-size: 10px;
+            color: #38bdf8;
+            background: rgba(0,0,0,0.4);
+            padding: 1px 5px;
+            border-radius: 4px;
+        }
+
+        /* Log do Sistema */
+        .log-box {
+            background: #090d16;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            height: 70px;
+            padding: 8px 12px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 11px;
+            color: #38bdf8;
+            display: flex;
+            flex-direction: column-reverse;
+        }
+
+        /* Tela de Fim de Jogo */
+        .overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.92);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+            z-index: 20;
+        }
+
+        .overlay.active {
+            display: flex;
+        }
+
+        .overlay h2 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: #38bdf8;
+        }
+
+        .overlay p {
+            font-size: 14px;
+            color: #94a3b8;
+            max-width: 400px;
+            margin-bottom: 20px;
+        }
+
+        .btn-restart {
+            background: #38bdf8;
+            color: #0f172a;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .btn-restart:active {
+            transform: scale(0.95);
+            background: #0284c7;
+        }
+
+        /* Dicas de Controles na Tela */
+        .game-instructions {
+            font-size: 11px;
+            color: #64748b;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-wrapper">
+    <!-- AVISO DE SUPORTE A DISPOSITIVOS -->
+    <div class="platform-badge">
+        <span class="icon">🖥️📱</span>
+        <span>Jogo otimizado com suporte completo para Computador (PC) e Dispositivos Móveis (Mobile)</span>
+    </div>
+
+    <!-- BARRA DE STATUS -->
+    <div class="status-panel">
+        <div class="stat-card">
+            <div class="stat-label"><span>SAÚDE (HP)</span><span id="txt-hp">100/100</span></div>
+            <div class="bar-bg"><div id="bar-hp" class="bar-fill" style="width:100%; background:#ef4444;"></div></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label"><span>NÍVEL INR (COAGULAÇÃO)</span><span id="txt-inr">2.0</span></div>
+            <div class="bar-bg"><div id="bar-inr" class="bar-fill" style="width:40%; background:#eab308;"></div></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label"><span>AMOXICILINA</span><span id="txt-amox">5 Doses</span></div>
+            <div class="bar-bg"><div id="bar-amox" class="bar-fill" style="width:100%; background:#06b6d4;"></div></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label"><span>AMOSTRAS COLETADAS</span><span id="txt-samples">0/10</span></div>
+            <div class="bar-bg"><div id="bar-samples" class="bar-fill" style="width:0%; background:#10b981;"></div></div>
+        </div>
+    </div>
+
+    <!-- TELA DO RPG (CANVAS) -->
+    <div class="viewport" id="viewport">
+        <canvas id="gameCanvas" width="800" height="480"></canvas>
+       
+        <!-- CONTROLE ANALÓGICO MOBILE -->
+        <div id="joystick-base" class="joystick-container">
+            <div id="joystick-knob" class="joystick-knob"></div>
+        </div>
+
+        <div id="game-overlay" class="overlay">
+            <h2 id="overlay-title">Fim de Jogo</h2>
+            <p id="overlay-desc">Você foi superado pelos riscos clínicos do ambiente.</p>
+            <button id="btn-restart" class="btn-restart">Jogar Novamente</button>
+        </div>
+    </div>
+
+    <!-- PAINEL DE CONTROLES -->
+    <div class="controls-panel">
+        <button id="btn-amox" class="btn-action">
+            <span>💊 Amoxicilina</span>
+            <span class="key">Tecla 1</span>
+        </button>
+        <button id="btn-varf" class="btn-action">
+            <span>🛡️ Varfarina</span>
+            <span class="key">Tecla 2</span>
+        </button>
+        <button id="btn-vitk" class="btn-action">
+            <span>🥦 Vitamina K</span>
+            <span class="key">Tecla 3</span>
+        </button>
+        <button id="btn-attack" class="btn-action">
+            <span>⚔️ Atacar Próximo</span>
+            <span class="key">Espaço</span>
+        </button>
+    </div>
+
+    <!-- LOG DE EVENTOS -->
+    <div id="log-box" class="log-box"></div>
+    <div class="game-instructions">
+        Mova-se com <b>WASD / Setas</b> ou pelo <b>Analógico Touch</b> | Ataque com <b>Espaço</b> ou Toque no Inimigo
+    </div>
+</div>
+
+<script>
+/* ========================================================
+   CONFIGURAÇÕES E ESTADO DO JOGO
+======================================================== */
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+const WORLD_SIZE = 2400; // Tamanho do Mapa Aberto
+const TILE_SIZE = 40;
+
+let keys = {};
+let gameActive = true;
+let lastTime = 0;
+
+// Vetor do Analógico Mobile
+let analogVector = { x: 0, y: 0 };
+let activeTouchId = null;
+
+// Estado do Jogador
+let player = {
+    x: WORLD_SIZE / 2,
+    y: WORLD_SIZE / 2,
+    radius: 14,
+    speed: 180,
+    hp: 100,
+    maxHp: 100,
+    inr: 2.0, // Faixa segura: 2.0 a 3.0
+    amox: 5,
+    maxAmox: 5,
+    samples: 0,
+    maxSamples: 10
+};
+
+// Colecionáveis e Inimigos no Mundo Aberto
+let enemies = [];
+let items = [];
+let terrainProps = [];
+
+/* ========================================================
+   INICIALIZAÇÃO DO MUNDO
+======================================================== */
+function initWorld() {
+    enemies = [];
+    items = [];
+    terrainProps = [];
+
+    // Gerar Elementos Biológicos Decorações/Obstáculos
+    for (let i = 0; i < 80; i++) {
+        terrainProps.push({
+            x: Math.random() * WORLD_SIZE,
+            y: Math.random() * WORLD_SIZE,
+            size: Math.random() * 20 + 15,
+            color: Math.random() > 0.5 ? '#1e293b' : '#0f172a'
+        });
+    }
+
+    // Spawn Inimigos pelo Mapa
+    for (let i = 0; i < 35; i++) {
+        spawnEnemy();
+    }
+
+    // Spawn Amostras de Pesquisa
+    for (let i = 0; i < player.maxSamples; i++) {
+        items.push({
+            x: Math.random() * (WORLD_SIZE - 200) + 100,
+            y: Math.random() * (WORLD_SIZE - 200) + 100,
+            type: 'sample'
+        });
+    }
+
+    // Spawn Frascos de Amoxicilina espalhados
+    for (let i = 0; i < 12; i++) {
+        items.push({
+            x: Math.random() * WORLD_SIZE,
+            y: Math.random() * WORLD_SIZE,
+            type: 'amox_pack'
+        });
+    }
+}
+
+function spawnEnemy() {
+    const isBact = Math.random() > 0.4;
+    enemies.push({
+        x: Math.random() * WORLD_SIZE,
+        y: Math.random() * WORLD_SIZE,
+        radius: isBact ? 12 : 16,
+        hp: isBact ? 40 : 60,
+        maxHp: isBact ? 40 : 60,
+        speed: isBact ? 90 : 60,
+        type: isBact ? 'bacteria' : 'thrombus',
+        color: isBact ? '#06b6d4' : '#f43f5e',
+        lastAtk: 0
+    });
+}
+
+/* ========================================================
+   SISTEMA DE AÇÕES E FARMACOLOGIA
+======================================================== */
+function useAmoxicillin() {
+    if (!gameActive) return;
+    if (player.amox <= 0) {
+        addLog("⚠️ Sem doses de Amoxicilina! Encontre suprimentos pelo mapa.");
+        return;
+    }
+
+    player.amox--;
+    player.inr = parseFloat((player.inr + 0.3).toFixed(1));
+
+    let hitCount = 0;
+    enemies.forEach(e => {
+        let dist = Math.hypot(e.x - player.x, e.y - player.y);
+        if (dist < 180 && e.type === 'bacteria') {
+            e.hp -= 35;
+            hitCount++;
+        }
+    });
+
+    addLog(`💊 Amoxicilina usada! (+0.3 INR). Dano em ${hitCount} bactéria(s).`);
+    updateUI();
+}
+
+function useWarfarin() {
+    if (!gameActive) return;
+    player.inr = parseFloat((player.inr + 0.6).toFixed(1));
+
+    let hitCount = 0;
+    enemies.forEach(e => {
+        let dist = Math.hypot(e.x - player.x, e.y - player.y);
+        if (dist < 180 && e.type === 'thrombus') {
+            e.hp -= 40;
+            hitCount++;
+        }
+    });
+
+    addLog(`🛡️ Varfarina administrada! INR subiu para ${player.inr}. Dissolveu ${hitCount} trombo(s).`);
+    updateUI();
+}
+
+function useVitK() {
+    if (!gameActive) return;
+    player.inr = Math.max(1.0, parseFloat((player.inr - 0.7).toFixed(1)));
+    addLog(`🥦 Vitamina K consumida! INR reduzido para ${player.inr}.`);
+    updateUI();
+}
+
+function attackNearest() {
+    if (!gameActive) return;
+   
+    let closest = null;
+    let minDist = 100;
+
+    enemies.forEach(e => {
+        let dist = Math.hypot(e.x - player.x, e.y - player.y);
+        if (dist < minDist) {
+            minDist = dist;
+            closest = e;
+        }
+    });
+
+    if (closest) {
+        let dmg = 15;
+        closest.hp -= dmg;
+        addLog(`⚔️ Ataque físico causou ${dmg} de dano.`);
+        if (closest.hp <= 0) {
+            addLog(`☠️ Ameaça neutralizada!`);
+        }
+    } else {
+        addLog("❓ Nenhuma ameaça ao alcance para ataque físico.");
+    }
+}
+
+/* ========================================================
+   VINCULAÇÃO DE BOTÕES E SUPORTE TOUCH / CLICK
+======================================================== */
+function bindButton(btnId, callback) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+
+    btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        callback();
+    });
+
+    btn.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        if (!btn.disabled) {
+            callback();
+        }
+    }, { passive: false });
+}
+
+bindButton("btn-amox", useAmoxicillin);
+bindButton("btn-varf", useWarfarin);
+bindButton("btn-vitk", useVitK);
+bindButton("btn-attack", attackNearest);
+bindButton("btn-restart", restartGame);
+
+/* ========================================================
+   LOOP PRINCIPAL DO JOGO (UPDATE & RENDER)
+======================================================== */
+function update(delta) {
+    if (!gameActive) return;
+
+    // Movimentação do Jogador
+    let moveX = 0;
+    let moveY = 0;
+
+    // Teclado
+    if (keys['KeyW'] || keys['ArrowUp']) moveY -= 1;
+    if (keys['KeyS'] || keys['ArrowDown']) moveY += 1;
+    if (keys['KeyA'] || keys['ArrowLeft']) moveX -= 1;
+    if (keys['KeyD'] || keys['ArrowRight']) moveX += 1;
+
+    if (moveX !== 0 && moveY !== 0) {
+        moveX *= 0.7071;
+        moveY *= 0.7071;
+    }
+
+    // Se houver input do Analógico Touch, este sobrepõe/soma à movimentação
+    if (analogVector.x !== 0 || analogVector.y !== 0) {
+        moveX = analogVector.x;
+        moveY = analogVector.y;
+    }
+
+    player.x = Math.max(player.radius, Math.min(WORLD_SIZE - player.radius, player.x + moveX * player.speed * delta));
+    player.y = Math.max(player.radius, Math.min(WORLD_SIZE - player.radius, player.y + moveY * player.speed * delta));
+
+    // Coleta de Itens
+    for (let i = items.length - 1; i >= 0; i--) {
+        let it = items[i];
+        let dist = Math.hypot(it.x - player.x, it.y - player.y);
+        if (dist < player.radius + 12) {
+            if (it.type === 'sample') {
+                player.samples++;
+                addLog(`🔬 Amostra de infecção coletada! (${player.samples}/${player.maxSamples})`);
+                if (player.samples >= player.maxSamples) {
+                    endGame(true, "Você coletou todas as amostras e purificou a região!");
+                }
+            } else if (it.type === 'amox_pack') {
+                player.amox = Math.min(player.maxAmox, player.amox + 2);
+                addLog(`💊 Suprimento de Amoxicilina encontrado (+2 doses).`);
+            }
+            items.splice(i, 1);
+            updateUI();
+        }
+    }
+
+    // Atualização de Inimigos
+    let now = Date.now();
+    enemies.forEach((e) => {
+        let dist = Math.hypot(player.x - e.x, player.y - e.y);
+
+        if (dist < 350) {
+            let dirX = (player.x - e.x) / dist;
+            let dirY = (player.y - e.y) / dist;
+            e.x += dirX * e.speed * delta;
+            e.y += dirY * e.speed * delta;
+        }
+
+        if (dist < player.radius + e.radius) {
+            if (now - e.lastAtk > 1000) {
+                let dmg = e.type === 'bacteria' ? 8 : 12;
+                player.hp -= dmg;
+                e.lastAtk = now;
+                addLog(`💥 Dano recebido de ${e.type === 'bacteria' ? 'Bactéria' : 'Trombo'} (-${dmg} HP)!`);
+                updateUI();
+            }
+        }
+    });
+
+    enemies = enemies.filter(e => e.hp > 0);
+    if (enemies.length < 20) spawnEnemy();
+
+    if (Math.random() < 0.005) {
+        if (player.inr >= 4.0) {
+            player.hp -= 3;
+            addLog(`🩸 RISCO HEMORRÁGICO! INR muito alto (${player.inr}). Perda de sangue contínua!`);
+            updateUI();
+        } else if (player.inr < 1.4) {
+            player.hp -= 2;
+            addLog(`⚠️ RISCO TROMBÓTICO! INR muito baixo (${player.inr}). Sangue espesso!`);
+            updateUI();
+        }
+    }
+
+    if (player.hp <= 0) {
+        endGame(false, "Sua saúde zerou. Você sucumbiu às complicações clínicas no ambiente.");
+    }
+}
+
+function render() {
+    ctx.fillStyle = "#090d16";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.save();
+    ctx.translate(canvas.width / 2 - player.x, canvas.height / 2 - player.y);
+
+    ctx.strokeStyle = "#1e293b";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(0, 0, WORLD_SIZE, WORLD_SIZE);
+
+    ctx.strokeStyle = "#0f172a";
+    ctx.lineWidth = 1;
+    for (let x = 0; x < WORLD_SIZE; x += TILE_SIZE) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, WORLD_SIZE); ctx.stroke();
+    }
+    for (let y = 0; y < WORLD_SIZE; y += TILE_SIZE) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(WORLD_SIZE, y); ctx.stroke();
+    }
+
+    terrainProps.forEach(p => {
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    items.forEach(it => {
+        ctx.beginPath();
+        if (it.type === 'sample') {
+            ctx.fillStyle = "#10b981";
+            ctx.arc(it.x, it.y, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "#a7f3d0";
+            ctx.stroke();
+        } else if (it.type === 'amox_pack') {
+            ctx.fillStyle = "#06b6d4";
+            ctx.fillRect(it.x - 6, it.y - 6, 12, 12);
+        }
+    });
+
+    enemies.forEach(e => {
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
+        ctx.fillStyle = e.color;
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#ffffff";
+        ctx.stroke();
+
+        ctx.fillStyle = "rgba(0,0,0,0.5)";
+        ctx.fillRect(e.x - 15, e.y - e.radius - 8, 30, 4);
+        ctx.fillStyle = "#ef4444";
+        ctx.fillRect(e.x - 15, e.y - e.radius - 8, (e.hp / e.maxHp) * 30, 4);
+    });
+
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+    ctx.fillStyle = "#38bdf8";
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#f8fafc";
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, 180, 0, Math.PI * 2);
+    ctx.strokeStyle = "rgba(56, 189, 248, 0.08)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+function gameLoop(timestamp) {
+    let delta = (timestamp - lastTime) / 1000;
+    lastTime = timestamp;
+
+    if (delta < 0.1) {
+        update(delta);
+        render();
+    }
+
+    requestAnimationFrame(gameLoop);
+}
+
+/* ========================================================
+   CONTROLE DO ANALÓGICO VIRTUAL (TOUCH / JOYSTICK)
+======================================================== */
+const joystickBase = document.getElementById("joystick-base");
+const joystickKnob = document.getElementById("joystick-knob");
+
+const maxRadius = 40;
+
+function handleTouchStart(e) {
+    e.preventDefault();
+    if (activeTouchId !== null) return;
+
+    for (let touch of e.changedTouches) {
+        activeTouchId = touch.identifier;
+        updateJoystickPosition(touch.clientX, touch.clientY);
+        break;
+    }
+}
+
+function handleTouchMove(e) {
+    e.preventDefault();
+    if (activeTouchId === null) return;
+
+    for (let touch of e.changedTouches) {
+        if (touch.identifier === activeTouchId) {
+            updateJoystickPosition(touch.clientX, touch.clientY);
+            break;
+        }
+    }
+}
+
+function handleTouchEnd(e) {
+    e.preventDefault();
+    if (activeTouchId === null) return;
+
+    for (let touch of e.changedTouches) {
+        if (touch.identifier === activeTouchId) {
+            resetJoystick();
+            break;
+        }
+    }
+}
+
+function updateJoystickPosition(clientX, clientY) {
+    const rect = joystickBase.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    let deltaX = clientX - centerX;
+    let deltaY = clientY - centerY;
+
+    let distance = Math.hypot(deltaX, deltaY);
+
+    if (distance > maxRadius) {
+        deltaX = (deltaX / distance) * maxRadius;
+        deltaY = (deltaY / distance) * maxRadius;
+    }
+
+    joystickKnob.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+
+    analogVector.x = deltaX / maxRadius;
+    analogVector.y = deltaY / maxRadius;
+}
+
+function resetJoystick() {
+    activeTouchId = null;
+    analogVector.x = 0;
+    analogVector.y = 0;
+    joystickKnob.style.transform = `translate(0px, 0px)`;
+}
+
+joystickBase.addEventListener("touchstart", handleTouchStart, { passive: false });
+window.addEventListener("touchmove", handleTouchMove, { passive: false });
+window.addEventListener("touchend", handleTouchEnd, { passive: false });
+window.addEventListener("touchcancel", handleTouchEnd, { passive: false });
+
+/* ========================================================
+   INTERFACE E UTILITÁRIOS
+======================================================== */
+function updateUI() {
+    document.getElementById("txt-hp").textContent = `${Math.max(0, Math.round(player.hp))}/${player.maxHp}`;
+    document.getElementById("bar-hp").style.width = `${Math.max(0, (player.hp / player.maxHp) * 100)}%`;
+
+    document.getElementById("txt-inr").textContent = `${player.inr}`;
+    document.getElementById("bar-inr").style.width = `${Math.min(100, (player.inr / 6) * 100)}%`;
+    document.getElementById("bar-inr").style.background = (player.inr > 3.5 || player.inr < 1.5) ? "#ef4444" : "#eab308";
+
+    document.getElementById("txt-amox").textContent = `${player.amox}/${player.maxAmox} Doses`;
+    document.getElementById("bar-amox").style.width = `${(player.amox / player.maxAmox) * 100}%`;
+    document.getElementById("btn-amox").disabled = player.amox <= 0;
+
+    document.getElementById("txt-samples").textContent = `${player.samples}/${player.maxSamples}`;
+    document.getElementById("bar-samples").style.width = `${(player.samples / player.maxSamples) * 100}%`;
+}
+
+function addLog(msg) {
+    const box = document.getElementById("log-box");
+    const entry = document.createElement("div");
+    entry.textContent = `> ${msg}`;
+    box.appendChild(entry);
+    box.scrollTop = box.scrollHeight;
+}
+
+function endGame(win, msg) {
+    gameActive = false;
+    resetJoystick();
+    document.getElementById("overlay-title").textContent = win ? "🏆 Missão Cumprida!" : "💀 Falha Clínica";
+    document.getElementById("overlay-desc").textContent = msg;
+    document.getElementById("game-overlay").classList.add("active");
+}
+
+function restartGame() {
+    player.hp = 100;
+    player.inr = 2.0;
+    player.amox = 5;
+    player.samples = 0;
+    player.x = WORLD_SIZE / 2;
+    player.y = WORLD_SIZE / 2;
+   
+    resetJoystick();
+    document.getElementById("game-overlay").classList.remove("active");
+    document.getElementById("log-box").innerHTML = "";
+    gameActive = true;
+   
+    addLog("🧭 Exploração iniciada. Explore o mapa e reuna 10 amostras.");
+    initWorld();
+    updateUI();
+}
+
+/* ========================================================
+   CONTROLES DE TECLADO E MOUSE / TOUCH CANVAS
+======================================================== */
+window.addEventListener("keydown", e => {
+    keys[e.code] = true;
+    if (e.code === "Digit1") useAmoxicillin();
+    if (e.code === "Digit2") useWarfarin();
+    if (e.code === "Digit3") useVitK();
+    if (e.code === "Space") attackNearest();
+});
+
+window.addEventListener("keyup", e => {
+    keys[e.code] = false;
+});
+
+function handleCanvasPointer(clientX, clientY) {
+    if (!gameActive) return;
+    
+    const joyRect = joystickBase.getBoundingClientRect();
+    if (clientX >= joyRect.left && clientX <= joyRect.right &&
+        clientY >= joyRect.top && clientY <= joyRect.bottom) {
+        return;
+    }
+
+    const rect = canvas.getBoundingClientRect();
+    const clickX = clientX - rect.left + (player.x - canvas.width / 2);
+    const clickY = clientY - rect.top + (player.y - canvas.height / 2);
+
+    enemies.forEach(en => {
+        let dist = Math.hypot(en.x - clickX, en.y - clickY);
+        if (dist < en.radius + 15) {
+            let pDist = Math.hypot(en.x - player.x, en.y - player.y);
+            if (pDist < 120) {
+                en.hp -= 20;
+                addLog(`⚔️ Ataque direto causou 20 de dano!`);
+            } else {
+                addLog("⚠️ Inimigo muito distante para ataque manual.");
+            }
+        }
+    });
+}
+
+canvas.addEventListener("click", (e) => {
+    handleCanvasPointer(e.clientX, e.clientY);
+});
+
+canvas.addEventListener("touchstart", (e) => {
+    if (e.touches.length > 0) {
+        const touch = e.touches[0];
+        handleCanvasPointer(touch.clientX, touch.clientY);
+    }
+}, { passive: true });
+
+// Inicialização
+initWorld();
+updateUI();
+addLog("🧭 Explore o mapa, derrote ameaças e colete as 10 amostras.");
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>

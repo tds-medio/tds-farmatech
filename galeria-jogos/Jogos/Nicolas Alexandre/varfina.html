@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desafio da Varfarina</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #e3f2fd, #e8f5e9);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #263238;
+        }
+
+        .game {
+            width: 100%;
+            max-width: 700px;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+
+        h1 {
+            color: #1565c0;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #607d8b;
+            margin-bottom: 25px;
+        }
+
+        .score {
+            background: #e3f2fd;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 25px;
+            font-weight: bold;
+            color: #1565c0;
+            font-size: 1.1rem;
+        }
+
+        .question-number {
+            color: #78909c;
+            margin-bottom: 10px;
+        }
+
+        .question {
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-bottom: 25px;
+        }
+
+        .answers {
+            display: grid;
+            gap: 12px;
+        }
+
+        button {
+            border: none;
+            border-radius: 12px;
+            padding: 15px;
+            font-size: 1rem;
+            cursor: pointer;
+            background: #f5f5f5;
+            color: #263238;
+            transition: 0.2s;
+        }
+
+        button:hover:not(:disabled) {
+            background: #bbdefb;
+            transform: scale(1.02);
+        }
+
+        button:disabled {
+            cursor: default;
+        }
+
+        button.correct {
+            background: #66bb6a;
+            color: white;
+        }
+
+        button.wrong {
+            background: #ef5350;
+            color: white;
+        }
+
+        .explanation {
+            margin-top: 20px;
+            padding: 18px;
+            border-radius: 12px;
+            background: #fff8e1;
+            border-left: 5px solid #ffb300;
+            text-align: left;
+            display: none;
+        }
+
+        #nextButton,
+        #restartButton {
+            margin-top: 20px;
+            background: #1565c0;
+            color: white;
+            font-weight: bold;
+            display: none;
+        }
+
+        #nextButton:hover,
+        #restartButton:hover {
+            background: #0d47a1;
+        }
+
+        .final {
+            display: none;
+        }
+
+        .final h2 {
+            color: #1565c0;
+            margin-bottom: 15px;
+        }
+
+        .final-score {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #43a047;
+            margin: 20px;
+        }
+
+        .warning {
+            margin-top: 25px;
+            padding: 15px;
+            background: #fff3cd;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            text-align: left;
+        }
+
+        .rules {
+            margin-top: 15px;
+            color: #607d8b;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="game">
+
+    <!-- ÁREA DO QUIZ -->
+    <div id="quiz">
+
+        <h1>💊 Desafio da Varfarina</h1>
+
+        <p class="subtitle">
+            Teste seus conhecimentos sobre varfarina e vitamina K!
+        </p>
+
+        <div class="score">
+            ⭐ Pontos: <span id="score">0</span>
+        </div>
+
+        <p class="rules">
+            ✅ Acerto: +10 pontos &nbsp; | &nbsp;
+            ❌ Erro: -10 pontos
+        </p>
+
+        <div class="question-number">
+            Pergunta <span id="currentQuestion">1</span> de
+            <span id="totalQuestions"></span>
+        </div>
+
+        <div class="question" id="question"></div>
+
+        <div class="answers" id="answers"></div>
+
+        <div class="explanation" id="explanation"></div>
+
+        <button id="nextButton" onclick="nextQuestion()">
+            Próxima pergunta ➜
+        </button>
+
+    </div>
+
+
+    <!-- TELA FINAL -->
+    <div class="final" id="final">
+
+        <h1>🏆 Fim do jogo!</h1>
+
+        <h2>Você terminou o desafio.</h2>
+
+        <div class="final-score">
+            <span id="finalScore"></span>
+        </div>
+
+        <p id="message"></p>
+
+        <button id="restartButton" onclick="restartGame()">
+            🔄 Jogar novamente
+        </button>
+
+        <div class="warning">
+            ⚠️ <strong>Importante:</strong> este jogo tem finalidade
+            educativa. Não altere a dose, não interrompa o tratamento
+            e não faça mudanças importantes na alimentação sem orientação
+            de um profissional de saúde.
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    // ==============================
+    // PERGUNTAS DO JOGO
+    // ==============================
+
+    const questions = [
+
+        {
+            question: "Para que a varfarina é utilizada?",
+            answers: [
+                "Para ajudar a prevenir a formação de coágulos sanguíneos",
+                "Para aumentar a formação de coágulos",
+                "Para substituir vitaminas",
+                "Para tratar apenas problemas digestivos"
+            ],
+            correct: 0,
+            explanation:
+                "A varfarina é um anticoagulante usado para ajudar a prevenir a formação de coágulos sanguíneos."
+        },
+
+        {
+            question: "Qual vitamina pode influenciar o efeito anticoagulante da varfarina?",
+            answers: [
+                "Vitamina C",
+                "Vitamina D",
+                "Vitamina K",
+                "Vitamina B12"
+            ],
+            correct: 2,
+            explanation:
+                "A vitamina K pode diminuir o efeito anticoagulante da varfarina."
+        },
+
+        {
+            question: "Qual destes alimentos é rico em vitamina K?",
+            answers: [
+                "Couve",
+                "Arroz branco",
+                "Maçã",
+                "Pão"
+            ],
+            correct: 0,
+            explanation:
+                "A couve é uma verdura verde-escura que contém bastante vitamina K."
+        },
+
+        {
+            question: "Qual destes alimentos também contém vitamina K?",
+            answers: [
+                "Espinafre",
+                "Banana",
+                "Arroz",
+                "Batata"
+            ],
+            correct: 0,
+            explanation:
+                "O espinafre é uma verdura que contém vitamina K."
+        },
+
+        {
+            question: "O que é recomendado em relação ao consumo de verduras ricas em vitamina K?",
+            answers: [
+                "Nunca comer verduras",
+                "Manter uma alimentação regular e evitar grandes mudanças sem orientação",
+                "Comer o máximo possível todos os dias",
+                "Parar de tomar a varfarina"
+            ],
+            correct: 1,
+            explanation:
+                "Não é necessário retirar esses alimentos por conta própria. É importante manter uma alimentação regular e conversar com um profissional antes de fazer grandes mudanças."
+        },
+
+        {
+            question: "Qual atitude é mais segura para uma pessoa que usa varfarina?",
+            answers: [
+                "Alterar a dose por conta própria",
+                "Interromper o medicamento quando quiser",
+                "Seguir as orientações do profissional de saúde",
+                "Evitar toda e qualquer verdura"
+            ],
+            correct: 2,
+            explanation:
+                "O tratamento com varfarina deve seguir a orientação do profissional de saúde. A dose não deve ser alterada por conta própria."
+        }
+
+    ];
+
+
+    // ==============================
+    // VARIÁVEIS DO JOGO
+    // ==============================
+
+    let current = 0;
+    let score = 0;
+
+    document.getElementById("totalQuestions").textContent =
+        questions.length;
+
+
+    // ==============================
+    // CARREGAR PERGUNTA
+    // ==============================
+
+    function loadQuestion() {
+
+        const q = questions[current];
+
+        document.getElementById("currentQuestion").textContent =
+            current + 1;
+
+        document.getElementById("question").textContent =
+            q.question;
+
+        const answersDiv =
+            document.getElementById("answers");
+
+        answersDiv.innerHTML = "";
+
+        document.getElementById("explanation").style.display =
+            "none";
+
+        document.getElementById("nextButton").style.display =
+            "none";
+
+
+        // Cria os botões das respostas
+        q.answers.forEach((answer, index) => {
+
+            const button =
+                document.createElement("button");
+
+            button.textContent = answer;
+
+            button.onclick = function() {
+                checkAnswer(index, button);
+            };
+
+            answersDiv.appendChild(button);
+
+        });
+    }
+
+
+    // ==============================
+    // VERIFICAR RESPOSTA
+    // ==============================
+
+    function checkAnswer(selected, selectedButton) {
+
+        const q = questions[current];
+
+        const buttons =
+            document.querySelectorAll("#answers button");
+
+
+        // Impede clicar em mais de uma resposta
+        buttons.forEach(button => {
+            button.disabled = true;
+        });
+
+
+        // ==========================
+        // RESPOSTA CORRETA
+        // ==========================
+
+        if (selected === q.correct) {
+
+            selectedButton.classList.add("correct");
+
+            // Ganha 10 pontos
+            score += 10;
+
+            document.getElementById("score").textContent =
+                score;
+
+            document.getElementById("explanation").innerHTML =
+                "✅ <strong>Resposta correta!</strong><br><br>" +
+                "+10 pontos 🎉<br><br>" +
+                q.explanation;
+
+        }
+
+
+        // ==========================
+        // RESPOSTA ERRADA
+        // ==========================
+
+        else {
+
+            selectedButton.classList.add("wrong");
+
+            // Perde 10 pontos
+            score -= 10;
+
+
+            // Não permite pontuação negativa
+            if (score < 0) {
+                score = 0;
+            }
+
+
+            document.getElementById("score").textContent =
+                score;
+
+
+            // Mostra qual era a resposta correta
+            buttons[q.correct].classList.add("correct");
+
+
+            document.getElementById("explanation").innerHTML =
+                "❌ <strong>Resposta incorreta!</strong><br><br>" +
+                "-10 pontos 😬<br><br>" +
+                "<strong>A resposta correta era:</strong><br>" +
+                q.answers[q.correct] +
+                "<br><br>" +
+                q.explanation;
+        }
+
+
+        document.getElementById("explanation").style.display =
+            "block";
+
+        document.getElementById("nextButton").style.display =
+            "inline-block";
+    }
+
+
+    // ==============================
+    // PRÓXIMA PERGUNTA
+    // ==============================
+
+    function nextQuestion() {
+
+        current++;
+
+        if (current < questions.length) {
+
+            loadQuestion();
+
+        } else {
+
+            showFinal();
+
+        }
+    }
+
+
+    // ==============================
+    // MOSTRAR RESULTADO FINAL
+    // ==============================
+
+    function showFinal() {
+
+        document.getElementById("quiz").style.display =
+            "none";
+
+        document.getElementById("final").style.display =
+            "block";
+
+
+        document.getElementById("finalScore").textContent =
+            score + " pontos";
+
+
+        let message;
+
+
+        if (score === questions.length * 10) {
+
+            message =
+                "🎉 Excelente! Você acertou todas as perguntas!";
+
+        }
+
+        else if (score >= 40) {
+
+            message =
+                "👏 Muito bem! Você demonstrou bons conhecimentos sobre o tema.";
+
+        }
+
+        else if (score >= 20) {
+
+            message =
+                "🙂 Bom trabalho! Continue estudando para melhorar sua pontuação.";
+
+        }
+
+        else {
+
+            message =
+                "📚 Continue estudando! Conhecer as interações da varfarina é importante.";
+
+        }
+
+
+        document.getElementById("message").textContent =
+            message;
+
+
+        document.getElementById("restartButton").style.display =
+            "inline-block";
+    }
+
+
+    // ==============================
+    // REINICIAR JOGO
+    // ==============================
+
+    function restartGame() {
+
+        current = 0;
+        score = 0;
+
+        document.getElementById("score").textContent =
+            "0";
+
+        document.getElementById("final").style.display =
+            "none";
+
+        document.getElementById("quiz").style.display =
+            "block";
+
+        loadQuestion();
+    }
+
+
+    // ==============================
+    // INICIAR JOGO
+    // ==============================
+
+    loadQuestion();
+
+</script>
+
+</body>
+</html>

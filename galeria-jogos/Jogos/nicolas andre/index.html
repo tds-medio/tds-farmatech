@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💊 Desafio dos Medicamentos</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #172554, #2563eb);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #172033;
+        }
+
+        .game {
+            width: 100%;
+            max-width: 750px;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            color: #1d4ed8;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #64748b;
+        }
+
+        .warning {
+            background: #fff7ed;
+            border-left: 5px solid #f97316;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            line-height: 1.5;
+        }
+
+        .info-box {
+            background: #eff6ff;
+            border-left: 5px solid #2563eb;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            line-height: 1.5;
+        }
+
+        .progress {
+            width: 100%;
+            height: 12px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #22c55e;
+            transition: width 0.4s;
+        }
+
+        .score {
+            text-align: right;
+            font-weight: bold;
+            color: #2563eb;
+            margin-bottom: 15px;
+        }
+
+        .question {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .answers {
+            display: grid;
+            gap: 12px;
+        }
+
+        .answer {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #dbeafe;
+            background: #f8fafc;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            text-align: left;
+            transition: 0.2s;
+        }
+
+        .answer:hover {
+            background: #eff6ff;
+            border-color: #60a5fa;
+        }
+
+        .answer.correct {
+            background: #dcfce7;
+            border-color: #22c55e;
+            color: #166534;
+        }
+
+        .answer.wrong {
+            background: #fee2e2;
+            border-color: #ef4444;
+            color: #991b1b;
+        }
+
+        .answer:disabled {
+            cursor: not-allowed;
+        }
+
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 12px;
+            display: none;
+            line-height: 1.5;
+        }
+
+        .feedback.show {
+            display: block;
+        }
+
+        .correct-feedback {
+            background: #ecfdf5;
+            color: #166534;
+        }
+
+        .wrong-feedback {
+            background: #fef2f2;
+            color: #991b1b;
+        }
+
+        .next,
+        .start-button,
+        .restart-button {
+            margin-top: 20px;
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            background: #2563eb;
+            color: white;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .next:hover,
+        .start-button:hover,
+        .restart-button:hover {
+            background: #1d4ed8;
+        }
+
+        .next {
+            display: none;
+        }
+
+        .start-screen,
+        .result-screen {
+            text-align: center;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .final-score {
+            font-size: 40px;
+            font-weight: bold;
+            color: #2563eb;
+            margin: 20px;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1d4ed8;
+            padding: 8px 14px;
+            border-radius: 20px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .category {
+            display: inline-block;
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="game">
+
+    <!-- TELA INICIAL -->
+    <div id="startScreen" class="start-screen">
+
+        <div class="header">
+            <h1>💊 Desafio dos Medicamentos</h1>
+            <p>
+                Aprenda sobre alprazolam, clonazepam,
+                cafeína e álcool.
+            </p>
+        </div>
+
+        <div class="warning">
+            <strong>⚠️ Atenção</strong><br>
+            Este jogo tem finalidade exclusivamente educativa.
+            Não altere, interrompa ou combine medicamentos por conta própria.
+            Em caso de dúvida, procure um profissional de saúde.
+        </div>
+
+        <div class="info-box">
+            <strong>☕ Café e cafeína:</strong><br>
+            A cafeína é estimulante e pode aumentar alerta,
+            ansiedade ou agitação e prejudicar o sono em algumas pessoas.
+            Ela pode contrariar alguns efeitos percebidos de medicamentos
+            sedativos, mas isso não significa que o café seja uma
+            "antídoto" para esses medicamentos.
+        </div>
+
+        <div class="warning">
+            <strong>🍺 Álcool:</strong><br>
+            O álcool pode aumentar os efeitos depressores dos
+            benzodiazepínicos sobre o sistema nervoso central.
+            A combinação pode ser perigosa.
+        </div>
+
+        <button class="start-button" onclick="startGame()">
+            🎮 Começar o jogo
+        </button>
+
+    </div>
+
+
+    <!-- JOGO -->
+    <div id="gameScreen" class="hidden">
+
+        <div class="header">
+            <h1>💊 Desafio dos Medicamentos</h1>
+            <p>Escolha a resposta correta.</p>
+        </div>
+
+        <div class="score">
+            Pontuação: <span id="score">0</span>
+        </div>
+
+        <div class="progress">
+            <div id="progressBar" class="progress-bar"></div>
+        </div>
+
+        <div id="category" class="category"></div>
+
+        <div id="question" class="question"></div>
+
+        <div id="answers" class="answers"></div>
+
+        <div id="feedback" class="feedback"></div>
+
+        <button id="nextButton" class="next" onclick="nextQuestion()">
+            Próxima pergunta →
+        </button>
+
+    </div>
+
+
+    <!-- RESULTADO -->
+    <div id="resultScreen" class="result-screen hidden">
+
+        <h2>🎉 Fim do desafio!</h2>
+
+        <p>Você terminou todas as perguntas.</p>
+
+        <div class="final-score">
+            <span id="finalScore">0</span>/8
+        </div>
+
+        <div id="resultMessage"></div>
+
+        <button class="restart-button" onclick="restartGame()">
+            🔄 Jogar novamente
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+const questions = [
+
+    {
+        category: "💊 Medicamento",
+        question: "O alprazolam pertence a qual classe de medicamentos?",
+        answers: [
+            "Antibióticos",
+            "Benzodiazepínicos",
+            "Antiácidos",
+            "Antifúngicos"
+        ],
+        correct: 1,
+        explanation:
+            "O alprazolam pertence à classe dos benzodiazepínicos."
+    },
+
+    {
+        category: "🧠 Sistema nervoso",
+        question: "Qual neurotransmissor tem sua ação aumentada pelos benzodiazepínicos?",
+        answers: [
+            "GABA",
+            "Insulina",
+            "Adrenalina",
+            "Melatonina"
+        ],
+        correct: 0,
+        explanation:
+            "Os benzodiazepínicos aumentam a ação do GABA, que reduz a atividade do sistema nervoso central."
+    },
+
+    {
+        category: "💊 Medicamentos",
+        question: "Por que alprazolam e clonazepam exigem atenção quando usados juntos?",
+        answers: [
+            "São medicamentos da mesma classe e podem somar efeitos depressores",
+            "Um deles é um antibiótico",
+            "Eles sempre anulam completamente seus efeitos",
+            "Um deles é uma vitamina"
+        ],
+        correct: 0,
+        explanation:
+            "Alprazolam e clonazepam são benzodiazepínicos. A combinação pode aumentar efeitos como sedação e outros efeitos depressores do sistema nervoso central."
+    },
+
+    {
+        category: "☕ Cafeína",
+        question: "Como a cafeína pode afetar uma pessoa que utiliza clonazepam?",
+        answers: [
+            "Pode aumentar alerta, ansiedade ou agitação e prejudicar o sono",
+            "Sempre aumenta a sedação do clonazepam",
+            "Transforma o clonazepam em antibiótico",
+            "Neutraliza completamente o medicamento"
+        ],
+        correct: 0,
+        explanation:
+            "A cafeína é estimulante. Em algumas pessoas, pode aumentar alerta, ansiedade ou agitação e dificultar o sono."
+    },
+
+    {
+        category: "☕ Café",
+        question: "Qual afirmação sobre café e clonazepam é mais adequada?",
+        answers: [
+            "O café é automaticamente proibido para todas as pessoas",
+            "A cafeína pode atrapalhar o sono e aumentar ansiedade ou agitação em algumas pessoas",
+            "O café funciona como antídoto do clonazepam",
+            "Café e clonazepam sempre produzem exatamente o mesmo efeito"
+        ],
+        correct: 1,
+        explanation:
+            "Não é correto dizer que café é universalmente proibido. A cafeína pode, entretanto, atrapalhar o sono e aumentar ansiedade ou agitação em algumas pessoas."
+    },
+
+    {
+        category: "⚡ Energéticos",
+        question: "Por que bebidas energéticas merecem atenção durante o uso de medicamentos sedativos?",
+        answers: [
+            "Porque geralmente contêm cafeína e outros estimulantes",
+            "Porque são sempre medicamentos",
+            "Porque aumentam diretamente o GABA",
+            "Porque eliminam todos os efeitos dos benzodiazepínicos"
+        ],
+        correct: 0,
+        explanation:
+            "Bebidas energéticas podem conter quantidades significativas de cafeína e outros estimulantes, que podem afetar alerta, ansiedade e sono."
+    },
+
+    {
+        category: "🍺 Álcool",
+        question: "Por que o álcool é especialmente preocupante quando combinado com benzodiazepínicos?",
+        answers: [
+            "Pode aumentar os efeitos depressores sobre o sistema nervoso central",
+            "Sempre reduz a sonolência",
+            "Funciona como tratamento para ansiedade",
+            "Neutraliza o medicamento"
+        ],
+        correct: 0,
+        explanation:
+            "O álcool também pode deprimir o sistema nervoso central. A combinação com benzodiazepínicos pode aumentar a sedação e o risco de efeitos graves, incluindo depressão respiratória."
+    },
+
+    {
+        category: "⚠️ Segurança",
+        question: "Qual atitude é mais segura ao ter dúvidas sobre combinar medicamento, café, energético ou álcool?",
+        answers: [
+            "Aumentar a dose do medicamento",
+            "Consultar um médico ou farmacêutico",
+            "Misturar pequenas quantidades para testar",
+            "Parar o medicamento imediatamente por conta própria"
+        ],
+        correct: 1,
+        explanation:
+            "Dúvidas sobre interações devem ser discutidas com um profissional de saúde. Não é seguro ajustar doses ou interromper medicamentos por conta própria."
+    }
+
+];
+
+let currentQuestion = 0;
+let score = 0;
+
+
+function startGame() {
+
+    document.getElementById("startScreen")
+        .classList.add("hidden");
+
+    document.getElementById("gameScreen")
+        .classList.remove("hidden");
+
+    currentQuestion = 0;
+    score = 0;
+
+    document.getElementById("score").textContent = score;
+
+    showQuestion();
+}
+
+
+function showQuestion() {
+
+    const question = questions[currentQuestion];
+
+    document.getElementById("category")
+        .textContent = question.category;
+
+    document.getElementById("question")
+        .textContent =
+        `${currentQuestion + 1}. ${question.question}`;
+
+    const answersContainer =
+        document.getElementById("answers");
+
+    answersContainer.innerHTML = "";
+
+    const feedback =
+        document.getElementById("feedback");
+
+    feedback.className = "feedback";
+    feedback.textContent = "";
+
+    document.getElementById("nextButton")
+        .style.display = "none";
+
+    const progress =
+        ((currentQuestion) / questions.length) * 100;
+
+    document.getElementById("progressBar")
+        .style.width = progress + "%";
+
+
+    question.answers.forEach((answer, index) => {
+
+        const button =
+            document.createElement("button");
+
+        button.className = "answer";
+
+        button.textContent = answer;
+
+        button.onclick =
+            () => checkAnswer(index, button);
+
+        answersContainer.appendChild(button);
+
+    });
+}
+
+
+function checkAnswer(selected, selectedButton) {
+
+    const question = questions[currentQuestion];
+
+    const buttons =
+        document.querySelectorAll(".answer");
+
+    buttons.forEach(button => {
+        button.disabled = true;
+    });
+
+
+    const feedback =
+        document.getElementById("feedback");
+
+
+    if (selected === question.correct) {
+
+        selectedButton.classList.add("correct");
+
+        score++;
+
+        document.getElementById("score")
+            .textContent = score;
+
+        feedback.className =
+            "feedback show correct-feedback";
+
+        feedback.innerHTML =
+            "<strong>✅ Correto!</strong><br>" +
+            question.explanation;
+
+    } else {
+
+        selectedButton.classList.add("wrong");
+
+        buttons[question.correct]
+            .classList.add("correct");
+
+        feedback.className =
+            "feedback show wrong-feedback";
+
+        feedback.innerHTML =
+            "<strong>❌ Resposta incorreta.</strong><br>" +
+            question.explanation;
+    }
+
+    document.getElementById("nextButton")
+        .style.display = "block";
+}
+
+
+function nextQuestion() {
+
+    currentQuestion++;
+
+    if (currentQuestion < questions.length) {
+
+        showQuestion();
+
+    } else {
+
+        showResult();
+
+    }
+}
+
+
+function showResult() {
+
+    document.getElementById("gameScreen")
+        .classList.add("hidden");
+
+    document.getElementById("resultScreen")
+        .classList.remove("hidden");
+
+    document.getElementById("finalScore")
+        .textContent = score;
+
+    const message =
+        document.getElementById("resultMessage");
+
+
+    if (score === questions.length) {
+
+        message.innerHTML =
+            '<span class="badge">🏆 Conhecimento completo!</span>' +
+            '<p style="margin-top:15px;">' +
+            'Você acertou todas as perguntas.' +
+            '</p>';
+
+    } else if (score >= 5) {
+
+        message.innerHTML =
+            '<span class="badge">👏 Muito bem!</span>' +
+            '<p style="margin-top:15px;">' +
+            'Você demonstrou um bom conhecimento do tema.' +
+            '</p>';
+
+    } else {
+
+        message.innerHTML =
+            '<span class="badge">📚 Continue aprendendo!</span>' +
+            '<p style="margin-top:15px;">' +
+            'Revise as informações e tente novamente.' +
+            '</p>';
+    }
+}
+
+
+function restartGame() {
+
+    document.getElementById("resultScreen")
+        .classList.add("hidden");
+
+    document.getElementById("startScreen")
+        .classList.remove("hidden");
+}
+
+</script>
+
+</body>
+</html>

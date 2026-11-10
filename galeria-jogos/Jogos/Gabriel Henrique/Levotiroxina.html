@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo da Forca - Levotiroxina</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f8ff;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        h1 {
+            color: #005b96;
+            margin-bottom: 5px;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .placar-box {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #005b96;
+            margin-bottom: 10px;
+            background: #e3f2fd;
+            padding: 8px;
+            border-radius: 6px;
+        }
+
+        svg {
+            height: 160px;
+            width: 150px;
+            stroke: #333;
+            stroke-width: 4;
+            fill: none;
+            stroke-linecap: round;
+        }
+
+        .dica-box {
+            background-color: #e1f5fe;
+            border-left: 5px solid #0288d1;
+            padding: 10px 15px;
+            margin: 15px 0;
+            text-align: left;
+            font-size: 1em;
+            border-radius: 4px;
+        }
+
+        .palavra-container {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            min-height: 45px;
+        }
+
+        .letra-box {
+            width: 32px;
+            height: 42px;
+            border-bottom: 3px solid #005b96;
+            font-size: 1.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .teclado {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .tecla {
+            background-color: #008cba;
+            color: white;
+            border: none;
+            padding: 10px 12px;
+            font-size: 1em;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+            min-width: 38px;
+        }
+
+        .tecla:hover:not(:disabled) {
+            background-color: #005f73;
+        }
+
+        .tecla:disabled {
+            background-color: #cccccc;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        .status {
+            font-weight: bold;
+            font-size: 1.2em;
+            margin: 15px 0;
+        }
+
+        .win { color: #2e7d32; }
+        .lose { color: #c62828; }
+
+        .btn-reiniciar {
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1em;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .btn-reiniciar:hover {
+            background-color: #388e3c;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Jogo da Forca: Levotiroxina</h1>
+        
+        <div class="placar-box">
+            Pontuação: <span id="pontos">0</span> pontos
+        </div>
+
+        <!-- Desenho SVG da Forca -->
+        <svg viewBox="0 0 100 100">
+            <line x1="10" y1="95" x2="90" y2="95" />
+            <line x1="30" y1="95" x2="30" y2="5" />
+            <line x1="30" y1="5" x2="70" y2="5" />
+            <line x1="70" y1="5" x2="70" y2="20" />
+
+            <circle id="cabeca" cx="70" cy="28" r="8" style="display:none;" />
+            <line id="corpo" x1="70" y1="36" x2="70" y2="60" style="display:none;" />
+            <line id="braco-esquerdo" x1="70" y1="42" x2="55" y2="50" style="display:none;" />
+            <line id="braco-direito" x1="70" y1="42" x2="85" y2="50" style="display:none;" />
+            <line id="perna-esquerda" x1="70" y1="60" x2="55" y2="80" style="display:none;" />
+            <line id="perna-direita" x1="70" y1="60" x2="85" y2="80" style="display:none;" />
+        </svg>
+
+        <div class="dica-box">
+            <strong>Dica:</strong> <span id="dica-texto"></span>
+        </div>
+
+        <div class="palavra-container" id="palavra-container"></div>
+
+        <div class="status" id="status-mensagem"></div>
+
+        <div class="teclado" id="teclado"></div>
+
+        <button class="btn-reiniciar" id="btn-reiniciar" onclick="iniciarJogo()">Próxima Palavra</button>
+    </div>
+
+    <script>
+        const bancoDeDados = [
+            { palavra: "HIPOTIREOIDISMO", dica: "Condição principal tratada pela Levotiroxina." },
+            { palavra: "JEJUM", dica: "Como o medicamento deve ser tomado em relação à alimentação." },
+            { palavra: "TIREÓIDE", dica: "Glândula do organismo que produz o hormônio reposto." },
+            { palavra: "ÁGUA", dica: "Bebida recomendada para tomar o comprimido." },
+            { palavra: "CAFÉ", dica: "Bebida matinal que pode diminuir a absorção do remédio." },
+            { palavra: "LEITE", dica: "Bebida rica em cálcio que interfere na absorção." },
+            { palavra: "FIBRAS", dica: "Nutriente em cereais e vegetais que reduz a absorção." },
+            { palavra: "SOJA", dica: "Alimento vegetal que pode interagir com o medicamento." },
+            { palavra: "HORMÔNIO", dica: "Substância reposta pela Levotiroxina no organismo." },
+            { palavra: "MÉDICO", dica: "Profissional que orienta a dosagem correta do remédio." }
+        ];
+
+        const partesCorpo = [
+            "cabeca", "corpo", "braco-esquerdo", "braco-direito", "perna-esquerda", "perna-direita"
+        ];
+
+        let palavraAtual = "";
+        let palavraSemAcento = "";
+        let letrasDescobertas = [];
+        let erros = 0;
+        const maxErros = 6;
+        let historicoPalavras = [];
+        let pontuacao = 0;
+
+        function removerAcentos(texto) {
+            return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        }
+
+        function iniciarJogo() {
+            erros = 0;
+            letrasDescobertas = [];
+            document.getElementById("status-mensagem").innerText = "";
+            document.getElementById("status-mensagem").className = "status";
+            document.getElementById("btn-reiniciar").style.display = "none";
+
+            partesCorpo.forEach(id => {
+                document.getElementById(id).style.display = "none";
+            });
+
+            let palavrasDisponiveis = bancoDeDados.filter(item => !historicoPalavras.includes(item.palavra));
+            if (palavrasDisponiveis.length === 0) {
+                historicoPalavras = [];
+                palavrasDisponiveis = bancoDeDados;
+            }
+
+            const itemSorteado = palavrasDisponiveis[Math.floor(Math.random() * palavrasDisponiveis.length)];
+            palavraAtual = itemSorteado.palavra;
+            palavraSemAcento = removerAcentos(palavraAtual);
+            historicoPalavras.push(palavraAtual);
+
+            // Preenche os espaços da palavra vazia
+            for (let i = 0; i < palavraAtual.length; i++) {
+                letrasDescobertas.push("");
+            }
+
+            document.getElementById("dica-texto").innerText = itemSorteado.dica;
+
+            const containerPalavra = document.getElementById("palavra-container");
+            containerPalavra.innerHTML = "";
+            for (let i = 0; i < palavraAtual.length; i++) {
+                const box = document.createElement("div");
+                box.className = "letra-box";
+                box.id = `letra-${i}`;
+                containerPalavra.appendChild(box);
+            }
+
+            gerarTeclado();
+        }
+
+        function gerarTeclado() {
+            const tecladoContainer = document.getElementById("teclado");
+            tecladoContainer.innerHTML = "";
+            const alfabeto = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
+            alfabeto.forEach(letra => {
+                const btn = document.createElement("button");
+                btn.className = "tecla";
+                btn.innerText = letra;
+                btn.id = `btn-${letra}`;
+                btn.onclick = () => chutarLetra(letra);
+                tecladoContainer.appendChild(btn);
+            });
+        }
+
+        function chutarLetra(letra) {
+            const btn = document.getElementById(`btn-${letra}`);
+            btn.disabled = true;
+
+            if (palavraSemAcento.includes(letra)) {
+                for (let i = 0; i < palavraAtual.length; i++) {
+                    if (palavraSemAcento[i] === letra) {
+                        document.getElementById(`letra-${i}`).innerText = palavraAtual[i];
+                        letrasDescobertas[i] = palavraAtual[i];
+                    }
+                }
+                checarVitoria();
+            } else {
+                document.getElementById(partesCorpo[erros]).style.display = "block";
+                erros++;
+                checarDerrota();
+            }
+        }
+
+        function checarVitoria() {
+            const palavraFormada = letrasDescobertas.join("");
+            if (palavraFormada === palavraAtual) {
+                pontuacao += 10;
+                document.getElementById("pontos").innerText = pontuacao;
+                
+                const status = document.getElementById("status-mensagem");
+                status.innerText = "Parabéns! Você acertou (+10 pontos)! 🎉";
+                status.className = "status win";
+                finalizarJogo();
+            }
+        }
+
+        function checarDerrota() {
+            if (erros === maxErros) {
+                const status = document.getElementById("status-mensagem");
+                status.innerText = `Você perdeu! A palavra era: ${palavraAtual}`;
+                status.className = "status lose";
+
+                for (let i = 0; i < palavraAtual.length; i++) {
+                    document.getElementById(`letra-${i}`).innerText = palavraAtual[i];
+                }
+
+                finalizarJogo();
+            }
+        }
+
+        function finalizarJogo() {
+            const botoes = document.querySelectorAll(".tecla");
+            botoes.forEach(btn => btn.disabled = true);
+            document.getElementById("btn-reiniciar").style.display = "inline-block";
+        }
+
+        window.onload = iniciarJogo;
+    </script>
+</body>
+</html>

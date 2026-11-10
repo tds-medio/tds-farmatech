@@ -1,0 +1,4224 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VARFARINA — Equilíbrio no Sangue</title>
+
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    user-select:none;
+}
+
+html,body{
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#020509;
+    font-family:Arial,Helvetica,sans-serif;
+}
+
+body{
+    color:white;
+}
+
+canvas{
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:100%;
+    display:block;
+    cursor:crosshair;
+}
+
+/* ================= HUD ================= */
+
+#hud{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100px;
+    pointer-events:none;
+    padding:15px;
+    display:flex;
+    justify-content:space-between;
+    z-index:10;
+}
+
+.hud-left,
+.hud-right{
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+}
+
+.hud-box{
+    min-width:210px;
+    padding:9px 13px;
+    border:1px solid rgba(100,190,255,.25);
+    background:rgba(3,10,18,.72);
+    backdrop-filter:blur(8px);
+    border-radius:9px;
+    box-shadow:0 0 20px rgba(0,120,255,.08);
+}
+
+.hud-title{
+    font-size:11px;
+    color:#8aa5b9;
+    text-transform:uppercase;
+    letter-spacing:1px;
+}
+
+.hud-value{
+    font-size:18px;
+    font-weight:bold;
+    margin-top:2px;
+}
+
+.bar{
+    width:210px;
+    height:9px;
+    background:#101a22;
+    border-radius:20px;
+    overflow:hidden;
+    margin-top:5px;
+}
+
+.bar-fill{
+    height:100%;
+    width:100%;
+    transition:width .2s;
+}
+
+#hpFill{
+    background:linear-gradient(90deg,#ff334f,#ff755e);
+    box-shadow:0 0 12px #ff334f;
+}
+
+#bossHud{
+    position:fixed;
+    top:15px;
+    left:50%;
+    transform:translateX(-50%);
+    width:min(600px,70vw);
+    z-index:11;
+    display:none;
+}
+
+.boss-name{
+    text-align:center;
+    font-size:15px;
+    font-weight:bold;
+    color:#ff6379;
+    letter-spacing:2px;
+    text-shadow:0 0 10px #ff003c;
+    margin-bottom:5px;
+}
+
+.boss-bar{
+    height:17px;
+    border:2px solid rgba(255,80,100,.5);
+    background:#16060b;
+    border-radius:20px;
+    overflow:hidden;
+}
+
+#bossFill{
+    height:100%;
+    width:100%;
+    background:linear-gradient(90deg,#ff173f,#ff7c45,#ff173f);
+    box-shadow:0 0 20px #ff1744;
+    transition:width .1s;
+}
+
+#message{
+    position:fixed;
+    left:50%;
+    bottom:25px;
+    transform:translateX(-50%);
+    padding:10px 20px;
+    border-radius:20px;
+    background:rgba(0,0,0,.65);
+    border:1px solid rgba(255,255,255,.12);
+    color:#bdeaff;
+    font-size:14px;
+    opacity:0;
+    transition:opacity .2s;
+    z-index:20;
+}
+
+/* ================= TELAS ================= */
+
+.screen{
+    position:fixed;
+    inset:0;
+    z-index:100;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:
+        radial-gradient(circle at center,rgba(10,40,65,.45),rgba(0,0,0,.96));
+}
+
+.panel{
+    width:min(760px,92vw);
+    padding:42px;
+    border:1px solid rgba(100,200,255,.25);
+    border-radius:20px;
+    background:rgba(4,10,17,.94);
+    box-shadow:
+        0 0 80px rgba(0,120,255,.12),
+        inset 0 0 50px rgba(0,100,180,.03);
+    text-align:center;
+}
+
+.logo{
+    font-size:clamp(32px,6vw,65px);
+    font-weight:900;
+    letter-spacing:5px;
+    color:#8ee7ff;
+    text-shadow:
+        0 0 10px #008cff,
+        0 0 35px rgba(0,140,255,.7);
+}
+
+.subtitle{
+    margin-top:8px;
+    color:#9bb4c5;
+    font-size:14px;
+    letter-spacing:2px;
+}
+
+.description{
+    margin:25px auto;
+    max-width:650px;
+    color:#b9c8d2;
+    line-height:1.7;
+    font-size:15px;
+}
+
+.controls{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:10px;
+    margin:25px 0;
+}
+
+.control{
+    padding:12px;
+    border-radius:10px;
+    background:rgba(255,255,255,.035);
+    border:1px solid rgba(255,255,255,.07);
+    color:#9db1be;
+}
+
+.control b{
+    color:#fff;
+}
+
+button{
+    border:0;
+    color:white;
+    cursor:pointer;
+    font-weight:bold;
+    letter-spacing:1px;
+}
+
+.main-button{
+    padding:16px 55px;
+    border-radius:12px;
+    background:linear-gradient(135deg,#008cff,#00d4ff);
+    box-shadow:0 0 30px rgba(0,170,255,.35);
+    font-size:17px;
+    transition:.2s;
+}
+
+.main-button:hover{
+    transform:translateY(-2px) scale(1.02);
+    box-shadow:0 0 45px rgba(0,190,255,.55);
+}
+
+.warning{
+    margin-top:22px;
+    color:#667b88;
+    font-size:11px;
+    line-height:1.5;
+}
+
+/* ================= UPGRADE ================= */
+
+#upgradeScreen{
+    display:none;
+}
+
+.upgrades{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:15px;
+    margin-top:25px;
+}
+
+.upgrade{
+    padding:22px 15px;
+    min-height:180px;
+    background:rgba(10,25,38,.9);
+    border:1px solid rgba(70,180,255,.2);
+    border-radius:15px;
+    transition:.2s;
+    cursor:pointer;
+}
+
+.upgrade:hover{
+    transform:translateY(-5px);
+    border-color:#2ec8ff;
+    box-shadow:0 0 25px rgba(0,180,255,.2);
+}
+
+.upgrade-icon{
+    font-size:40px;
+    margin-bottom:12px;
+}
+
+.upgrade h3{
+    font-size:15px;
+    color:#8edfff;
+    margin-bottom:8px;
+}
+
+.upgrade p{
+    color:#8399a8;
+    font-size:12px;
+    line-height:1.5;
+}
+
+/* ================= TRANSIÇÃO ================= */
+
+#transitionScreen{
+    display:none;
+}
+
+.phase-number{
+    font-size:65px;
+    font-weight:900;
+    color:#62dcff;
+    text-shadow:0 0 30px #009dff;
+}
+
+.phase-text{
+    margin-top:8px;
+    color:#8ca5b5;
+}
+
+/* ================= RESPONSIVO ================= */
+
+/* ================= CONTROLES MOBILE ================= */
+
+#mobileControls{
+    position:fixed;
+    inset:0;
+    z-index:50;
+    pointer-events:none;
+    display:none;
+}
+
+.mobile-stick{
+    position:absolute;
+    width:118px;
+    height:118px;
+    border-radius:50%;
+    border:2px solid rgba(150,220,255,.35);
+    background:rgba(5,20,32,.42);
+    box-shadow:0 0 25px rgba(0,150,255,.12);
+    pointer-events:auto;
+    touch-action:none;
+}
+
+#moveStick{
+    left:24px;
+    bottom:24px;
+}
+
+#aimStick{
+    right:24px;
+    bottom:24px;
+}
+
+.mobile-knob{
+    position:absolute;
+    left:50%;
+    top:50%;
+    width:52px;
+    height:52px;
+    margin-left:-26px;
+    margin-top:-26px;
+    border-radius:50%;
+    background:rgba(80,210,255,.45);
+    border:2px solid rgba(210,250,255,.7);
+    box-shadow:0 0 18px rgba(0,200,255,.2);
+    pointer-events:none;
+}
+
+#mobilePause{
+    position:absolute;
+    top:112px;
+    right:14px;
+    width:48px;
+    height:48px;
+    border-radius:12px;
+    border:1px solid rgba(120,210,255,.35);
+    background:rgba(3,10,18,.78);
+    color:white;
+    font-size:20px;
+    pointer-events:auto;
+    touch-action:manipulation;
+}
+
+@media(max-width:700px){
+    #mobileControls{
+        display:block;
+    }
+
+    canvas{
+        touch-action:none;
+    }
+
+    #hud{
+        height:92px;
+    }
+
+    #hud{
+        padding:8px;
+    }
+
+    .hud-box{
+        min-width:112px;
+        padding:6px;
+    }
+
+    .bar{
+        width:112px;
+    }
+
+    .hud-value{
+        font-size:12px;
+    }
+
+    .controls,
+    .upgrades{
+        grid-template-columns:1fr;
+    }
+
+    .panel{
+        padding:25px;
+        max-height:92vh;
+        overflow:auto;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="game"></canvas>
+
+<!-- ================= CONTROLES MOBILE ================= -->
+<div id="mobileControls">
+    <div id="moveStick" class="mobile-stick">
+        <div id="moveKnob" class="mobile-knob"></div>
+    </div>
+
+    <div id="aimStick" class="mobile-stick">
+        <div id="aimKnob" class="mobile-knob"></div>
+    </div>
+
+    <button id="mobilePause" type="button">Ⅱ</button>
+</div>
+
+<!-- ================= HUD ================= -->
+
+<div id="hud">
+
+    <div class="hud-left">
+
+        <div class="hud-box">
+            <div class="hud-title">Fase</div>
+            <div class="hud-value">
+                <span id="phaseText">1</span>
+            </div>
+        </div>
+
+        <div class="hud-box">
+            <div class="hud-title">Inimigos restantes</div>
+            <div class="hud-value">
+                <span id="remainingText">0</span>
+            </div>
+        </div>
+
+        <div class="hud-box">
+            <div class="hud-title">Integridade</div>
+            <div class="hud-value">
+                <span id="hpText">100 / 100</span>
+            </div>
+            <div class="bar">
+                <div id="hpFill" class="bar-fill"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="hud-right">
+
+        <div class="hud-box">
+            <div class="hud-title">Pontuação</div>
+            <div class="hud-value" id="scoreText">0</div>
+        </div>
+
+        <div class="hud-box">
+            <div class="hud-title">Abates</div>
+            <div class="hud-value" id="killsText">0</div>
+        </div>
+
+        <div class="hud-box">
+            <div class="hud-title">Poder</div>
+            <div class="hud-value" id="powerText">Normal</div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ================= BOSS HUD ================= -->
+
+<div id="bossHud">
+    <div class="boss-name" id="bossName">MEGA COÁGULO</div>
+    <div class="boss-bar">
+        <div id="bossFill"></div>
+    </div>
+</div>
+
+<div id="message"></div>
+
+<!-- ================= MENU ================= -->
+
+<div id="menuScreen" class="screen">
+
+    <div class="panel">
+
+        <div class="logo">VARFARINA</div>
+        <div class="subtitle">EQUILÍBRIO NO SANGUE</div>
+
+        <div class="description">
+            Entre em uma corrente sanguínea hostil e enfrente coágulos,
+            mutações e grandes ameaças. Cada fase possui seus próprios
+            inimigos e só termina quando <b>todos forem derrotados</b>.
+        </div>
+
+        <div class="description" style="margin-top:18px; color:#70e6ff;">
+            <b>📱 SUPORTE PARA DISPOSITIVOS MÓVEIS</b><br>
+            O jogo possui controles adaptados para dispositivos móveis.<br>
+            <b>Joystick esquerdo:</b> movimentação do personagem.<br>
+            <b>Joystick direito:</b> direcionamento da mira e realização dos disparos.
+        </div>
+
+        <div class="controls">
+
+            <div class="control">
+                <b>WASD / SETAS</b><br>
+                Movimento
+            </div>
+
+            <div class="control">
+                <b>MOUSE</b><br>
+                Mirar
+            </div>
+
+            <div class="control">
+                <b>CLIQUE</b><br>
+                Atacar
+            </div>
+
+            <div class="control">
+                <b>ESC</b><br>
+                Pausar
+            </div>
+
+        </div>
+
+        <button id="playButton" class="main-button">
+            JOGAR
+        </button>
+
+        <div class="warning">
+            REPRESENTAÇÃO FICTÍCIA E SIMPLIFICADA PARA FINS EDUCACIONAIS.
+            O jogo não representa doses, tratamentos, farmacocinética ou
+            decisões médicas reais sobre varfarina.
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ================= PAUSE ================= -->
+
+<div id="pauseScreen" class="screen" style="display:none">
+
+    <div class="panel">
+
+        <div class="logo" style="font-size:45px">
+            PAUSADO
+        </div>
+
+        <div class="description">
+            A corrente sanguínea está congelada.
+        </div>
+
+        <button id="resumeButton" class="main-button">
+            CONTINUAR
+        </button>
+
+    </div>
+
+</div>
+
+<!-- ================= TRANSIÇÃO ================= -->
+
+<div id="transitionScreen" class="screen">
+
+    <div class="panel">
+
+        <div class="phase-number" id="transitionNumber">
+            FASE 2
+        </div>
+
+        <div class="phase-text" id="transitionText">
+            Todos os inimigos foram eliminados.
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ================= UPGRADES ================= -->
+
+<div id="upgradeScreen" class="screen">
+
+    <div class="panel">
+
+        <div class="logo" style="font-size:38px">
+            EVOLUÇÃO
+        </div>
+
+        <div class="subtitle">
+            ESCOLHA UMA MELHORIA
+        </div>
+
+        <div class="upgrades">
+
+            <div class="upgrade" data-upgrade="damage">
+                <div class="upgrade-icon">⚔️</div>
+                <h3>FORÇA CELULAR</h3>
+                <p>
+                    Aumenta permanentemente o dano dos seus disparos.
+                </p>
+            </div>
+
+            <div class="upgrade" data-upgrade="speed">
+                <div class="upgrade-icon">⚡</div>
+                <h3>IMPULSO</h3>
+                <p>
+                    Aumenta a velocidade de movimento.
+                </p>
+            </div>
+
+            <div class="upgrade" data-upgrade="health">
+                <div class="upgrade-icon">❤️</div>
+                <h3>MEMBRANA RESISTENTE</h3>
+                <p>
+                    Aumenta a vida máxima e recupera parte da integridade.
+                </p>
+            </div>
+
+            <div class="upgrade" data-upgrade="fire">
+                <div class="upgrade-icon">🔥</div>
+                <h3>METABOLISMO</h3>
+                <p>
+                    Aumenta a velocidade de disparo.
+                </p>
+            </div>
+
+            <div class="upgrade" data-upgrade="shield">
+                <div class="upgrade-icon">🛡️</div>
+                <h3>BARREIRA</h3>
+                <p>
+                    Concede uma proteção adicional contra ataques.
+                </p>
+            </div>
+
+            <div class="upgrade" data-upgrade="pickup">
+                <div class="upgrade-icon">🌿</div>
+                <h3>ABSORÇÃO</h3>
+                <p>
+                    Aumenta a chance de inimigos deixarem itens.
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ================= GAME OVER ================= -->
+
+<div id="gameOverScreen" class="screen" style="display:none">
+
+    <div class="panel">
+
+        <div class="logo" style="color:#ff526c">
+            DERROTA
+        </div>
+
+        <div class="description">
+            O Guardião Sanguíneo perdeu sua integridade.
+        </div>
+
+        <div class="hud-value" style="margin-bottom:25px">
+            Pontuação: <span id="finalScore">0</span>
+        </div>
+
+        <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
+
+            <button id="restartPhaseButton" class="main-button">
+                ↻ REINICIAR FASE
+            </button>
+
+            <button id="restartButton" class="main-button">
+                ⟳ REINICIAR TUDO
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ================= VITÓRIA ================= -->
+
+<div id="victoryScreen" class="screen" style="display:none">
+
+    <div class="panel">
+
+        <div class="logo" style="color:#70ffb0">
+            VITÓRIA
+        </div>
+
+        <div class="subtitle">
+            CORRENTE SANGUÍNEA ESTABILIZADA
+        </div>
+
+        <div class="description">
+            Você derrotou o Coágulo Supremo e concluiu todas as fases.
+        </div>
+
+        <div class="hud-value" style="margin-bottom:25px">
+            Pontuação final:
+            <span id="victoryScore">0</span>
+        </div>
+
+        <button id="victoryRestart" class="main-button">
+            JOGAR NOVAMENTE
+        </button>
+
+    </div>
+
+</div>
+
+<script>
+/* =========================================================
+   VARFARINA — EQUILÍBRIO NO SANGUE
+   ========================================================= */
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let W = window.innerWidth;
+let H = window.innerHeight;
+
+canvas.width = W;
+canvas.height = H;
+
+window.addEventListener("resize", () => {
+    W = window.innerWidth;
+    H = window.innerHeight;
+
+    canvas.width = W;
+    canvas.height = H;
+
+    if(player){
+        player.x = Math.min(player.x, W - 40);
+        player.y = Math.min(player.y, H - 40);
+    }
+});
+
+/* =========================================================
+   DOM
+   ========================================================= */
+
+const menuScreen = document.getElementById("menuScreen");
+const pauseScreen = document.getElementById("pauseScreen");
+const transitionScreen = document.getElementById("transitionScreen");
+const upgradeScreen = document.getElementById("upgradeScreen");
+const gameOverScreen = document.getElementById("gameOverScreen");
+const victoryScreen = document.getElementById("victoryScreen");
+
+const phaseText = document.getElementById("phaseText");
+const remainingText = document.getElementById("remainingText");
+const hpText = document.getElementById("hpText");
+const hpFill = document.getElementById("hpFill");
+const scoreText = document.getElementById("scoreText");
+const killsText = document.getElementById("killsText");
+const powerText = document.getElementById("powerText");
+
+const bossHud = document.getElementById("bossHud");
+const bossFill = document.getElementById("bossFill");
+const bossName = document.getElementById("bossName");
+
+const message = document.getElementById("message");
+
+/* =========================================================
+   ESTADO
+   ========================================================= */
+
+let gameRunning = false;
+let paused = false;
+let phaseTransition = false;
+let selectingUpgrade = false;
+
+let phase = 1;
+const MAX_PHASE = 15;
+
+let score = 0;
+let totalKills = 0;
+
+let enemies = [];
+let bullets = [];
+let enemyBullets = [];
+let particles = [];
+let pickups = [];
+let floatingTexts = [];
+let bloodCells = [];
+let platelets = [];
+let backgroundThreads = [];
+
+let mouse = {
+    x: W / 2,
+    y: H / 2,
+    down: false
+};
+
+let keys = {};
+
+let spawnShake = 0;
+let screenShake = 0;
+
+let phaseEnemiesTotal = 0;
+let phaseEnemiesRemaining = 0;
+let phaseEnemiesKilled = 0;
+
+let phaseStarted = false;
+let transitionTimer = 0;
+
+let enemyIdCounter = 0;
+
+let player = null;
+let boss = null;
+
+/* =========================================================
+   CONFIGURAÇÃO DO JOGADOR
+   ========================================================= */
+
+const basePlayer = {
+    maxHp: 100,
+    speed: 2.8,
+    damage: 20,
+    fireRate: 380,
+    radius: 18,
+    shield: 0,
+    pickupChance: 1
+};
+
+/* =========================================================
+   DIFICULDADE
+   ========================================================= */
+
+function difficulty(){
+
+    return {
+        hpMultiplier: 1 + (phase - 1) * 0.15,
+        speedMultiplier: 1 + (phase - 1) * 0.055,
+        damageMultiplier: 1 + (phase - 1) * 0.10,
+        radiusMultiplier: 1 + (phase - 1) * 0.018
+    };
+}
+
+/* =========================================================
+   INICIALIZAÇÃO
+   ========================================================= */
+
+function createPlayer(){
+
+    return {
+        x: W / 2,
+        y: H / 2,
+
+        radius: basePlayer.radius,
+
+        hp: basePlayer.maxHp,
+        maxHp: basePlayer.maxHp,
+
+        speed: basePlayer.speed,
+        damage: basePlayer.damage,
+        fireRate: basePlayer.fireRate,
+
+        fireTimer: 0,
+
+        shield: 0,
+
+        spinachTimer: 0,
+        spinachBoost: 1,
+
+        rapidFireTimer: 0,
+
+        invincibleTimer: 0,
+
+        pickupChance: basePlayer.pickupChance,
+
+        trail: []
+    };
+}
+
+/* =========================================================
+   FUNDO
+   ========================================================= */
+
+function generateBackground(){
+
+    bloodCells = [];
+    platelets = [];
+    backgroundThreads = [];
+
+    for(let i = 0; i < 65; i++){
+
+        bloodCells.push({
+            x: Math.random() * W,
+            y: Math.random() * H,
+            r: 7 + Math.random() * 13,
+            speed: .1 + Math.random() * .35,
+            angle: Math.random() * Math.PI * 2,
+            alpha: .12 + Math.random() * .22
+        });
+    }
+
+    for(let i = 0; i < 110; i++){
+
+        platelets.push({
+            x: Math.random() * W,
+            y: Math.random() * H,
+            r: 1 + Math.random() * 2.5,
+            angle: Math.random() * Math.PI * 2,
+            speed: .1 + Math.random() * .4,
+            alpha: .15 + Math.random() * .3
+        });
+    }
+
+    for(let i = 0; i < 18; i++){
+
+        let points = [];
+
+        let x = Math.random() * W;
+        let y = Math.random() * H;
+
+        for(let j = 0; j < 8; j++){
+
+            points.push({
+                x: x + (Math.random() - .5) * 150,
+                y: y + (Math.random() - .5) * 150
+            });
+        }
+
+        backgroundThreads.push(points);
+    }
+}
+
+/* =========================================================
+   CONTROLES MOBILE
+   ========================================================= */
+
+const mobileInput = {
+    moveId:null,
+    aimId:null,
+    moveX:0,
+    moveY:0,
+    aiming:false
+};
+
+const moveStick = document.getElementById("moveStick");
+const moveKnob = document.getElementById("moveKnob");
+const aimStick = document.getElementById("aimStick");
+const aimKnob = document.getElementById("aimKnob");
+
+function setStick(el, knob, clientX, clientY){
+    const r = el.getBoundingClientRect();
+    const cx = r.left + r.width/2;
+    const cy = r.top + r.height/2;
+    let dx = clientX - cx;
+    let dy = clientY - cy;
+    const max = r.width * .34;
+    const len = Math.hypot(dx,dy);
+
+    if(len > max){
+        dx = dx / len * max;
+        dy = dy / len * max;
+    }
+
+    knob.style.transform = `translate(${dx}px,${dy}px)`;
+    return {x:dx/max,y:dy/max};
+}
+
+function resetMoveStick(){
+    mobileInput.moveX = 0;
+    mobileInput.moveY = 0;
+    mobileInput.moveId = null;
+    moveKnob.style.transform = "translate(0,0)";
+    keys.w = keys.a = keys.s = keys.d = false;
+}
+
+function resetAimStick(){
+    mobileInput.aiming = false;
+    mobileInput.aimId = null;
+    mouse.down = false;
+    aimKnob.style.transform = "translate(0,0)";
+}
+
+function updateMobileMove(clientX,clientY){
+    const v = setStick(moveStick,moveKnob,clientX,clientY);
+    mobileInput.moveX = v.x;
+    mobileInput.moveY = v.y;
+}
+
+function updateMobileAim(clientX,clientY){
+    const v = setStick(aimStick,aimKnob,clientX,clientY);
+    const len = Math.hypot(v.x,v.y);
+
+    if(player && len > .08){
+        const range = 500;
+        mouse.x = player.x + v.x * range;
+        mouse.y = player.y + v.y * range;
+        mobileInput.aiming = true;
+        mouse.down = true;
+    }else{
+        mobileInput.aiming = false;
+        mouse.down = false;
+    }
+}
+
+moveStick.addEventListener("touchstart", e => {
+    e.preventDefault();
+    if(mobileInput.moveId !== null) return;
+    const t = e.changedTouches[0];
+    mobileInput.moveId = t.identifier;
+    updateMobileMove(t.clientX,t.clientY);
+},{passive:false});
+
+moveStick.addEventListener("touchmove", e => {
+    e.preventDefault();
+    for(const t of e.changedTouches){
+        if(t.identifier === mobileInput.moveId){
+            updateMobileMove(t.clientX,t.clientY);
+            break;
+        }
+    }
+},{passive:false});
+
+moveStick.addEventListener("touchend", e => {
+    for(const t of e.changedTouches){
+        if(t.identifier === mobileInput.moveId){
+            resetMoveStick();
+            break;
+        }
+    }
+});
+
+moveStick.addEventListener("touchcancel", resetMoveStick);
+
+aimStick.addEventListener("touchstart", e => {
+    e.preventDefault();
+    if(mobileInput.aimId !== null) return;
+    const t = e.changedTouches[0];
+    mobileInput.aimId = t.identifier;
+    updateMobileAim(t.clientX,t.clientY);
+},{passive:false});
+
+aimStick.addEventListener("touchmove", e => {
+    e.preventDefault();
+    for(const t of e.changedTouches){
+        if(t.identifier === mobileInput.aimId){
+            updateMobileAim(t.clientX,t.clientY);
+            break;
+        }
+    }
+},{passive:false});
+
+aimStick.addEventListener("touchend", e => {
+    for(const t of e.changedTouches){
+        if(t.identifier === mobileInput.aimId){
+            resetAimStick();
+            break;
+        }
+    }
+});
+
+aimStick.addEventListener("touchcancel", resetAimStick);
+
+document.getElementById("mobilePause").addEventListener("touchstart", e => {
+    e.preventDefault();
+    if(gameRunning && !phaseTransition && !selectingUpgrade) togglePause();
+},{passive:false});
+
+/* =========================================================
+   INPUT
+   ========================================================= */
+
+window.addEventListener("keydown", e => {
+
+    keys[e.key.toLowerCase()] = true;
+
+    if(e.key === "Escape"){
+
+        if(!gameRunning) return;
+        if(phaseTransition || selectingUpgrade) return;
+
+        togglePause();
+    }
+
+    if(selectingUpgrade){
+
+        if(e.key === "1") chooseUpgrade(0);
+        if(e.key === "2") chooseUpgrade(1);
+        if(e.key === "3") chooseUpgrade(2);
+    }
+});
+
+window.addEventListener("keyup", e => {
+    keys[e.key.toLowerCase()] = false;
+});
+
+canvas.addEventListener("mousemove", e => {
+
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+});
+
+canvas.addEventListener("mousedown", e => {
+
+    if(e.button === 0){
+        mouse.down = true;
+    }
+});
+
+window.addEventListener("mouseup", e => {
+
+    if(e.button === 0){
+        mouse.down = false;
+    }
+});
+
+/* =========================================================
+   BOTÕES
+   ========================================================= */
+
+document.getElementById("playButton")
+    .addEventListener("click", startGame);
+
+document.getElementById("resumeButton")
+    .addEventListener("click", togglePause);
+
+document.getElementById("restartPhaseButton")
+    .addEventListener("click", restartCurrentPhase);
+
+document.getElementById("restartButton")
+    .addEventListener("click", startGame);
+
+document.getElementById("victoryRestart")
+    .addEventListener("click", startGame);
+
+/* =========================================================
+   COMEÇAR
+   ========================================================= */
+
+function startGame(){
+
+    menuScreen.style.display = "none";
+    gameOverScreen.style.display = "none";
+    victoryScreen.style.display = "none";
+    pauseScreen.style.display = "none";
+    transitionScreen.style.display = "none";
+    upgradeScreen.style.display = "none";
+
+    gameRunning = true;
+    paused = false;
+    phaseTransition = false;
+    selectingUpgrade = false;
+
+    phase = 1;
+
+    score = 0;
+    totalKills = 0;
+
+    player = createPlayer();
+
+    enemies = [];
+    bullets = [];
+    enemyBullets = [];
+    particles = [];
+    pickups = [];
+    floatingTexts = [];
+
+    boss = null;
+
+    generateBackground();
+
+    startPhase(1);
+
+    lastTime = performance.now();
+    requestAnimationFrame(gameLoop);
+}
+
+/* =========================================================
+   COMEÇAR FASE
+   ========================================================= */
+
+function startPhase(number){
+
+    phase = number;
+
+    enemies = [];
+    bullets = [];
+    enemyBullets = [];
+    pickups = [];
+    boss = null;
+
+    phaseStarted = true;
+    phaseTransition = false;
+
+    bossHud.style.display = "none";
+
+    /*
+       AQUI ESTÁ A REGRA PRINCIPAL:
+
+       Cada fase recebe uma quantidade definida de inimigos.
+       Todos são criados de uma vez.
+       A fase somente termina quando enemies.length == 0
+       e o chefe, caso exista, também for derrotado.
+    */
+
+    const amount = getEnemyAmount(phase);
+
+    phaseEnemiesTotal = amount;
+    phaseEnemiesRemaining = amount;
+    phaseEnemiesKilled = 0;
+
+    createPhaseEnemies(amount);
+
+    if(isBossPhase(phase)){
+
+        createBoss();
+
+        /*
+           O chefe também faz parte da fase.
+           Portanto o jogador precisa eliminar TODOS os inimigos
+           normais + o chefe.
+        */
+
+        phaseEnemiesTotal += 1;
+        phaseEnemiesRemaining += 1;
+    }
+
+    updateHUD();
+
+    showMessage(
+        isBossPhase(phase)
+        ? "⚠️ AMEAÇA GIGANTE DETECTADA"
+        : `FASE ${phase} — ELIMINE TODOS OS INIMIGOS`
+    );
+}
+
+/* =========================================================
+   QUANTIDADE DE INIMIGOS
+   ========================================================= */
+
+function getEnemyAmount(p){
+
+    /*
+       A quantidade aumenta bastante com as fases.
+    */
+
+    if(p === 1) return 8;
+    if(p === 2) return 11;
+    if(p === 3) return 14;
+    if(p === 4) return 18;
+    if(p === 5) return 21;
+
+    if(p === 6) return 25;
+    if(p === 7) return 29;
+    if(p === 8) return 33;
+    if(p === 9) return 37;
+    if(p === 10) return 42;
+
+    if(p === 11) return 47;
+    if(p === 12) return 52;
+    if(p === 13) return 57;
+    if(p === 14) return 62;
+    if(p === 15) return 70;
+
+    return 10 + p * 5;
+}
+
+/* =========================================================
+   TIPOS DE INIMIGOS
+   ========================================================= */
+
+function availableEnemyType(){
+
+    const r = Math.random();
+
+    if(phase <= 2){
+
+        return r < .8 ? "normal" : "fast";
+    }
+
+    if(phase <= 4){
+
+        if(r < .55) return "normal";
+        if(r < .78) return "fast";
+        return "tank";
+    }
+
+    if(phase <= 6){
+
+        if(r < .40) return "normal";
+        if(r < .58) return "fast";
+        if(r < .76) return "tank";
+        return "ranged";
+    }
+
+    if(phase <= 8){
+
+        if(r < .30) return "normal";
+        if(r < .48) return "fast";
+        if(r < .66) return "tank";
+        if(r < .84) return "ranged";
+        return "splitter";
+    }
+
+    if(phase <= 11){
+
+        if(r < .20) return "normal";
+        if(r < .38) return "fast";
+        if(r < .57) return "tank";
+        if(r < .75) return "ranged";
+        if(r < .90) return "splitter";
+        return "swarm";
+    }
+
+    if(r < .15) return "normal";
+    if(r < .32) return "fast";
+    if(r < .50) return "tank";
+    if(r < .68) return "ranged";
+    if(r < .84) return "splitter";
+
+    return "swarm";
+}
+
+/* =========================================================
+   CRIAR INIMIGOS
+   ========================================================= */
+
+function createPhaseEnemies(amount){
+
+    for(let i = 0; i < amount; i++){
+
+        createEnemy(availableEnemyType());
+    }
+}
+
+/* =========================================================
+   POSIÇÃO DE SPAWN
+   ========================================================= */
+
+function randomSpawnPosition(){
+
+    let side = Math.floor(Math.random() * 4);
+
+    let margin = 70;
+
+    if(side === 0){
+        return {
+            x: Math.random() * W,
+            y: -margin
+        };
+    }
+
+    if(side === 1){
+        return {
+            x: W + margin,
+            y: Math.random() * H
+        };
+    }
+
+    if(side === 2){
+        return {
+            x: Math.random() * W,
+            y: H + margin
+        };
+    }
+
+    return {
+        x: -margin,
+        y: Math.random() * H
+    };
+}
+
+/* =========================================================
+   CRIAR INIMIGO
+   ========================================================= */
+
+function createEnemy(type, x = null, y = null){
+
+    const d = difficulty();
+
+    const pos = x === null
+        ? randomSpawnPosition()
+        : {x,y};
+
+    let enemy = {
+
+        id: ++enemyIdCounter,
+
+        type,
+
+        x: pos.x,
+        y: pos.y,
+
+        radius: 18,
+
+        hp: 50,
+        maxHp: 50,
+
+        speed: 1.2,
+        damage: 7,
+
+        color: "#d92946",
+
+        shootTimer: 0,
+
+        angle: Math.random() * Math.PI * 2,
+
+        wobble: Math.random() * Math.PI * 2,
+
+        dead:false,
+
+        mini:false
+    };
+
+    if(type === "normal"){
+
+        enemy.radius = 19;
+        enemy.maxHp = 55 * d.hpMultiplier;
+        enemy.hp = enemy.maxHp;
+        enemy.speed = .85 * d.speedMultiplier;
+        enemy.damage = 7 * d.damageMultiplier;
+        enemy.color = "#e3324e";
+    }
+
+    else if(type === "fast"){
+
+        enemy.radius = 13;
+        enemy.maxHp = 32 * d.hpMultiplier;
+        enemy.hp = enemy.maxHp;
+        enemy.speed = 1.7 * d.speedMultiplier;
+        enemy.damage = 5 * d.damageMultiplier;
+        enemy.color = "#ff6173";
+    }
+
+    else if(type === "tank"){
+
+        enemy.radius = 28;
+        enemy.maxHp = 170 * d.hpMultiplier;
+        enemy.hp = enemy.maxHp;
+        enemy.speed = .5 * d.speedMultiplier;
+        enemy.damage = 14 * d.damageMultiplier;
+        enemy.color = "#9d2038";
+    }
+
+    else if(type === "ranged"){
+
+        enemy.radius = 21;
+        enemy.maxHp = 85 * d.hpMultiplier;
+        enemy.hp = enemy.maxHp;
+        enemy.speed = .55 * d.speedMultiplier;
+        enemy.damage = 9 * d.damageMultiplier;
+        enemy.color = "#bc45dc";
+        enemy.shootTimer = 700 + Math.random() * 500;
+    }
+
+    else if(type === "splitter"){
+
+        enemy.radius = 24;
+        enemy.maxHp = 105 * d.hpMultiplier;
+        enemy.hp = enemy.maxHp;
+        enemy.speed = .75 * d.speedMultiplier;
+        enemy.damage = 10 * d.damageMultiplier;
+        enemy.color = "#ff853d";
+    }
+
+    else if(type === "swarm"){
+
+        enemy.radius = 10;
+        enemy.maxHp = 22 * d.hpMultiplier;
+        enemy.hp = enemy.maxHp;
+        enemy.speed = 1.4 * d.speedMultiplier;
+        enemy.damage = 4 * d.damageMultiplier;
+        enemy.color = "#ffb02e";
+    }
+
+    if(Math.hypot(enemy.x - player.x, enemy.y - player.y) < 180){
+
+        const p = randomSpawnPosition();
+
+        enemy.x = p.x;
+        enemy.y = p.y;
+    }
+
+    enemies.push(enemy);
+}
+
+/* =========================================================
+   BOSS
+   ========================================================= */
+
+function isBossPhase(p){
+
+    return p === 5 ||
+           p === 10 ||
+           p === 15;
+}
+
+function createBoss(){
+
+    const bossNames = {
+
+        5:"MEGA COÁGULO",
+
+        10:"COÁGULO MUTANTE",
+
+        15:"COÁGULO SUPREMO"
+    };
+
+    const hp = {
+
+        5:650,
+
+        10:1200,
+
+        15:2200
+    }[phase];
+
+    boss = {
+
+        x:W/2,
+
+        y:130,
+
+        radius:72,
+
+        hp:hp,
+
+        maxHp:hp,
+
+        speed:.5 + phase * .015,
+
+        damage:7 + phase * .5,
+
+        shootTimer:130,
+
+        attackTimer:300,
+
+        angle:0,
+
+        dead:false,
+
+        name:bossNames[phase]
+    };
+
+    bossHud.style.display = "block";
+
+    bossName.textContent = boss.name;
+
+    updateBossHUD();
+}
+
+/* =========================================================
+   UPDATE BOSS
+   ========================================================= */
+
+function updateBoss(dt){
+
+    if(!boss || boss.dead) return;
+
+    boss.angle += dt * .0015;
+
+    const dx = player.x - boss.x;
+    const dy = player.y - boss.y;
+
+    const dist = Math.hypot(dx,dy);
+
+    if(dist > 260){
+
+        boss.x += dx / dist * boss.speed;
+        boss.y += dy / dist * boss.speed;
+    }
+
+    else{
+
+        boss.x += Math.cos(boss.angle) * .8;
+        boss.y += Math.sin(boss.angle) * .8;
+    }
+
+    boss.x = Math.max(100,Math.min(W-100,boss.x));
+    boss.y = Math.max(100,Math.min(H-100,boss.y));
+
+    boss.shootTimer -= dt;
+
+    if(boss.shootTimer <= 0){
+
+        boss.shootTimer =
+            Math.max(750,1100 - phase * 10);
+
+        bossShoot();
+    }
+
+    boss.attackTimer -= dt;
+
+    if(boss.attackTimer <= 0){
+
+        boss.attackTimer =
+            Math.max(900,1300 - phase * 15);
+
+        bossSpecialAttack();
+    }
+
+    updateBossHUD();
+}
+
+/* =========================================================
+   ATAQUE DO BOSS
+   ========================================================= */
+
+function bossShoot(){
+
+    const dx = player.x - boss.x;
+    const dy = player.y - boss.y;
+
+    const dist = Math.hypot(dx,dy);
+
+    const speed = 2.4 + phase * .05;
+
+    enemyBullets.push({
+
+        x:boss.x,
+
+        y:boss.y,
+
+        vx:dx/dist * speed,
+
+        vy:dy/dist * speed,
+
+        radius:9,
+
+        damage:boss.damage,
+
+        life:300,
+
+        boss:true
+    });
+
+    createExplosion(
+        boss.x,
+        boss.y,
+        10,
+        "#ff4668"
+    );
+}
+
+function bossSpecialAttack(){
+
+    const amount = 6 + Math.floor(phase / 4);
+
+    for(let i = 0; i < amount; i++){
+
+        const angle =
+            Math.PI * 2 * i / amount;
+
+        enemyBullets.push({
+
+            x:boss.x,
+
+            y:boss.y,
+
+            vx:Math.cos(angle) * 1.5,
+
+            vy:Math.sin(angle) * 1.5,
+
+            radius:7,
+
+            damage:boss.damage * .65,
+
+            life:250,
+
+            boss:true
+        });
+    }
+
+    screenShake = 10;
+
+    createExplosion(
+        boss.x,
+        boss.y,
+        35,
+        "#ff1744"
+    );
+}
+
+/* =========================================================
+   UPDATE PLAYER
+   ========================================================= */
+
+function updatePlayer(dt){
+
+    if(!player) return;
+
+    let dx = 0;
+    let dy = 0;
+
+    if(keys["w"] || keys["arrowup"]) dy--;
+    if(keys["s"] || keys["arrowdown"]) dy++;
+    if(keys["a"] || keys["arrowleft"]) dx--;
+    if(keys["d"] || keys["arrowright"]) dx++;
+
+    if(mobileInput.moveX !== 0 || mobileInput.moveY !== 0){
+        dx += mobileInput.moveX;
+        dy += mobileInput.moveY;
+    }
+
+    if(dx !== 0 || dy !== 0){
+
+        const len = Math.hypot(dx,dy);
+
+        dx /= len;
+        dy /= len;
+
+        player.x += dx * player.speed;
+        player.y += dy * player.speed;
+    }
+
+    player.x =
+        Math.max(player.radius,
+        Math.min(W-player.radius,player.x));
+
+    player.y =
+        Math.max(player.radius,
+        Math.min(H-player.radius,player.y));
+
+    if(player.fireTimer > 0){
+
+        player.fireTimer -= dt;
+    }
+
+    if(player.spinachTimer > 0){
+
+        player.spinachTimer -= dt;
+
+        if(player.spinachTimer <= 0){
+
+            player.spinachBoost = 1;
+
+            showMessage("O efeito do espinafre acabou.");
+        }
+    }
+
+    if(player.rapidFireTimer > 0){
+
+        player.rapidFireTimer -= dt;
+    }
+
+    if(player.invincibleTimer > 0){
+
+        player.invincibleTimer -= dt;
+    }
+
+    if(mouse.down){
+
+        shoot();
+    }
+
+    player.trail.push({
+
+        x:player.x,
+
+        y:player.y,
+
+        life:1
+    });
+
+    if(player.trail.length > 14){
+
+        player.trail.shift();
+    }
+}
+
+/* =========================================================
+   TIRO
+   ========================================================= */
+
+function shoot(){
+
+    if(player.fireTimer > 0) return;
+
+    const dx = mouse.x - player.x;
+    const dy = mouse.y - player.y;
+
+    const dist = Math.hypot(dx,dy);
+
+    if(dist === 0) return;
+
+    const fireRate =
+        player.rapidFireTimer > 0
+        ? player.fireRate * .55
+        : player.fireRate;
+
+    player.fireTimer = fireRate;
+
+    const damage =
+        player.damage *
+        player.spinachBoost;
+
+    bullets.push({
+
+        x:player.x + dx/dist * 20,
+
+        y:player.y + dy/dist * 20,
+
+        vx:dx/dist * 7,
+
+        vy:dy/dist * 7,
+
+        radius:5,
+
+        damage,
+
+        life:100,
+
+        color:
+            player.spinachBoost > 1
+            ? "#70ff72"
+            : "#67dfff"
+    });
+
+    createParticle(
+        player.x,
+        player.y,
+        "#67dfff",
+        4
+    );
+}
+
+/* =========================================================
+   UPDATE BULLETS
+   ========================================================= */
+
+function updateBullets(dt){
+
+    for(let i=bullets.length-1;i>=0;i--){
+
+        const b = bullets[i];
+
+        b.x += b.vx;
+        b.y += b.vy;
+
+        b.life -= dt / 16;
+
+        if(
+            b.life <= 0 ||
+            b.x < -50 ||
+            b.x > W+50 ||
+            b.y < -50 ||
+            b.y > H+50
+        ){
+
+            bullets.splice(i,1);
+            continue;
+        }
+
+        /* INIMIGOS */
+
+        let hit = false;
+
+        for(let j=enemies.length-1;j>=0;j--){
+
+            const e = enemies[j];
+
+            if(e.dead) continue;
+
+            const d =
+                Math.hypot(
+                    b.x-e.x,
+                    b.y-e.y
+                );
+
+            if(d < b.radius + e.radius){
+
+                e.hp -= b.damage;
+
+                createExplosion(
+                    b.x,
+                    b.y,
+                    5,
+                    b.color
+                );
+
+                bullets.splice(i,1);
+
+                hit = true;
+
+                if(e.hp <= 0){
+
+                    killEnemy(e,j);
+                }
+
+                break;
+            }
+        }
+
+        if(hit) continue;
+
+        /* BOSS */
+
+        if(boss && !boss.dead){
+
+            const d =
+                Math.hypot(
+                    b.x-boss.x,
+                    b.y-boss.y
+                );
+
+            if(d < b.radius + boss.radius){
+
+                boss.hp -= b.damage;
+
+                createExplosion(
+                    b.x,
+                    b.y,
+                    7,
+                    b.color
+                );
+
+                bullets.splice(i,1);
+
+                if(boss.hp <= 0){
+
+                    killBoss();
+                }
+            }
+        }
+    }
+}
+
+/* =========================================================
+   MATAR INIMIGO
+   ========================================================= */
+
+function killEnemy(enemy,index){
+
+    if(enemy.dead) return;
+
+    enemy.dead = true;
+
+    createExplosion(
+        enemy.x,
+        enemy.y,
+        enemy.type === "tank" ? 30 : 18,
+        enemy.color
+    );
+
+    score += getEnemyScore(enemy.type);
+
+    totalKills++;
+
+    phaseEnemiesKilled++;
+
+    phaseEnemiesRemaining--;
+
+    /*
+       SPLITTER:
+       Os fragmentos NÃO são considerados novos inimigos da fase.
+       Eles apenas funcionam como ameaça secundária.
+    */
+
+    if(enemy.type === "splitter"){
+
+        for(let i=0;i<2;i++){
+
+            createMiniEnemy(
+                enemy.x + (Math.random()-.5)*30,
+                enemy.y + (Math.random()-.5)*30
+            );
+        }
+    }
+
+    dropPickup(enemy.x,enemy.y);
+
+    enemies.splice(index,1);
+
+    floatingTexts.push({
+
+        x:enemy.x,
+
+        y:enemy.y,
+
+        text:"+" + getEnemyScore(enemy.type),
+
+        color:"#70e6ff",
+
+        life:70
+    });
+
+    updateHUD();
+
+    checkPhaseCompletion();
+}
+
+/* =========================================================
+   MINI INIMIGO
+   ========================================================= */
+
+function createMiniEnemy(x,y){
+
+    const d = difficulty();
+
+    enemies.push({
+
+        id:++enemyIdCounter,
+
+        type:"mini",
+
+        x,
+
+        y,
+
+        radius:7,
+
+        hp:15 * d.hpMultiplier,
+
+        maxHp:15 * d.hpMultiplier,
+
+        speed:1.7 * d.speedMultiplier,
+
+        damage:3 * d.damageMultiplier,
+
+        color:"#ff9d3d",
+
+        shootTimer:0,
+
+        angle:Math.random()*Math.PI*2,
+
+        wobble:Math.random()*10,
+
+        dead:false,
+
+        mini:true
+    });
+
+    /*
+       IMPORTANTE:
+
+       Os mini inimigos também precisam ser derrotados,
+       mas não aumentam o contador inicial.
+
+       Enquanto existirem, a fase NÃO pode terminar.
+    */
+}
+
+/* =========================================================
+   SCORE
+   ========================================================= */
+
+function getEnemyScore(type){
+
+    if(type === "normal") return 100;
+    if(type === "fast") return 140;
+    if(type === "tank") return 250;
+    if(type === "ranged") return 220;
+    if(type === "splitter") return 300;
+    if(type === "swarm") return 180;
+    if(type === "mini") return 70;
+
+    return 100;
+}
+
+/* =========================================================
+   BOSS MORRE
+   ========================================================= */
+
+function killBoss(){
+
+    if(!boss || boss.dead) return;
+
+    boss.dead = true;
+
+    boss.hp = 0;
+
+    phaseEnemiesRemaining--;
+
+    totalKills++;
+
+    score += 5000 + phase * 500;
+
+    createExplosion(
+        boss.x,
+        boss.y,
+        100,
+        "#ff214e"
+    );
+
+    for(let i=0;i<70;i++){
+
+        createParticle(
+            boss.x,
+            boss.y,
+            Math.random() < .5
+            ? "#ff304f"
+            : "#ff9b3d",
+            1
+        );
+    }
+
+    bossHud.style.display = "none";
+
+    showMessage("BOSS DERROTADO!");
+
+    updateHUD();
+
+    checkPhaseCompletion();
+}
+
+/* =========================================================
+   UPDATE INIMIGOS
+   ========================================================= */
+
+function updateEnemies(dt){
+
+    for(let i=enemies.length-1;i>=0;i--){
+
+        const e = enemies[i];
+
+        if(e.dead) continue;
+
+        const dx = player.x - e.x;
+        const dy = player.y - e.y;
+
+        const dist = Math.max(
+            .001,
+            Math.hypot(dx,dy)
+        );
+
+        e.wobble += dt * .004;
+
+        /* RANGED */
+
+        if(e.type === "ranged"){
+
+            if(dist > 330){
+
+                e.x += dx/dist * e.speed;
+                e.y += dy/dist * e.speed;
+            }
+
+            else if(dist < 240){
+
+                e.x -= dx/dist * e.speed;
+                e.y -= dy/dist * e.speed;
+            }
+
+            e.shootTimer -= dt;
+
+            if(e.shootTimer <= 0){
+
+                e.shootTimer =
+                    Math.max(
+                        650,
+                        1100 - phase * 15
+                    );
+
+                enemyShoot(e);
+            }
+        }
+
+        else{
+
+            e.x += dx/dist * e.speed;
+            e.y += dy/dist * e.speed;
+        }
+
+        /* COLISÃO COM PLAYER */
+
+        const collision =
+            Math.hypot(
+                player.x-e.x,
+                player.y-e.y
+            );
+
+        if(
+            collision <
+            player.radius + e.radius
+        ){
+
+            damagePlayer(e.damage);
+
+            const push =
+                Math.max(
+                    1,
+                    player.radius + e.radius - collision
+                );
+
+            e.x -= dx/dist * push * .3;
+            e.y -= dy/dist * push * .3;
+        }
+
+        /* LIMITES */
+
+        e.x = Math.max(-100,Math.min(W+100,e.x));
+        e.y = Math.max(-100,Math.min(H+100,e.y));
+    }
+}
+
+/* =========================================================
+   ATAQUE INIMIGO
+   ========================================================= */
+
+function enemyShoot(e){
+
+    const dx = player.x - e.x;
+    const dy = player.y - e.y;
+
+    const dist = Math.hypot(dx,dy);
+
+    const speed = 2.5;
+
+    enemyBullets.push({
+
+        x:e.x,
+
+        y:e.y,
+
+        vx:dx/dist*speed,
+
+        vy:dy/dist*speed,
+
+        radius:6,
+
+        damage:e.damage,
+
+        life:240,
+
+        boss:false
+    });
+}
+
+/* =========================================================
+   UPDATE PROJÉTEIS INIMIGOS
+   ========================================================= */
+
+function updateEnemyBullets(dt){
+
+    for(let i=enemyBullets.length-1;i>=0;i--){
+
+        const b = enemyBullets[i];
+
+        b.x += b.vx;
+        b.y += b.vy;
+
+        b.life -= dt / 16;
+
+        if(
+            b.life <= 0 ||
+            b.x < -100 ||
+            b.x > W+100 ||
+            b.y < -100 ||
+            b.y > H+100
+        ){
+
+            enemyBullets.splice(i,1);
+            continue;
+        }
+
+        const d =
+            Math.hypot(
+                b.x-player.x,
+                b.y-player.y
+            );
+
+        if(
+            d <
+            b.radius + player.radius
+        ){
+
+            damagePlayer(b.damage);
+
+            createExplosion(
+                b.x,
+                b.y,
+                8,
+                "#ff526c"
+            );
+
+            enemyBullets.splice(i,1);
+        }
+    }
+}
+
+/* =========================================================
+   DANO NO PLAYER
+   ========================================================= */
+
+function damagePlayer(amount){
+
+    if(player.invincibleTimer > 0) return;
+
+    if(player.shield > 0){
+
+        player.shield--;
+
+        player.invincibleTimer = 300;
+
+        showMessage("🛡️ BARREIRA ABSORVEU O ATAQUE!");
+
+        createExplosion(
+            player.x,
+            player.y,
+            15,
+            "#6edcff"
+        );
+
+        return;
+    }
+
+    player.hp -= amount;
+
+    player.invincibleTimer = 500;
+
+    screenShake = 8;
+
+    floatingTexts.push({
+
+        x:player.x,
+
+        y:player.y-30,
+
+        text:"-" + Math.round(amount),
+
+        color:"#ff526c",
+
+        life:50
+    });
+
+    if(player.hp <= 0){
+
+        player.hp = 0;
+
+        gameOver();
+    }
+
+    updateHUD();
+}
+
+/* =========================================================
+   PICKUPS
+   ========================================================= */
+
+function dropPickup(x,y){
+
+    const chance =
+        .18 *
+        player.pickupChance;
+
+    if(Math.random() > chance) return;
+
+    const r = Math.random();
+
+    let type;
+
+    if(r < .42){
+
+        type = "spinach";
+    }
+
+    else if(r < .70){
+
+        type = "vitamin";
+    }
+
+    else if(r < .88){
+
+        type = "shield";
+    }
+
+    else{
+
+        type = "energy";
+    }
+
+    pickups.push({
+
+        x,
+
+        y,
+
+        type,
+
+        radius:15,
+
+        life:1000,
+
+        phase:Math.random()*Math.PI*2
+    });
+}
+
+/* =========================================================
+   UPDATE PICKUPS
+   ========================================================= */
+
+function updatePickups(dt){
+
+    for(let i=pickups.length-1;i>=0;i--){
+
+        const p = pickups[i];
+
+        p.life -= dt / 16;
+
+        p.phase += dt * .005;
+
+        if(p.life <= 0){
+
+            pickups.splice(i,1);
+
+            continue;
+        }
+
+        const d =
+            Math.hypot(
+                player.x-p.x,
+                player.y-p.y
+            );
+
+        if(d < player.radius+p.radius){
+
+            collectPickup(p);
+
+            pickups.splice(i,1);
+        }
+    }
+}
+
+/* =========================================================
+   COLETAR
+   ========================================================= */
+
+function collectPickup(p){
+
+    if(p.type === "spinach"){
+
+        player.spinachTimer = 7000;
+
+        player.spinachBoost = 1.7;
+
+        player.rapidFireTimer = 7000;
+
+        showMessage(
+            "🌿 ESPINAFRE DE PODER — DANO + VELOCIDADE DE TIRO!"
+        );
+
+        createExplosion(
+            p.x,
+            p.y,
+            25,
+            "#64ff6b"
+        );
+    }
+
+    else if(p.type === "vitamin"){
+
+        const heal = 22;
+
+        player.hp =
+            Math.min(
+                player.maxHp,
+                player.hp + heal
+            );
+
+        showMessage(
+            "🍃 VITAMINA K — INTEGRIDADE RECUPERADA!"
+        );
+
+        createExplosion(
+            p.x,
+            p.y,
+            20,
+            "#6dff9c"
+        );
+    }
+
+    else if(p.type === "shield"){
+
+        player.shield += 2;
+
+        showMessage(
+            "🛡️ BARREIRA — 2 ATAQUES ABSORVIDOS!"
+        );
+
+        createExplosion(
+            p.x,
+            p.y,
+            20,
+            "#5edfff"
+        );
+    }
+
+    else if(p.type === "energy"){
+
+        player.speed += .45;
+
+        showMessage(
+            "⚡ IMPULSO — VELOCIDADE AUMENTADA!"
+        );
+
+        createExplosion(
+            p.x,
+            p.y,
+            20,
+            "#ffe95b"
+        );
+    }
+
+    score += 50;
+
+    updateHUD();
+}
+
+/* =========================================================
+   FASE TERMINOU?
+   ========================================================= */
+
+function checkPhaseCompletion(){
+
+    /*
+       A fase só termina quando:
+
+       1. Todos os inimigos normais foram eliminados.
+       2. Todos os mini inimigos também foram eliminados.
+       3. O boss foi eliminado, caso exista.
+    */
+
+    if(enemies.length > 0) return;
+
+    if(boss && !boss.dead) return;
+
+    if(phaseTransition) return;
+
+    phaseTransition = true;
+
+    phaseStarted = false;
+
+    if(phase >= MAX_PHASE){
+
+        victory();
+
+        return;
+    }
+
+    /*
+       A cada algumas fases aparece uma tela
+       de evolução.
+    */
+
+    if(
+        phase % 3 === 0 ||
+        phase === 5 ||
+        phase === 10
+    ){
+
+        openUpgradeScreen();
+
+        return;
+    }
+
+    transitionToNextPhase();
+}
+
+/* =========================================================
+   TRANSIÇÃO
+   ========================================================= */
+
+function transitionToNextPhase(){
+
+    transitionScreen.style.display = "flex";
+
+    const next = phase + 1;
+
+    document.getElementById(
+        "transitionNumber"
+    ).textContent =
+        "FASE " + next;
+
+    document.getElementById(
+        "transitionText"
+    ).textContent =
+        "Todos os inimigos foram eliminados. Prepare-se.";
+
+    setTimeout(() => {
+
+        transitionScreen.style.display = "none";
+
+        startPhase(next);
+
+    },1800);
+}
+
+/* =========================================================
+   UPGRADES
+   ========================================================= */
+
+let upgradeOptions = [];
+
+const upgradeElements =
+    document.querySelectorAll(".upgrade");
+
+upgradeElements.forEach((element,index) => {
+
+    element.addEventListener("click",() => {
+
+        chooseUpgrade(index);
+    });
+});
+
+function openUpgradeScreen(){
+
+    selectingUpgrade = true;
+
+    upgradeScreen.style.display = "flex";
+
+    /*
+       Mostramos três melhorias aleatórias.
+    */
+
+    const all = Array.from(upgradeElements);
+
+    all.forEach(e => {
+        e.style.display = "none";
+    });
+
+    const indexes = [];
+
+    while(indexes.length < 3){
+
+        const n =
+            Math.floor(
+                Math.random() * all.length
+            );
+
+        if(!indexes.includes(n)){
+
+            indexes.push(n);
+        }
+    }
+
+    upgradeOptions = indexes;
+
+    indexes.forEach((index,position) => {
+
+        all[index].style.display = "block";
+
+        all[index].setAttribute(
+            "data-choice",
+            position
+        );
+    });
+}
+
+function chooseUpgrade(choice){
+
+    if(!selectingUpgrade) return;
+
+    if(choice >= upgradeOptions.length){
+
+        /*
+           Caso o jogador aperte 1/2/3.
+        */
+
+        choice = 0;
+    }
+
+    const actual =
+        upgradeOptions[choice];
+
+    const element =
+        upgradeElements[actual];
+
+    const upgrade =
+        element.dataset.upgrade;
+
+    applyUpgrade(upgrade);
+
+    selectingUpgrade = false;
+
+    upgradeScreen.style.display = "none";
+
+    transitionToNextPhase();
+}
+
+function applyUpgrade(type){
+
+    if(type === "damage"){
+
+        player.damage *= 1.25;
+
+        showMessage(
+            "⚔️ FORÇA CELULAR AUMENTADA!"
+        );
+    }
+
+    if(type === "speed"){
+
+        player.speed *= 1.18;
+
+        showMessage(
+            "⚡ VELOCIDADE AUMENTADA!"
+        );
+    }
+
+    if(type === "health"){
+
+        player.maxHp += 30;
+
+        player.hp = player.maxHp;
+
+        showMessage(
+            "❤️ MEMBRANA RESISTENTE!"
+        );
+    }
+
+    if(type === "fire"){
+
+        player.fireRate *= .82;
+
+        showMessage(
+            "🔥 METABOLISMO AUMENTADO!"
+        );
+    }
+
+    if(type === "shield"){
+
+        player.shield += 3;
+
+        showMessage(
+            "🛡️ BARREIRA REFORÇADA!"
+        );
+    }
+
+    if(type === "pickup"){
+
+        player.pickupChance += .45;
+
+        showMessage(
+            "🌿 ABSORÇÃO MELHORADA!"
+        );
+    }
+
+    updateHUD();
+}
+
+/* =========================================================
+   PAUSA
+   ========================================================= */
+
+function togglePause(){
+
+    if(paused){
+
+        paused = false;
+
+        pauseScreen.style.display = "none";
+
+    }else{
+
+        paused = true;
+
+        pauseScreen.style.display = "flex";
+    }
+}
+
+/* =========================================================
+   GAME OVER
+   ========================================================= */
+
+function restartCurrentPhase(){
+
+    const restartPhase = phase;
+
+    gameOverScreen.style.display = "none";
+    victoryScreen.style.display = "none";
+    pauseScreen.style.display = "none";
+    transitionScreen.style.display = "none";
+    upgradeScreen.style.display = "none";
+
+    gameRunning = true;
+    paused = false;
+    phaseTransition = false;
+    selectingUpgrade = false;
+    mouse.down = false;
+    resetMoveStick();
+    resetAimStick();
+
+    /* Recria o jogador para evitar qualquer estado corrompido da morte,
+       mas reaplica os upgrades que já foram conquistados. */
+    const oldPlayer = player;
+    player = createPlayer();
+
+    if(oldPlayer){
+        player.maxHp = oldPlayer.maxHp;
+        player.damage = oldPlayer.damage;
+        player.speed = oldPlayer.speed;
+        player.fireRate = oldPlayer.fireRate;
+        player.shield = oldPlayer.shield;
+        player.pickupChance = oldPlayer.pickupChance;
+    }
+
+    player.hp = player.maxHp;
+    player.x = W / 2;
+    player.y = H / 2;
+    player.fireTimer = 0;
+    player.invincibleTimer = 1000;
+    player.spinachTimer = 0;
+    player.spinachBoost = 1;
+    player.rapidFireTimer = 0;
+    player.trail = [];
+
+    enemies = [];
+    bullets = [];
+    enemyBullets = [];
+    pickups = [];
+    particles = [];
+    floatingTexts = [];
+    boss = null;
+
+    startPhase(restartPhase);
+
+    /* O loop anterior foi encerrado em gameOver().
+       Portanto precisamos iniciar um novo frame loop aqui. */
+    lastTime = performance.now();
+    requestAnimationFrame(gameLoop);
+}
+
+function gameOver(){
+
+    gameRunning = false;
+
+    mouse.down = false;
+    resetMoveStick();
+    resetAimStick();
+
+    gameOverScreen.style.display = "flex";
+
+    document.getElementById(
+        "finalScore"
+    ).textContent =
+        score.toLocaleString("pt-BR");
+}
+
+/* =========================================================
+   VITÓRIA
+   ========================================================= */
+
+function victory(){
+
+    gameRunning = false;
+
+    mouse.down = false;
+
+    bossHud.style.display = "none";
+
+    victoryScreen.style.display = "flex";
+
+    document.getElementById(
+        "victoryScore"
+    ).textContent =
+        score.toLocaleString("pt-BR");
+}
+
+/* =========================================================
+   PARTÍCULAS
+   ========================================================= */
+
+function createParticle(x,y,color,count=1){
+
+    for(let i=0;i<count;i++){
+
+        particles.push({
+
+            x,
+
+            y,
+
+            vx:(Math.random()-.5)*4,
+
+            vy:(Math.random()-.5)*4,
+
+            radius:1+Math.random()*3,
+
+            life:25+Math.random()*35,
+
+            maxLife:60,
+
+            color
+        });
+    }
+}
+
+function createExplosion(x,y,count,color){
+
+    for(let i=0;i<count;i++){
+
+        const angle =
+            Math.random()*Math.PI*2;
+
+        const speed =
+            Math.random()*5+.5;
+
+        particles.push({
+
+            x,
+
+            y,
+
+            vx:Math.cos(angle)*speed,
+
+            vy:Math.sin(angle)*speed,
+
+            radius:1+Math.random()*4,
+
+            life:25+Math.random()*50,
+
+            maxLife:75,
+
+            color
+        });
+    }
+}
+
+function updateParticles(dt){
+
+    for(let i=particles.length-1;i>=0;i--){
+
+        const p = particles[i];
+
+        p.x += p.vx;
+        p.y += p.vy;
+
+        p.vx *= .97;
+        p.vy *= .97;
+
+        p.life -= dt / 16;
+
+        if(p.life <= 0){
+
+            particles.splice(i,1);
+        }
+    }
+}
+
+/* =========================================================
+   FUNDO ANIMADO
+   ========================================================= */
+
+function updateBackground(dt){
+
+    for(const cell of bloodCells){
+
+        cell.x +=
+            Math.cos(cell.angle) *
+            cell.speed;
+
+        cell.y +=
+            Math.sin(cell.angle) *
+            cell.speed;
+
+        cell.angle +=
+            (Math.random()-.5)*.002;
+
+        if(cell.x < -30) cell.x = W+30;
+        if(cell.x > W+30) cell.x = -30;
+
+        if(cell.y < -30) cell.y = H+30;
+        if(cell.y > H+30) cell.y = -30;
+    }
+
+    for(const p of platelets){
+
+        p.x += Math.cos(p.angle)*p.speed;
+        p.y += Math.sin(p.angle)*p.speed;
+
+        if(p.x < -20) p.x = W+20;
+        if(p.x > W+20) p.x = -20;
+
+        if(p.y < -20) p.y = H+20;
+        if(p.y > H+20) p.y = -20;
+    }
+}
+
+/* =========================================================
+   FLOATING TEXT
+   ========================================================= */
+
+function updateFloatingTexts(dt){
+
+    for(let i=floatingTexts.length-1;i>=0;i--){
+
+        const t = floatingTexts[i];
+
+        t.y -= .7;
+
+        t.life -= dt / 16;
+
+        if(t.life <= 0){
+
+            floatingTexts.splice(i,1);
+        }
+    }
+}
+
+/* =========================================================
+   UPDATE HUD
+   ========================================================= */
+
+function updateHUD(){
+
+    phaseText.textContent = phase;
+
+    remainingText.textContent =
+        Math.max(0,phaseEnemiesRemaining);
+
+    killsText.textContent =
+        totalKills;
+
+    scoreText.textContent =
+        score.toLocaleString("pt-BR");
+
+    hpText.textContent =
+        Math.ceil(player.hp) +
+        " / " +
+        Math.ceil(player.maxHp);
+
+    const hpPercent =
+        Math.max(
+            0,
+            player.hp / player.maxHp * 100
+        );
+
+    hpFill.style.width =
+        hpPercent + "%";
+
+    let power = "Normal";
+
+    if(player.spinachTimer > 0){
+
+        power = "🌿 ESPINAFRE";
+    }
+
+    if(player.shield > 0){
+
+        power +=
+            " | 🛡️ " +
+            player.shield;
+    }
+
+    powerText.textContent = power;
+}
+
+/* =========================================================
+   BOSS HUD
+   ========================================================= */
+
+function updateBossHUD(){
+
+    if(!boss || boss.dead) return;
+
+    const percent =
+        Math.max(
+            0,
+            boss.hp / boss.maxHp * 100
+        );
+
+    bossFill.style.width =
+        percent + "%";
+}
+
+/* =========================================================
+   MENSAGEM
+   ========================================================= */
+
+let messageTimer = null;
+
+function showMessage(text){
+
+    message.textContent = text;
+
+    message.style.opacity = "1";
+
+    clearTimeout(messageTimer);
+
+    messageTimer = setTimeout(() => {
+
+        message.style.opacity = "0";
+
+    },2200);
+}
+
+/* =========================================================
+   DESENHO DO FUNDO
+   ========================================================= */
+
+function drawBackground(){
+
+    const gradient =
+        ctx.createRadialGradient(
+            W/2,
+            H/2,
+            0,
+            W/2,
+            H/2,
+            Math.max(W,H)
+        );
+
+    gradient.addColorStop(
+        0,
+        phase >= 10
+        ? "#250914"
+        : "#071a28"
+    );
+
+    gradient.addColorStop(
+        .5,
+        phase >= 10
+        ? "#0c101c"
+        : "#06131f"
+    );
+
+    gradient.addColorStop(
+        1,
+        "#010307"
+    );
+
+    ctx.fillStyle = gradient;
+
+    ctx.fillRect(0,0,W,H);
+
+    /* paredes do vaso */
+
+    ctx.save();
+
+    ctx.globalAlpha = .15;
+
+    for(let i=0;i<8;i++){
+
+        ctx.beginPath();
+
+        ctx.arc(
+            W*.5,
+            H*.5,
+            Math.max(W,H)*(.45+i*.045),
+            0,
+            Math.PI*2
+        );
+
+        ctx.strokeStyle =
+            i % 2
+            ? "#14648a"
+            : "#64132b";
+
+        ctx.lineWidth =
+            25 + i*12;
+
+        ctx.stroke();
+    }
+
+    ctx.restore();
+
+    /* fios de fibrina do fundo */
+
+    ctx.save();
+
+    ctx.globalAlpha = .08;
+
+    for(const thread of backgroundThreads){
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            thread[0].x,
+            thread[0].y
+        );
+
+        for(let i=1;i<thread.length;i++){
+
+            ctx.lineTo(
+                thread[i].x,
+                thread[i].y
+            );
+        }
+
+        ctx.strokeStyle =
+            phase >= 8
+            ? "#ff3659"
+            : "#72cfff";
+
+        ctx.lineWidth = 1;
+
+        ctx.stroke();
+    }
+
+    ctx.restore();
+
+    /* células vermelhas */
+
+    for(const cell of bloodCells){
+
+        drawBloodCell(cell);
+    }
+
+    /* plaquetas */
+
+    for(const p of platelets){
+
+        ctx.save();
+
+        ctx.globalAlpha = p.alpha;
+
+        ctx.fillStyle = "#f7c4c9";
+
+        ctx.beginPath();
+
+        ctx.arc(
+            p.x,
+            p.y,
+            p.r,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+
+        ctx.restore();
+    }
+}
+
+/* =========================================================
+   CÉLULA VERMELHA
+   ========================================================= */
+
+function drawBloodCell(cell){
+
+    ctx.save();
+
+    ctx.globalAlpha = cell.alpha;
+
+    const gradient =
+        ctx.createRadialGradient(
+            cell.x-cell.r*.3,
+            cell.y-cell.r*.3,
+            1,
+            cell.x,
+            cell.y,
+            cell.r
+        );
+
+    gradient.addColorStop(0,"#ff6d7d");
+    gradient.addColorStop(.45,"#c72b45");
+    gradient.addColorStop(1,"#551322");
+
+    ctx.fillStyle = gradient;
+
+    ctx.beginPath();
+
+    ctx.arc(
+        cell.x,
+        cell.y,
+        cell.r,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+    ctx.strokeStyle = "rgba(255,150,160,.18)";
+    ctx.lineWidth = 1;
+
+    ctx.stroke();
+
+    ctx.fillStyle = "rgba(30,0,10,.25)";
+
+    ctx.beginPath();
+
+    ctx.ellipse(
+        cell.x,
+        cell.y,
+        cell.r*.45,
+        cell.r*.28,
+        0,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+    ctx.restore();
+}
+
+/* =========================================================
+   DRAW PLAYER
+   ========================================================= */
+
+function drawPlayer(){
+
+    if(!player) return;
+
+    ctx.save();
+
+    /* rastro */
+
+    for(let i=0;i<player.trail.length;i++){
+
+        const t =
+            player.trail[i];
+
+        const alpha =
+            i / player.trail.length * .25;
+
+        ctx.globalAlpha = alpha;
+
+        ctx.fillStyle =
+            player.spinachBoost > 1
+            ? "#63ff75"
+            : "#47dfff";
+
+        ctx.beginPath();
+
+        ctx.arc(
+            t.x,
+            t.y,
+            5 + i*.4,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+    }
+
+    ctx.globalAlpha = 1;
+
+    /* escudo */
+
+    if(player.shield > 0){
+
+        ctx.strokeStyle =
+            "rgba(80,220,255,.75)";
+
+        ctx.lineWidth = 3;
+
+        ctx.beginPath();
+
+        ctx.arc(
+            player.x,
+            player.y,
+            player.radius+10,
+            0,
+            Math.PI*2
+        );
+
+        ctx.stroke();
+    }
+
+    /* comprimido: corpo em formato de cápsula */
+
+    ctx.shadowBlur = 28;
+    ctx.shadowColor =
+        player.spinachBoost > 1
+        ? "#48ff65"
+        : "#00cfff";
+
+    const pillW = player.radius * 1.75;
+    const pillH = player.radius * 2.45;
+    const pillX = player.x - pillW / 2;
+    const pillY = player.y - pillH / 2;
+
+    ctx.save();
+    ctx.translate(player.x, player.y);
+
+    const pillGradient = ctx.createLinearGradient(0, -pillH/2, 0, pillH/2);
+    pillGradient.addColorStop(0, "#f7ffff");
+    pillGradient.addColorStop(.48, "#b9f4ff");
+    pillGradient.addColorStop(.5, player.spinachBoost > 1 ? "#65ff76" : "#48cfee");
+    pillGradient.addColorStop(1, "#0879b0");
+
+    ctx.fillStyle = pillGradient;
+    ctx.beginPath();
+    ctx.roundRect(-pillW/2, -pillH/2, pillW, pillH, pillW/2);
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = "rgba(210,250,255,.95)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    /* brilho do comprimido */
+    ctx.fillStyle = "rgba(255,255,255,.82)";
+    ctx.beginPath();
+    ctx.ellipse(-pillW*.22, -pillH*.27, pillW*.12, pillH*.16, -.35, 0, Math.PI*2);
+    ctx.fill();
+
+    /* pequena marca central */
+    ctx.strokeStyle = "rgba(5,50,75,.45)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-pillW*.31, 0);
+    ctx.lineTo(pillW*.31, 0);
+    ctx.stroke();
+
+    ctx.restore();
+
+    ctx.restore();
+}
+
+/* =========================================================
+   DRAW ENEMY
+   ========================================================= */
+
+function drawEnemy(e){
+
+    ctx.save();
+
+    const pulse =
+        Math.sin(e.wobble)*2;
+
+    let r = e.radius + pulse;
+
+    ctx.shadowBlur = 15;
+
+    ctx.shadowColor = e.color;
+
+    /* corpo irregular */
+
+    ctx.fillStyle = e.color;
+
+    ctx.beginPath();
+
+    const points = 11;
+
+    for(let i=0;i<points;i++){
+
+        const angle =
+            Math.PI*2*i/points;
+
+        const variation =
+            r *
+            (.75 +
+            Math.sin(
+                e.wobble+i*2
+            )*.13 +
+            Math.random()*.04);
+
+        const x =
+            e.x +
+            Math.cos(angle)*variation;
+
+        const y =
+            e.y +
+            Math.sin(angle)*variation;
+
+        if(i===0){
+
+            ctx.moveTo(x,y);
+
+        }else{
+
+            ctx.lineTo(x,y);
+        }
+    }
+
+    ctx.closePath();
+
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+
+    /* fibrina */
+
+    ctx.strokeStyle =
+        "rgba(255,220,225,.28)";
+
+    ctx.lineWidth = 1.5;
+
+    for(let i=0;i<4;i++){
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            e.x-r*.7,
+            e.y+(i-2)*r*.3
+        );
+
+        ctx.quadraticCurveTo(
+            e.x,
+            e.y-r*.6,
+            e.x+r*.7,
+            e.y+(i-2)*r*.2
+        );
+
+        ctx.stroke();
+    }
+
+    /* núcleo */
+
+    ctx.fillStyle =
+        "rgba(70,0,15,.35)";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        e.x,
+        e.y,
+        r*.3,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+    /* ranged */
+
+    if(e.type === "ranged"){
+
+        ctx.strokeStyle =
+            "#e980ff";
+
+        ctx.lineWidth = 2;
+
+        ctx.beginPath();
+
+        ctx.arc(
+            e.x,
+            e.y,
+            r+5,
+            0,
+            Math.PI*2
+        );
+
+        ctx.stroke();
+    }
+
+    /* tank */
+
+    if(e.type === "tank"){
+
+        ctx.strokeStyle =
+            "rgba(255,210,220,.5)";
+
+        ctx.lineWidth = 3;
+
+        ctx.beginPath();
+
+        ctx.arc(
+            e.x,
+            e.y,
+            r*.7,
+            0,
+            Math.PI*2
+        );
+
+        ctx.stroke();
+    }
+
+    /* rostinho de mau */
+
+    const eyeY = e.y - r*.12;
+    const eyeX = r*.27;
+
+    ctx.strokeStyle = "#170006";
+    ctx.fillStyle = "#170006";
+    ctx.lineWidth = Math.max(2, r*.10);
+    ctx.lineCap = "round";
+
+    /* sobrancelhas inclinadas */
+    ctx.beginPath();
+    ctx.moveTo(e.x-eyeX-r*.18, eyeY-r*.12);
+    ctx.lineTo(e.x-eyeX+r*.10, eyeY+r*.04);
+    ctx.moveTo(e.x+eyeX-r*.10, eyeY+r*.04);
+    ctx.lineTo(e.x+eyeX+r*.18, eyeY-r*.12);
+    ctx.stroke();
+
+    /* olhos */
+    ctx.beginPath();
+    ctx.arc(e.x-eyeX, eyeY, Math.max(2.2, r*.095), 0, Math.PI*2);
+    ctx.arc(e.x+eyeX, eyeY, Math.max(2.2, r*.095), 0, Math.PI*2);
+    ctx.fill();
+
+    /* boca zangada */
+    ctx.beginPath();
+    ctx.moveTo(e.x-r*.25, e.y+r*.23);
+    ctx.quadraticCurveTo(e.x, e.y+r*.08, e.x+r*.25, e.y+r*.23);
+    ctx.stroke();
+
+    /* barra */
+
+    const hpPercent =
+        Math.max(
+            0,
+            e.hp/e.maxHp
+        );
+
+    if(hpPercent < 1){
+
+        ctx.fillStyle =
+            "rgba(0,0,0,.5)";
+
+        ctx.fillRect(
+            e.x-r,
+            e.y-r-10,
+            r*2,
+            4
+        );
+
+        ctx.fillStyle =
+            "#ff5b6f";
+
+        ctx.fillRect(
+            e.x-r,
+            e.y-r-10,
+            r*2*hpPercent,
+            4
+        );
+    }
+
+    ctx.restore();
+}
+
+/* =========================================================
+   DRAW BOSS
+   ========================================================= */
+
+function drawBoss(){
+
+    if(!boss || boss.dead) return;
+
+    ctx.save();
+
+    const pulse =
+        Math.sin(Date.now()*.004)*7;
+
+    /* anéis */
+
+    for(let i=3;i>=0;i--){
+
+        ctx.strokeStyle =
+            `rgba(255,30,70,${.1+i*.04})`;
+
+        ctx.lineWidth = 3;
+
+        ctx.beginPath();
+
+        ctx.arc(
+            boss.x,
+            boss.y,
+            boss.radius+25+i*13+pulse,
+            0,
+            Math.PI*2
+        );
+
+        ctx.stroke();
+    }
+
+    ctx.shadowBlur = 45;
+
+    ctx.shadowColor = "#ff1744";
+
+    const gradient =
+        ctx.createRadialGradient(
+            boss.x-20,
+            boss.y-20,
+            5,
+            boss.x,
+            boss.y,
+            boss.radius
+        );
+
+    gradient.addColorStop(
+        0,
+        "#ffb0b9"
+    );
+
+    gradient.addColorStop(
+        .3,
+        "#e32d50"
+    );
+
+    gradient.addColorStop(
+        .75,
+        "#74132b"
+    );
+
+    gradient.addColorStop(
+        1,
+        "#270711"
+    );
+
+    ctx.fillStyle = gradient;
+
+    ctx.beginPath();
+
+    const points = 18;
+
+    for(let i=0;i<points;i++){
+
+        const angle =
+            Math.PI*2*i/points;
+
+        const r =
+            boss.radius *
+            (.8 +
+            Math.sin(
+                Date.now()*.002+i
+            )*.1);
+
+        const x =
+            boss.x+
+            Math.cos(angle)*r;
+
+        const y =
+            boss.y+
+            Math.sin(angle)*r;
+
+        if(i===0)
+            ctx.moveTo(x,y);
+        else
+            ctx.lineTo(x,y);
+    }
+
+    ctx.closePath();
+
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+
+    /* núcleo */
+
+    ctx.fillStyle = "#390714";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        boss.x,
+        boss.y,
+        boss.radius*.38,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+    ctx.strokeStyle = "#ff6b7c";
+
+    ctx.lineWidth = 4;
+
+    ctx.stroke();
+
+    /* espinhos */
+
+    for(let i=0;i<10;i++){
+
+        const angle =
+            Date.now()*.0004+
+            Math.PI*2*i/10;
+
+        const x1 =
+            boss.x+
+            Math.cos(angle)*boss.radius*.7;
+
+        const y1 =
+            boss.y+
+            Math.sin(angle)*boss.radius*.7;
+
+        const x2 =
+            boss.x+
+            Math.cos(angle)*(boss.radius+28);
+
+        const y2 =
+            boss.y+
+            Math.sin(angle)*(boss.radius+28);
+
+        ctx.strokeStyle =
+            "#ff4b69";
+
+        ctx.lineWidth = 5;
+
+        ctx.beginPath();
+
+        ctx.moveTo(x1,y1);
+
+        ctx.lineTo(x2,y2);
+
+        ctx.stroke();
+    }
+
+    ctx.restore();
+}
+
+/* =========================================================
+   DRAW BULLETS
+   ========================================================= */
+
+function drawBullets(){
+
+    for(const b of bullets){
+
+        ctx.save();
+
+        ctx.shadowBlur = 15;
+
+        ctx.shadowColor = b.color;
+
+        ctx.fillStyle = b.color;
+
+        ctx.beginPath();
+
+        ctx.arc(
+            b.x,
+            b.y,
+            b.radius,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+
+        ctx.restore();
+    }
+
+    for(const b of enemyBullets){
+
+        ctx.save();
+
+        ctx.shadowBlur = 15;
+
+        ctx.shadowColor =
+            b.boss
+            ? "#ff1744"
+            : "#ff8a9a";
+
+        ctx.fillStyle =
+            b.boss
+            ? "#ff1744"
+            : "#ff6077";
+
+        ctx.beginPath();
+
+        ctx.arc(
+            b.x,
+            b.y,
+            b.radius,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+
+        ctx.restore();
+    }
+}
+
+/* =========================================================
+   DRAW PICKUPS
+   ========================================================= */
+
+function drawPickups(){
+
+    for(const p of pickups){
+
+        const bob =
+            Math.sin(p.phase)*5;
+
+        ctx.save();
+
+        ctx.translate(
+            p.x,
+            p.y+bob
+        );
+
+        ctx.shadowBlur = 20;
+
+        if(p.type === "spinach"){
+
+            ctx.shadowColor = "#49ff63";
+
+            ctx.fillStyle = "#3cff61";
+
+            /* folhas */
+
+            ctx.beginPath();
+
+            ctx.ellipse(
+                -7,
+                0,
+                8,
+                15,
+                -.6,
+                0,
+                Math.PI*2
+            );
+
+            ctx.fill();
+
+            ctx.beginPath();
+
+            ctx.ellipse(
+                7,
+                -2,
+                8,
+                15,
+                .6,
+                0,
+                Math.PI*2
+            );
+
+            ctx.fill();
+
+            ctx.strokeStyle = "#baffc0";
+
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+
+            ctx.moveTo(0,10);
+            ctx.lineTo(0,-12);
+
+            ctx.stroke();
+        }
+
+        else if(p.type === "vitamin"){
+
+            ctx.shadowColor = "#7affae";
+
+            ctx.fillStyle = "#7dff9e";
+
+            ctx.beginPath();
+
+            ctx.moveTo(0,-15);
+            ctx.bezierCurveTo(
+                18,-5,
+                13,12,
+                0,16
+            );
+
+            ctx.bezierCurveTo(
+                -13,12,
+                -18,-5,
+                0,-15
+            );
+
+            ctx.fill();
+
+            ctx.strokeStyle = "#d8ffe1";
+
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+
+            ctx.moveTo(0,13);
+            ctx.lineTo(0,-11);
+
+            ctx.stroke();
+        }
+
+        else if(p.type === "shield"){
+
+            ctx.shadowColor = "#54ddff";
+
+            ctx.strokeStyle = "#62e5ff";
+
+            ctx.lineWidth = 4;
+
+            ctx.beginPath();
+
+            ctx.arc(
+                0,
+                0,
+                12,
+                0,
+                Math.PI*2
+            );
+
+            ctx.stroke();
+
+            ctx.fillStyle =
+                "rgba(70,220,255,.2)";
+
+            ctx.fill();
+        }
+
+        else{
+
+            ctx.shadowColor = "#ffe75c";
+
+            ctx.fillStyle = "#ffe75c";
+
+            ctx.beginPath();
+
+            ctx.arc(
+                0,
+                0,
+                11,
+                0,
+                Math.PI*2
+            );
+
+            ctx.fill();
+
+            ctx.strokeStyle = "#fff";
+
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+
+            ctx.moveTo(-5,0);
+            ctx.lineTo(5,0);
+
+            ctx.moveTo(0,-5);
+            ctx.lineTo(0,5);
+
+            ctx.stroke();
+        }
+
+        ctx.restore();
+    }
+}
+
+/* =========================================================
+   DRAW PARTICLES
+   ========================================================= */
+
+function drawParticles(){
+
+    for(const p of particles){
+
+        ctx.save();
+
+        ctx.globalAlpha =
+            Math.max(
+                0,
+                p.life/p.maxLife
+            );
+
+        ctx.fillStyle = p.color;
+
+        ctx.beginPath();
+
+        ctx.arc(
+            p.x,
+            p.y,
+            p.radius,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+
+        ctx.restore();
+    }
+}
+
+/* =========================================================
+   DRAW FLOATING TEXT
+   ========================================================= */
+
+function drawFloatingTexts(){
+
+    for(const t of floatingTexts){
+
+        ctx.save();
+
+        ctx.globalAlpha =
+            Math.max(
+                0,
+                t.life/70
+            );
+
+        ctx.fillStyle = t.color;
+
+        ctx.font =
+            "bold 14px Arial";
+
+        ctx.textAlign = "center";
+
+        ctx.fillText(
+            t.text,
+            t.x,
+            t.y
+        );
+
+        ctx.restore();
+    }
+}
+
+/* =========================================================
+   LOOP
+   ========================================================= */
+
+let lastTime = 0;
+
+function gameLoop(time){
+
+    if(!gameRunning) return;
+
+    const dt =
+        Math.min(
+            33,
+            time-lastTime || 16
+        );
+
+    lastTime = time;
+
+    if(!paused && !selectingUpgrade){
+
+        updateBackground(dt);
+
+        updatePlayer(dt);
+
+        updateBullets(dt);
+
+        updateEnemyBullets(dt);
+
+        updateEnemies(dt);
+
+        updateBoss(dt);
+
+        updatePickups(dt);
+
+        updateParticles(dt);
+
+        updateFloatingTexts(dt);
+
+        updateHUD();
+
+        if(screenShake > 0){
+
+            screenShake *= .88;
+
+            if(screenShake < .2){
+                screenShake = 0;
+            }
+        }
+    }
+
+    draw();
+
+    requestAnimationFrame(gameLoop);
+}
+
+/* =========================================================
+   DRAW
+   ========================================================= */
+
+function draw(){
+
+    ctx.save();
+
+    if(screenShake > 0){
+
+        ctx.translate(
+            (Math.random()-.5)*screenShake,
+            (Math.random()-.5)*screenShake
+        );
+    }
+
+    drawBackground();
+
+    drawPickups();
+
+    for(const e of enemies){
+
+        drawEnemy(e);
+    }
+
+    drawBoss();
+
+    drawBullets();
+
+    drawParticles();
+
+    drawPlayer();
+
+    drawFloatingTexts();
+
+    ctx.restore();
+}
+
+/* =========================================================
+   STARTUP
+   ========================================================= */
+
+generateBackground();
+
+/*
+   Pequena animação de fundo mesmo no menu.
+*/
+
+function menuAnimation(time){
+
+    if(!gameRunning){
+
+        updateBackground(16);
+
+        draw();
+
+        requestAnimationFrame(menuAnimation);
+    }
+}
+
+requestAnimationFrame(menuAnimation);
+
+</script>
+
+</body>
+</html>

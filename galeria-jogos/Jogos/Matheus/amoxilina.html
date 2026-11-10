@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Farmácia Rush</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    background:
+        radial-gradient(circle at 20% 20%, #172b4d, transparent 35%),
+        radial-gradient(circle at 80% 80%, #063d3b, transparent 35%),
+        #071016;
+
+    font-family: Arial, sans-serif;
+    color: white;
+}
+
+.game {
+    width: 480px;
+    max-width: 95vw;
+
+    padding: 20px;
+
+    background: rgba(10, 20, 27, .95);
+
+    border: 1px solid #39d98a55;
+    border-radius: 22px;
+
+    box-shadow:
+        0 0 40px #39d98a18,
+        inset 0 0 30px #39d98a08;
+}
+
+h1 {
+    text-align: center;
+
+    color: #55e6a5;
+
+    font-size: 34px;
+
+    text-shadow:
+        0 0 10px #39d98a,
+        0 0 25px #39d98a55;
+}
+
+.subtitle {
+    text-align: center;
+
+    color: #8fa5a5;
+
+    margin-top: 5px;
+    margin-bottom: 18px;
+}
+
+/* STATUS */
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+
+    gap: 8px;
+
+    margin-bottom: 12px;
+}
+
+.stat {
+    padding: 10px;
+
+    text-align: center;
+
+    background: #0d1b22;
+
+    border: 1px solid #ffffff10;
+
+    border-radius: 10px;
+
+    font-size: 13px;
+
+    color: #91a6ad;
+}
+
+.stat strong {
+    display: block;
+
+    margin-top: 3px;
+
+    font-size: 17px;
+
+    color: #55e6a5;
+}
+
+/* ARENA */
+
+#arena {
+    position: relative;
+
+    height: 520px;
+
+    overflow: hidden;
+
+    border-radius: 18px;
+
+    border: 1px solid #39d98a55;
+
+    background:
+        linear-gradient(#ffffff04 1px, transparent 1px),
+        linear-gradient(90deg, #ffffff04 1px, transparent 1px),
+        #061017;
+
+    background-size: 35px 35px;
+
+    box-shadow: inset 0 0 50px #000;
+}
+
+/* LINHAS DE DNA */
+
+#arena::before {
+    content: "⚕";
+
+    position: absolute;
+
+    font-size: 180px;
+
+    color: #39d98a06;
+
+    left: 50%;
+    top: 50%;
+
+    transform: translate(-50%, -50%);
+
+    pointer-events: none;
+}
+
+/* JOGADOR */
+
+#player {
+    position: absolute;
+
+    width: 42px;
+    height: 22px;
+
+    border-radius: 20px;
+
+    bottom: 25px;
+
+    left: 50%;
+
+    transform: translateX(-50%) rotate(-15deg);
+
+    background:
+        linear-gradient(
+            90deg,
+            #ffffff 0%,
+            #ffffff 48%,
+            #55e6a5 49%,
+            #55e6a5 100%
+        );
+
+    box-shadow:
+        0 0 8px #fff,
+        0 0 20px #39d98a,
+        0 0 35px #39d98a55;
+
+    z-index: 10;
+}
+
+/* BRILHO DA CAPSULA */
+
+#player::after {
+    content: "";
+
+    position: absolute;
+
+    width: 5px;
+    height: 5px;
+
+    border-radius: 50%;
+
+    background: white;
+
+    left: 9px;
+    top: 8px;
+
+    box-shadow:
+        0 0 8px white,
+        0 0 15px #39d98a;
+}
+
+/* ITENS */
+
+.item {
+    position: absolute;
+
+    width: 34px;
+    height: 34px;
+
+    display: flex;
+
+    justify-content: center;
+    align-items: center;
+
+    border-radius: 50%;
+
+    font-size: 19px;
+
+    z-index: 5;
+}
+
+/* ITEM BOM */
+
+.safe {
+    background: #123c30;
+
+    border: 2px solid #39d98a;
+
+    box-shadow:
+        0 0 10px #39d98a,
+        0 0 25px #39d98a55;
+}
+
+/* PERIGO */
+
+.danger {
+    background: #401a27;
+
+    border: 2px solid #ff4f75;
+
+    box-shadow:
+        0 0 10px #ff4f75,
+        0 0 25px #ff4f7555;
+}
+
+/* INFORMAÇÃO */
+
+.info-message {
+    position: absolute;
+
+    top: 15px;
+    left: 50%;
+
+    transform: translateX(-50%);
+
+    width: 85%;
+
+    padding: 10px;
+
+    text-align: center;
+
+    background: #071820dd;
+
+    border: 1px solid #39d98a55;
+
+    border-radius: 10px;
+
+    color: #b9d4d0;
+
+    font-size: 12px;
+
+    opacity: 0;
+
+    transition: .3s;
+
+    z-index: 20;
+}
+
+.info-message.show {
+    opacity: 1;
+}
+
+/* TELA INICIAL */
+
+.overlay {
+    position: absolute;
+
+    inset: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: center;
+
+    align-items: center;
+
+    padding: 30px;
+
+    text-align: center;
+
+    background: #061017eF;
+
+    backdrop-filter: blur(5px);
+
+    z-index: 30;
+}
+
+.overlay h2 {
+    color: #55e6a5;
+
+    font-size: 32px;
+
+    margin-bottom: 10px;
+}
+
+.overlay p {
+    color: #9eb2b2;
+
+    line-height: 1.5;
+
+    max-width: 350px;
+}
+
+/* BOTÃO */
+
+button {
+    border: none;
+
+    margin-top: 20px;
+
+    padding: 13px 32px;
+
+    border-radius: 10px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #28bd78,
+            #55e6a5
+        );
+
+    color: #061016;
+
+    font-weight: bold;
+
+    font-size: 15px;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 0 18px #39d98a44;
+
+    transition: .2s;
+}
+
+button:hover {
+    transform: scale(1.05);
+
+    box-shadow:
+        0 0 25px #39d98a88;
+}
+
+/* CONTROLES */
+
+.controls {
+    display: flex;
+
+    justify-content: center;
+
+    gap: 25px;
+
+    margin-top: 12px;
+}
+
+.control {
+    margin: 0;
+
+    width: 70px;
+    height: 45px;
+
+    padding: 0;
+
+    font-size: 22px;
+
+    background: #10232b;
+
+    color: #55e6a5;
+
+    border: 1px solid #39d98a55;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="game">
+
+    <h1>⚕ FARMÁCIA RUSH</h1>
+
+    <p class="subtitle">
+        Amoxicilina × Varfarina
+    </p>
+
+    <div class="stats">
+
+        <div class="stat">
+            PONTOS
+            <strong id="score">0</strong>
+        </div>
+
+        <div class="stat">
+            INR
+            <strong id="inr">2.5</strong>
+        </div>
+
+        <div class="stat">
+            TEMPO
+            <strong id="time">60</strong>
+        </div>
+
+    </div>
+
+    <div id="arena">
+
+        <div id="player"></div>
+
+        <div
+            id="info"
+            class="info-message">
+        </div>
+
+        <div
+            id="overlay"
+            class="overlay">
+
+            <h2>Farmácia Rush</h2>
+
+            <p>
+                Controle a cápsula e atravesse o
+                tratamento evitando situações que
+                podem aumentar o risco de sangramento.
+            </p>
+
+            <button onclick="startGame()">
+                COMEÇAR
+            </button>
+
+        </div>
+
+    </div>
+
+    <div class="controls">
+
+        <button
+            class="control"
+            onclick="moveLeft()">
+            ◀
+        </button>
+
+        <button
+            class="control"
+            onclick="moveRight()">
+            ▶
+        </button>
+
+    </div>
+
+</div>
+
+<script>
+
+/* ELEMENTOS */
+
+const arena =
+    document.getElementById("arena");
+
+const player =
+    document.getElementById("player");
+
+const scoreText =
+    document.getElementById("score");
+
+const inrText =
+    document.getElementById("inr");
+
+const timeText =
+    document.getElementById("time");
+
+const overlay =
+    document.getElementById("overlay");
+
+const info =
+    document.getElementById("info");
+
+
+/* VARIÁVEIS */
+
+let playerX = 0;
+
+let score = 0;
+
+let inr = 2.5;
+
+let time = 60;
+
+let playing = false;
+
+let objects = [];
+
+let spawnTimer;
+
+let gameTimer;
+
+let animation;
+
+
+/* INICIAR */
+
+function startGame() {
+
+    clearInterval(spawnTimer);
+
+    clearInterval(gameTimer);
+
+    cancelAnimationFrame(animation);
+
+
+    objects.forEach(
+        obj => obj.element.remove()
+    );
+
+    objects = [];
+
+
+    score = 0;
+
+    inr = 2.5;
+
+    time = 60;
+
+    playing = true;
+
+
+    scoreText.textContent = score;
+
+    inrText.textContent =
+        inr.toFixed(1);
+
+    timeText.textContent = time;
+
+
+    overlay.style.display =
+        "none";
+
+
+    playerX =
+        arena.clientWidth / 2 - 21;
+
+    player.style.left =
+        playerX + "px";
+
+
+    spawnTimer =
+        setInterval(
+            createObject,
+            700
+        );
+
+
+    gameTimer =
+        setInterval(() => {
+
+            time--;
+
+            timeText.textContent =
+                time;
+
+
+            if (time <= 0) {
+
+                endGame();
+            }
+
+        }, 1000);
+
+
+    update();
+
+}
+
+
+/* CRIAR OBJETOS */
+
+function createObject() {
+
+    if (!playing)
+        return;
+
+
+    const element =
+        document.createElement("div");
+
+
+    const isDanger =
+        Math.random() < .45;
+
+
+    element.className =
+        "item " +
+        (isDanger ? "danger" : "safe");
+
+
+    if (isDanger) {
+
+        /*
+        Obstáculo visual:
+        representa situações que podem
+        elevar o risco de sangramento.
+        */
+
+        element.textContent = "⚠";
+
+    } else {
+
+        element.textContent = "✚";
+
+    }
+
+
+    const x =
+        Math.random() *
+        (arena.clientWidth - 34);
+
+
+    element.style.left =
+        x + "px";
+
+    element.style.top =
+        "-40px";
+
+
+    arena.appendChild(element);
+
+
+    objects.push({
+
+        element: element,
+
+        x: x,
+
+        y: -40,
+
+        speed:
+            2 + Math.random() * 2,
+
+        danger: isDanger
+
+    });
+
+}
+
+
+/* ATUALIZAÇÃO */
+
+function update() {
+
+    if (!playing)
+        return;
+
+
+    objects.forEach(obj => {
+
+        obj.y += obj.speed;
+
+
+        obj.element.style.top =
+            obj.y + "px";
+
+
+        /* COLISÃO */
+
+        if (
+            collision(
+                player,
+                obj.element
+            )
+        ) {
+
+            collectObject(obj);
+        }
+
+
+        /* REMOVE */
+
+        if (
+            obj.y >
+            arena.clientHeight
+        ) {
+
+            obj.element.remove();
+        }
+
+    });
+
+
+    objects =
+        objects.filter(
+            obj =>
+                obj.element.parentElement
+        );
+
+
+    animation =
+        requestAnimationFrame(update);
+
+}
+
+
+/* PEGAR ITEM */
+
+function collectObject(obj) {
+
+    obj.element.remove();
+
+
+    if (obj.danger) {
+
+        /*
+        Aumentamos o indicador do jogo.
+        */
+
+        inr += .3;
+
+        score -= 10;
+
+        if (score < 0)
+            score = 0;
+
+
+        showMessage(
+            "⚠ Atenção: situações de maior risco hemorrágico!"
+        );
+
+    } else {
+
+        score += 10;
+
+        showMessage(
+            "✓ Monitorização e acompanhamento são importantes."
+        );
+
+    }
+
+
+    inrText.textContent =
+        inr.toFixed(1);
+
+    scoreText.textContent =
+        score;
+
+}
+
+
+/* MENSAGEM */
+
+function showMessage(text) {
+
+    info.textContent = text;
+
+    info.classList.add("show");
+
+
+    setTimeout(() => {
+
+        info.classList.remove("show");
+
+    }, 1800);
+
+}
+
+
+/* COLISÃO */
+
+function collision(a, b) {
+
+    const ar =
+        a.getBoundingClientRect();
+
+    const br =
+        b.getBoundingClientRect();
+
+
+    return !(
+        ar.right < br.left ||
+        ar.left > br.right ||
+        ar.bottom < br.top ||
+        ar.top > br.bottom
+    );
+
+}
+
+
+/* MOVER */
+
+function moveLeft() {
+
+    if (!playing)
+        return;
+
+
+    playerX -= 30;
+
+
+    playerX =
+        Math.max(
+            0,
+            playerX
+        );
+
+
+    player.style.left =
+        playerX + "px";
+
+}
+
+
+function moveRight() {
+
+    if (!playing)
+        return;
+
+
+    playerX += 30;
+
+
+    playerX =
+        Math.min(
+            arena.clientWidth - 42,
+            playerX
+        );
+
+
+    player.style.left =
+        playerX + "px";
+
+}
+
+
+/* TECLADO */
+
+document.addEventListener(
+    "keydown",
+    event => {
+
+        if (!playing)
+            return;
+
+
+        if (
+            event.key === "ArrowLeft" ||
+            event.key.toLowerCase() === "a"
+        ) {
+
+            moveLeft();
+
+        }
+
+
+        if (
+            event.key === "ArrowRight" ||
+            event.key.toLowerCase() === "d"
+        ) {
+
+            moveRight();
+
+        }
+
+    }
+);
+
+
+/* FINAL */
+
+function endGame() {
+
+    playing = false;
+
+    clearInterval(spawnTimer);
+
+    clearInterval(gameTimer);
+
+    cancelAnimationFrame(animation);
+
+
+    overlay.innerHTML = `
+
+        <h2>Tratamento concluído!</h2>
+
+        <p>
+            Pontuação final:
+            <strong>${score}</strong>
+        </p>
+
+        <p style="
+            margin-top:10px;
+            color:#55e6a5;
+        ">
+            Indicador final:
+            ${inr.toFixed(1)}
+        </p>
+
+        <button onclick="startGame()">
+            JOGAR NOVAMENTE
+        </button>
+
+    `;
+
+
+    overlay.style.display =
+        "flex";
+
+}
+
+
+/* INICIAR LOOP */
+
+</script>
+
+</body>
+</html>

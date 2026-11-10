@@ -1,0 +1,2040 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>VARFARINA — Controle de Acesso</title>
+
+<style>
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+body{
+    min-height:100vh;
+    background:
+        radial-gradient(
+            circle at 50% 20%,
+            #18202c,
+            #080b10 65%
+        );
+    color:#e8edf5;
+    font-family:Arial,Helvetica,sans-serif;
+    overflow-x:hidden;
+}
+
+button{
+    font-family:inherit;
+}
+
+#game{
+    min-height:100vh;
+    position:relative;
+}
+
+/* =========================
+   MENU
+========================= */
+
+.screen{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:25px;
+}
+
+.menuBox{
+    width:min(800px,95vw);
+    padding:45px;
+    text-align:center;
+    border:1px solid #303b4d;
+    border-radius:20px;
+    background:
+        linear-gradient(
+            145deg,
+            #111721,
+            #090d13
+        );
+    box-shadow:
+        0 30px 80px rgba(0,0,0,.5);
+}
+
+.logo{
+    font-size:clamp(40px,8vw,75px);
+    font-weight:900;
+    letter-spacing:7px;
+    color:#e94b67;
+    margin-bottom:5px;
+}
+
+.logoSub{
+    color:#8794a8;
+    letter-spacing:3px;
+    font-size:13px;
+    margin-bottom:35px;
+}
+
+.menuDescription{
+    color:#aeb8c7;
+    line-height:1.7;
+    max-width:600px;
+    margin:0 auto 30px;
+}
+
+.startButton{
+    border:0;
+    padding:16px 50px;
+    border-radius:10px;
+    background:#b9324d;
+    color:white;
+    font-size:18px;
+    font-weight:bold;
+    cursor:pointer;
+    transition:.2s;
+}
+
+.startButton:hover{
+    background:#d6405b;
+    transform:translateY(-2px);
+}
+
+.warning{
+    margin-top:25px;
+    padding:13px;
+    border-radius:8px;
+    background:#191f29;
+    color:#77859a;
+    font-size:12px;
+}
+
+/* =========================
+   GAME
+========================= */
+
+#gameScreen{
+    display:none;
+    min-height:100vh;
+    padding:15px;
+}
+
+.topBar{
+    width:min(1400px,100%);
+    margin:auto;
+    display:grid;
+    grid-template-columns:
+        1fr
+        auto
+        1fr;
+    gap:15px;
+    align-items:center;
+    margin-bottom:15px;
+}
+
+.topPanel{
+    background:#101620;
+    border:1px solid #293343;
+    border-radius:10px;
+    padding:12px 16px;
+}
+
+.topPanel.center{
+    text-align:center;
+}
+
+.topPanel.right{
+    text-align:right;
+}
+
+.label{
+    color:#657286;
+    text-transform:uppercase;
+    font-size:10px;
+    letter-spacing:1.5px;
+}
+
+.value{
+    margin-top:4px;
+    font-size:18px;
+    font-weight:bold;
+}
+
+#timer{
+    color:#e9c65c;
+}
+
+/* =========================
+   OFFICE
+========================= */
+
+.office{
+    width:min(1400px,100%);
+    margin:auto;
+    display:grid;
+    grid-template-columns:
+        minmax(300px,1fr)
+        minmax(330px,1.1fr)
+        minmax(260px,.8fr);
+    gap:15px;
+}
+
+.panel{
+    background:#101620;
+    border:1px solid #293343;
+    border-radius:12px;
+    overflow:hidden;
+}
+
+.panelHeader{
+    padding:13px 16px;
+    border-bottom:1px solid #293343;
+    background:#131a25;
+    color:#9aa7ba;
+    text-transform:uppercase;
+    letter-spacing:1.5px;
+    font-size:11px;
+    font-weight:bold;
+}
+
+.panelBody{
+    padding:16px;
+}
+
+/* =========================
+   PERSON
+========================= */
+
+.personArea{
+    min-height:550px;
+    display:flex;
+    flex-direction:column;
+}
+
+.personPortrait{
+    height:270px;
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    background:
+        radial-gradient(
+            circle,
+            #283341,
+            #0b0f15
+        );
+    border-radius:9px;
+}
+
+.personSilhouette{
+    width:130px;
+    height:170px;
+    position:relative;
+}
+
+.head{
+    width:70px;
+    height:70px;
+    border-radius:50%;
+    background:#c89475;
+    position:absolute;
+    top:0;
+    left:30px;
+    box-shadow:
+        inset -10px -5px 0 rgba(0,0,0,.1);
+}
+
+.hair{
+    position:absolute;
+    width:78px;
+    height:38px;
+    top:-4px;
+    left:26px;
+    border-radius:50% 50% 35% 35%;
+    background:#252126;
+    z-index:2;
+}
+
+.body{
+    position:absolute;
+    width:125px;
+    height:105px;
+    bottom:0;
+    left:2px;
+    border-radius:45px 45px 10px 10px;
+    background:#43566b;
+}
+
+.shoulderLine{
+    position:absolute;
+    width:90px;
+    height:10px;
+    background:#60748a;
+    left:18px;
+    bottom:70px;
+    border-radius:20px;
+}
+
+.personName{
+    font-size:22px;
+    font-weight:bold;
+    margin-top:16px;
+}
+
+.personStatus{
+    margin-top:5px;
+    color:#718096;
+    font-size:12px;
+}
+
+.personSpeech{
+    margin-top:18px;
+    padding:14px;
+    border-radius:8px;
+    background:#171f2b;
+    border-left:3px solid #b9324d;
+    color:#aeb8c6;
+    line-height:1.5;
+    font-size:13px;
+}
+
+/* =========================
+   DOCUMENTS
+========================= */
+
+.documents{
+    display:grid;
+    gap:12px;
+}
+
+.document{
+    background:#f0eadb;
+    color:#1c1d20;
+    border-radius:5px;
+    padding:15px;
+    min-height:130px;
+    box-shadow:
+        0 5px 15px rgba(0,0,0,.25);
+    position:relative;
+}
+
+.documentTitle{
+    font-weight:bold;
+    font-size:13px;
+    border-bottom:1px solid #aaa;
+    padding-bottom:7px;
+    margin-bottom:9px;
+}
+
+.documentRow{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    font-size:11px;
+    margin:5px 0;
+}
+
+.documentRow span:first-child{
+    color:#777;
+}
+
+.documentStamp{
+    position:absolute;
+    right:10px;
+    bottom:8px;
+    font-size:9px;
+    color:#777;
+}
+
+.invalidMark{
+    color:#b4233d !important;
+    font-weight:bold;
+}
+
+/* =========================
+   CHECKLIST
+========================= */
+
+.checkList{
+    display:grid;
+    gap:9px;
+}
+
+.checkItem{
+    padding:11px;
+    border-radius:7px;
+    background:#151c27;
+    border:1px solid #252f3d;
+    cursor:pointer;
+    display:flex;
+    gap:10px;
+    align-items:center;
+    transition:.15s;
+}
+
+.checkItem:hover{
+    border-color:#65748b;
+}
+
+.checkItem input{
+    width:17px;
+    height:17px;
+}
+
+.checkText{
+    font-size:12px;
+    color:#aab4c3;
+}
+
+/* =========================
+   BUTTONS
+========================= */
+
+.actions{
+    margin-top:15px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+}
+
+.actionButton{
+    min-height:52px;
+    border:1px solid #354153;
+    border-radius:8px;
+    background:#171f2b;
+    color:#dce3ed;
+    font-weight:bold;
+    cursor:pointer;
+    transition:.15s;
+}
+
+.actionButton:hover{
+    transform:translateY(-1px);
+    background:#202a38;
+}
+
+.accept{
+    border-color:#37694e;
+    background:#173024;
+}
+
+.accept:hover{
+    background:#1c3c2c;
+}
+
+.reject{
+    border-color:#713445;
+    background:#351923;
+}
+
+.reject:hover{
+    background:#421d2a;
+}
+
+.inspect{
+    grid-column:1 / -1;
+    background:#182231;
+}
+
+/* =========================
+   LOG
+========================= */
+
+.log{
+    max-height:220px;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+}
+
+.logEntry{
+    padding:9px;
+    border-radius:6px;
+    background:#151c26;
+    color:#8490a2;
+    font-size:11px;
+    line-height:1.4;
+}
+
+.logEntry.good{
+    border-left:3px solid #4ebd78;
+}
+
+.logEntry.bad{
+    border-left:3px solid #d54c64;
+}
+
+/* =========================
+   MODAL
+========================= */
+
+.overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(3,5,8,.86);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:50;
+    padding:20px;
+}
+
+.modal{
+    width:min(700px,95vw);
+    max-height:90vh;
+    overflow:auto;
+    background:#101620;
+    border:1px solid #344052;
+    border-radius:15px;
+    padding:28px;
+}
+
+.modal h2{
+    color:#e3e9f2;
+    margin-bottom:15px;
+}
+
+.modal p{
+    color:#9ba7b9;
+    line-height:1.7;
+    font-size:13px;
+    margin-bottom:12px;
+}
+
+.closeButton{
+    margin-top:15px;
+    padding:11px 20px;
+    border:0;
+    border-radius:7px;
+    background:#2c3748;
+    color:white;
+    cursor:pointer;
+}
+
+/* =========================
+   RESULTADO
+========================= */
+
+.result{
+    text-align:center;
+}
+
+.resultTitle{
+    font-size:45px;
+    font-weight:bold;
+    margin-bottom:15px;
+}
+
+.resultScore{
+    font-size:25px;
+    color:#e6c85d;
+    margin:20px 0;
+}
+
+.resultInfo{
+    color:#9aa6b7;
+    line-height:1.7;
+    margin-bottom:25px;
+}
+
+/* =========================
+   RESPONSIVO
+========================= */
+
+@media(max-width:1000px){
+
+    .office{
+        grid-template-columns:1fr 1fr;
+    }
+
+    .office .rightColumn{
+        grid-column:1 / -1;
+    }
+
+}
+
+@media(max-width:700px){
+
+    .topBar{
+        grid-template-columns:1fr 1fr;
+    }
+
+    .topPanel.center{
+        grid-column:1 / -1;
+        grid-row:1;
+    }
+
+    .office{
+        grid-template-columns:1fr;
+    }
+
+    .office .rightColumn{
+        grid-column:auto;
+    }
+
+    .menuBox{
+        padding:28px 20px;
+    }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+<!-- =========================
+     MENU
+========================= -->
+
+<section id="menuScreen" class="screen">
+
+    <div class="menuBox">
+
+        <div class="logo">
+            VARFARINA
+        </div>
+
+        <div class="logoSub">
+            CONTROLE DE ACESSO
+        </div>
+
+        <div class="menuDescription">
+
+            Você é responsável por controlar a entrada
+            de pacientes em uma clínica especializada.
+            Examine documentos, compare informações e
+            identifique inconsistências antes de tomar
+            sua decisão.
+
+            <br><br>
+
+            Nem todo documento apresentado é verdadeiro.
+
+        </div>
+
+        <button
+            id="startGame"
+            class="startButton"
+        >
+            INICIAR TURNO
+        </button>
+
+        <div class="warning">
+
+            Jogo educativo fictício.
+            As informações sobre medicamentos são
+            simplificadas para fins de gameplay e não
+            substituem orientação médica.
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================
+     JOGO
+========================= -->
+
+<section id="gameScreen">
+
+    <div class="topBar">
+
+        <div class="topPanel">
+
+            <div class="label">
+                Turno
+            </div>
+
+            <div
+                id="roundDisplay"
+                class="value"
+            >
+                1 / 10
+            </div>
+
+        </div>
+
+
+        <div class="topPanel center">
+
+            <div class="label">
+                Tempo
+            </div>
+
+            <div
+                id="timer"
+                class="value"
+            >
+                60
+            </div>
+
+        </div>
+
+
+        <div class="topPanel right">
+
+            <div class="label">
+                Reputação
+            </div>
+
+            <div
+                id="reputation"
+                class="value"
+            >
+                100
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="office">
+
+
+        <!-- =====================
+             PESSOA
+        ====================== -->
+
+        <div class="panel">
+
+            <div class="panelHeader">
+                Pessoa na entrada
+            </div>
+
+            <div class="panelBody personArea">
+
+                <div class="personPortrait">
+
+                    <div class="personSilhouette">
+
+                        <div
+                            id="hair"
+                            class="hair"
+                        ></div>
+
+                        <div
+                            id="head"
+                            class="head"
+                        ></div>
+
+                        <div
+                            id="body"
+                            class="body"
+                        ></div>
+
+                        <div
+                            class="shoulderLine"
+                        ></div>
+
+                    </div>
+
+                </div>
+
+                <div
+                    id="personName"
+                    class="personName"
+                >
+                    —
+                </div>
+
+                <div
+                    id="personStatus"
+                    class="personStatus"
+                >
+                    Aguardando identificação...
+                </div>
+
+                <div
+                    id="personSpeech"
+                    class="personSpeech"
+                >
+                    —
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================
+             DOCUMENTOS
+        ====================== -->
+
+        <div class="panel">
+
+            <div class="panelHeader">
+                Documentos apresentados
+            </div>
+
+            <div class="panelBody">
+
+                <div
+                    id="documents"
+                    class="documents"
+                ></div>
+
+                <div
+                    id="checkList"
+                    style="margin-top:15px"
+                >
+
+                    <div class="label"
+                         style="margin-bottom:10px">
+
+                        Pontos verificados
+
+                    </div>
+
+                </div>
+
+
+                <div class="actions">
+
+                    <button
+                        id="acceptButton"
+                        class="actionButton accept"
+                    >
+                        ✓ AUTORIZAR
+                    </button>
+
+                    <button
+                        id="rejectButton"
+                        class="actionButton reject"
+                    >
+                        ✕ RECUSAR
+                    </button>
+
+                    <button
+                        id="inspectButton"
+                        class="actionButton inspect"
+                    >
+                        🔎 INVESTIGAR
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================
+             CONTROLE
+        ====================== -->
+
+        <div class="panel rightColumn">
+
+            <div class="panelHeader">
+                Central de controle
+            </div>
+
+            <div class="panelBody">
+
+                <div
+                    id="log"
+                    class="log"
+                ></div>
+
+                <div
+                    style="
+                    margin-top:18px;
+                    padding-top:15px;
+                    border-top:1px solid #293343;
+                    "
+                >
+
+                    <div class="label">
+                        Objetivo
+                    </div>
+
+                    <p
+                        style="
+                        color:#9ba7b8;
+                        font-size:12px;
+                        line-height:1.6;
+                        margin-top:8px;
+                        "
+                    >
+                        Identifique se a pessoa pode
+                        entrar verificando todas as
+                        informações disponíveis.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================
+     INVESTIGAÇÃO
+========================= -->
+
+<div
+    id="investigationOverlay"
+    class="overlay"
+>
+
+    <div class="modal">
+
+        <h2>
+            🔎 Investigação detalhada
+        </h2>
+
+        <div id="investigationText"></div>
+
+        <button
+            id="closeInvestigation"
+            class="closeButton"
+        >
+            Voltar aos documentos
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- =========================
+     RESULTADO
+========================= -->
+
+<div
+    id="resultOverlay"
+    class="overlay"
+>
+
+    <div class="modal result">
+
+        <div
+            id="resultTitle"
+            class="resultTitle"
+        >
+            TURNO ENCERRADO
+        </div>
+
+        <div
+            id="resultScore"
+            class="resultScore"
+        >
+            0 pontos
+        </div>
+
+        <div
+            id="resultInfo"
+            class="resultInfo"
+        ></div>
+
+        <button
+            id="restartButton"
+            class="startButton"
+        >
+            NOVO TURNO
+        </button>
+
+    </div>
+
+</div>
+
+</div>
+
+
+<script>
+
+/* =========================================================
+   DADOS
+========================================================= */
+
+const people = [
+
+    {
+        name:"Marcos Almeida",
+        age:42,
+        id:"BR-48291",
+        prescription:"Varfarina",
+        dose:"5 mg",
+        valid:true,
+        reason:"Paciente regular.",
+        speech:
+            "Bom dia. Tenho uma consulta marcada e trouxe meus documentos.",
+        details:
+            "Os dados de identificação, idade, prescrição e validade estão consistentes."
+    },
+
+    {
+        name:"Ana Beatriz Costa",
+        age:36,
+        id:"BR-73921",
+        prescription:"Varfarina",
+        dose:"2,5 mg",
+        valid:true,
+        reason:"Paciente regular.",
+        speech:
+            "Eu só preciso entregar meus documentos para a consulta.",
+        details:
+            "Todas as informações apresentadas correspondem ao cadastro."
+    },
+
+    {
+        name:"Lucas Ferreira",
+        age:51,
+        id:"BR-18273",
+        prescription:"Varfarina",
+        dose:"5 mg",
+        valid:false,
+        reason:"Documento incompatível.",
+        speech:
+            "Está tudo certo. Pode verificar.",
+        details:
+            "O nome no documento secundário não corresponde ao nome informado na identificação principal."
+    },
+
+    {
+        name:"Juliana Martins",
+        age:29,
+        id:"BR-92741",
+        prescription:"Varfarina",
+        dose:"10 mg",
+        valid:false,
+        reason:"Prescrição inconsistente.",
+        speech:
+            "O médico mudou minha receita recentemente.",
+        details:
+            "A documentação apresenta uma prescrição cuja informação não corresponde ao registro fornecido pela clínica."
+    },
+
+    {
+        name:"Rafael Souza",
+        age:63,
+        id:"BR-55120",
+        prescription:"Varfarina",
+        dose:"5 mg",
+        valid:true,
+        reason:"Paciente regular.",
+        speech:
+            "Boa tarde. Vim para minha avaliação.",
+        details:
+            "Identificação e registros estão consistentes."
+    },
+
+    {
+        name:"Carolina Mendes",
+        age:45,
+        id:"BR-66281",
+        prescription:"Varfarina",
+        dose:"2,5 mg",
+        valid:false,
+        reason:"Identidade divergente.",
+        speech:
+            "Meu documento está aí. Acho que não precisa olhar tanto.",
+        details:
+            "A idade declarada e a informação do documento apresentam uma divergência."
+    },
+
+    {
+        name:"Pedro Henrique",
+        age:38,
+        id:"BR-31029",
+        prescription:"Varfarina",
+        dose:"5 mg",
+        valid:true,
+        reason:"Paciente regular.",
+        speech:
+            "Aqui estão todos os documentos solicitados.",
+        details:
+            "As informações conferem."
+    },
+
+    {
+        name:"Fernanda Lima",
+        age:57,
+        id:"BR-88421",
+        prescription:"Varfarina",
+        dose:"5 mg",
+        valid:false,
+        reason:"Documento vencido.",
+        speech:
+            "Eu não sabia que precisava renovar esse documento.",
+        details:
+            "O documento apresentado está fora do período de validade exigido pelo cadastro."
+    },
+
+    {
+        name:"Gabriel Oliveira",
+        age:33,
+        id:"BR-21931",
+        prescription:"Varfarina",
+        dose:"2,5 mg",
+        valid:true,
+        reason:"Paciente regular.",
+        speech:
+            "Tenho horário marcado para agora.",
+        details:
+            "Todas as informações conferem."
+    },
+
+    {
+        name:"Patrícia Rocha",
+        age:49,
+        id:"BR-73182",
+        prescription:"Varfarina",
+        dose:"10 mg",
+        valid:false,
+        reason:"Cadastro divergente.",
+        speech:
+            "O cadastro deve estar errado, mas sou eu mesmo.",
+        details:
+            "Há divergência entre o número do documento e o registro da pessoa."
+    }
+
+];
+
+
+/* =========================================================
+   ESTADO
+========================================================= */
+
+let currentPerson = null;
+
+let round = 0;
+
+let totalRounds = 10;
+
+let reputation = 100;
+
+let score = 0;
+
+let correct = 0;
+
+let mistakes = 0;
+
+let timeLeft = 60;
+
+let timerInterval = null;
+
+let usedPeople = [];
+
+
+/* =========================================================
+   ELEMENTOS
+========================================================= */
+
+const menuScreen =
+    document.getElementById(
+        "menuScreen"
+    );
+
+const gameScreen =
+    document.getElementById(
+        "gameScreen"
+    );
+
+const startGame =
+    document.getElementById(
+        "startGame"
+    );
+
+const acceptButton =
+    document.getElementById(
+        "acceptButton"
+    );
+
+const rejectButton =
+    document.getElementById(
+        "rejectButton"
+    );
+
+const inspectButton =
+    document.getElementById(
+        "inspectButton"
+    );
+
+const personName =
+    document.getElementById(
+        "personName"
+    );
+
+const personStatus =
+    document.getElementById(
+        "personStatus"
+    );
+
+const personSpeech =
+    document.getElementById(
+        "personSpeech"
+    );
+
+const documents =
+    document.getElementById(
+        "documents"
+    );
+
+const checkList =
+    document.getElementById(
+        "checkList"
+    );
+
+const log =
+    document.getElementById(
+        "log"
+    );
+
+const roundDisplay =
+    document.getElementById(
+        "roundDisplay"
+    );
+
+const timer =
+    document.getElementById(
+        "timer"
+    );
+
+const reputationDisplay =
+    document.getElementById(
+        "reputation"
+    );
+
+const investigationOverlay =
+    document.getElementById(
+        "investigationOverlay"
+    );
+
+const investigationText =
+    document.getElementById(
+        "investigationText"
+    );
+
+const closeInvestigation =
+    document.getElementById(
+        "closeInvestigation"
+    );
+
+const resultOverlay =
+    document.getElementById(
+        "resultOverlay"
+    );
+
+const resultTitle =
+    document.getElementById(
+        "resultTitle"
+    );
+
+const resultScore =
+    document.getElementById(
+        "resultScore"
+    );
+
+const resultInfo =
+    document.getElementById(
+        "resultInfo"
+    );
+
+const restartButton =
+    document.getElementById(
+        "restartButton"
+    );
+
+
+/* =========================================================
+   INICIAR
+========================================================= */
+
+startGame.addEventListener(
+    "click",
+    beginGame
+);
+
+restartButton.addEventListener(
+    "click",
+    beginGame
+);
+
+acceptButton.addEventListener(
+    "click",
+    () => makeDecision(true)
+);
+
+rejectButton.addEventListener(
+    "click",
+    () => makeDecision(false)
+);
+
+inspectButton.addEventListener(
+    "click",
+    investigate
+);
+
+closeInvestigation.addEventListener(
+    "click",
+    () => {
+
+        investigationOverlay.style.display =
+            "none";
+
+    }
+);
+
+
+/* =========================================================
+   COMEÇAR TURNO
+========================================================= */
+
+function beginGame(){
+
+    round = 0;
+
+    reputation = 100;
+
+    score = 0;
+
+    correct = 0;
+
+    mistakes = 0;
+
+    usedPeople = [];
+
+    log.innerHTML = "";
+
+    menuScreen.style.display =
+        "none";
+
+    gameScreen.style.display =
+        "block";
+
+    resultOverlay.style.display =
+        "none";
+
+    addLog(
+        "Sistema iniciado. Primeiro visitante aguardando.",
+        "good"
+    );
+
+    nextPerson();
+
+}
+
+
+/* =========================================================
+   PRÓXIMA PESSOA
+========================================================= */
+
+function nextPerson(){
+
+    if(round >= totalRounds){
+
+        finishGame();
+
+        return;
+
+    }
+
+    round++;
+
+    timeLeft =
+        Math.max(
+            35,
+            65 - round * 2
+        );
+
+    updateUI();
+
+    let available =
+        people.filter(
+            p =>
+                !usedPeople.includes(p.id)
+        );
+
+    if(available.length === 0){
+
+        usedPeople = [];
+
+        available = people;
+
+    }
+
+    currentPerson =
+        available[
+            Math.floor(
+                Math.random() *
+                available.length
+            )
+        ];
+
+    usedPeople.push(
+        currentPerson.id
+    );
+
+    renderPerson();
+
+    startTimer();
+
+}
+
+
+/* =========================================================
+   RENDER PESSOA
+========================================================= */
+
+function renderPerson(){
+
+    personName.textContent =
+        currentPerson.name;
+
+    personStatus.textContent =
+        "Aguardando autorização de entrada";
+
+    personSpeech.textContent =
+        '"' +
+        currentPerson.speech +
+        '"';
+
+
+    /*
+       Documentos
+    */
+
+    documents.innerHTML = `
+
+        <div class="document">
+
+            <div class="documentTitle">
+                DOCUMENTO DE IDENTIFICAÇÃO
+            </div>
+
+            <div class="documentRow">
+                <span>Nome</span>
+                <strong>
+                    ${currentPerson.name}
+                </strong>
+            </div>
+
+            <div class="documentRow">
+                <span>Idade</span>
+                <strong>
+                    ${currentPerson.age}
+                </strong>
+            </div>
+
+            <div class="documentRow">
+                <span>Número</span>
+                <strong>
+                    ${currentPerson.id}
+                </strong>
+            </div>
+
+            <div class="documentRow">
+                <span>Status</span>
+                <strong>
+                    ATIVO
+                </strong>
+            </div>
+
+            <div class="documentStamp">
+                REGISTRO CENTRAL
+            </div>
+
+        </div>
+
+
+        <div class="document">
+
+            <div class="documentTitle">
+                REGISTRO DE PRESCRIÇÃO
+            </div>
+
+            <div class="documentRow">
+                <span>Paciente</span>
+                <strong>
+                    ${currentPerson.name}
+                </strong>
+            </div>
+
+            <div class="documentRow">
+                <span>Medicamento</span>
+                <strong>
+                    ${currentPerson.prescription}
+                </strong>
+            </div>
+
+            <div class="documentRow">
+                <span>Registro</span>
+                <strong>
+                    ${currentPerson.id}
+                </strong>
+            </div>
+
+            <div class="documentRow">
+                <span>Apresentação</span>
+                <strong>
+                    ${currentPerson.dose}
+                </strong>
+            </div>
+
+            <div class="documentStamp">
+                ARQUIVO MÉDICO
+            </div>
+
+        </div>
+
+    `;
+
+
+    renderChecklist();
+
+}
+
+
+/* =========================================================
+   CHECKLIST
+========================================================= */
+
+function renderChecklist(){
+
+    checkList.innerHTML = `
+
+        <div class="label"
+             style="margin-bottom:10px">
+            Pontos verificados
+        </div>
+
+        <label class="checkItem">
+
+            <input
+                type="checkbox"
+                class="verifyCheck"
+            >
+
+            <span class="checkText">
+                Nome confere
+            </span>
+
+        </label>
+
+        <label class="checkItem">
+
+            <input
+                type="checkbox"
+                class="verifyCheck"
+            >
+
+            <span class="checkText">
+                Número do documento confere
+            </span>
+
+        </label>
+
+        <label class="checkItem">
+
+            <input
+                type="checkbox"
+                class="verifyCheck"
+            >
+
+            <span class="checkText">
+                Prescrição corresponde ao cadastro
+            </span>
+
+        </label>
+
+        <label class="checkItem">
+
+            <input
+                type="checkbox"
+                class="verifyCheck"
+            >
+
+            <span class="checkText">
+                Identidade visual/documental analisada
+            </span>
+
+        </label>
+
+    `;
+
+}
+
+
+/* =========================================================
+   DECISÃO
+========================================================= */
+
+function makeDecision(accepted){
+
+    if(!currentPerson)
+        return;
+
+    stopTimer();
+
+    const correctDecision =
+        accepted === currentPerson.valid;
+
+
+    if(correctDecision){
+
+        correct++;
+
+        score +=
+            accepted
+            ? 100
+            : 120;
+
+        reputation =
+            Math.min(
+                100,
+                reputation + 2
+            );
+
+        addLog(
+            "Decisão correta: " +
+            currentPerson.name +
+            " — " +
+            (
+                accepted
+                ? "entrada autorizada."
+                : "entrada recusada."
+            ),
+            "good"
+        );
+
+    }else{
+
+        mistakes++;
+
+        reputation -= 15;
+
+        score =
+            Math.max(
+                0,
+                score - 50
+            );
+
+        addLog(
+            "ERRO: " +
+            currentPerson.reason,
+            "bad"
+        );
+
+    }
+
+
+    updateUI();
+
+
+    /*
+       Pequena pausa antes do próximo.
+    */
+
+    acceptButton.disabled = true;
+
+    rejectButton.disabled = true;
+
+    inspectButton.disabled = true;
+
+
+    setTimeout(
+        () => {
+
+            acceptButton.disabled =
+                false;
+
+            rejectButton.disabled =
+                false;
+
+            inspectButton.disabled =
+                false;
+
+            if(
+                reputation <= 0
+            ){
+
+                finishGame(
+                    true
+                );
+
+                return;
+
+            }
+
+            nextPerson();
+
+        },
+        900
+    );
+
+}
+
+
+/* =========================================================
+   INVESTIGAR
+========================================================= */
+
+function investigate(){
+
+    if(!currentPerson)
+        return;
+
+    stopTimer();
+
+    investigationText.innerHTML = `
+
+        <p>
+            <strong>
+                Registro encontrado:
+            </strong>
+        </p>
+
+        <p>
+            Nome cadastrado:
+            <strong>
+                ${currentPerson.name}
+            </strong>
+        </p>
+
+        <p>
+            Número do documento:
+            <strong>
+                ${currentPerson.id}
+            </strong>
+        </p>
+
+        <p>
+            Prescrição registrada:
+            <strong>
+                ${currentPerson.prescription}
+            </strong>
+        </p>
+
+        <p>
+            Informação adicional:
+            ${currentPerson.details}
+        </p>
+
+        <p>
+            <strong>
+                Atenção:
+            </strong>
+            a investigação fornece pistas, mas
+            a decisão final continua sendo sua.
+        </p>
+
+    `;
+
+    investigationOverlay.style.display =
+        "flex";
+
+}
+
+
+/* =========================================================
+   TIMER
+========================================================= */
+
+function startTimer(){
+
+    stopTimer();
+
+    updateTimer();
+
+    timerInterval =
+        setInterval(
+            () => {
+
+                timeLeft--;
+
+                updateTimer();
+
+                if(
+                    timeLeft <= 0
+                ){
+
+                    stopTimer();
+
+                    timeExpired();
+
+                }
+
+            },
+            1000
+        );
+
+}
+
+
+function stopTimer(){
+
+    if(timerInterval){
+
+        clearInterval(
+            timerInterval
+        );
+
+        timerInterval = null;
+
+    }
+
+}
+
+
+function updateTimer(){
+
+    timer.textContent =
+        timeLeft;
+
+    if(
+        timeLeft <= 10
+    ){
+
+        timer.style.color =
+            "#e95a68";
+
+    }else{
+
+        timer.style.color =
+            "#e9c65c";
+
+    }
+
+}
+
+
+function timeExpired(){
+
+    mistakes++;
+
+    reputation -= 10;
+
+    score =
+        Math.max(
+            0,
+            score - 30
+        );
+
+    addLog(
+        "Tempo esgotado. A pessoa não recebeu uma decisão.",
+        "bad"
+    );
+
+    updateUI();
+
+    if(
+        reputation <= 0
+    ){
+
+        finishGame(true);
+
+        return;
+
+    }
+
+    setTimeout(
+        nextPerson,
+        700
+    );
+
+}
+
+
+/* =========================================================
+   LOG
+========================================================= */
+
+function addLog(
+    text,
+    type=""
+){
+
+    const entry =
+        document.createElement(
+            "div"
+        );
+
+    entry.className =
+        "logEntry " +
+        type;
+
+    entry.textContent =
+        text;
+
+    log.prepend(
+        entry
+    );
+
+}
+
+
+/* =========================================================
+   UI
+========================================================= */
+
+function updateUI(){
+
+    roundDisplay.textContent =
+        round +
+        " / " +
+        totalRounds;
+
+    reputationDisplay.textContent =
+        reputation;
+
+}
+
+
+/* =========================================================
+   FINAL
+========================================================= */
+
+function finishGame(
+    fired=false
+){
+
+    stopTimer();
+
+    gameScreen.style.display =
+        "none";
+
+    resultOverlay.style.display =
+        "flex";
+
+
+    if(fired){
+
+        resultTitle.textContent =
+            "TURNO ENCERRADO";
+
+    }else{
+
+        resultTitle.textContent =
+            "TURNO CONCLUÍDO";
+
+    }
+
+
+    resultScore.textContent =
+        score +
+        " pontos";
+
+
+    let evaluation;
+
+
+    if(
+        reputation >= 90
+    ){
+
+        evaluation =
+            "Excelente precisão. Você conseguiu manter um alto nível de controle durante o turno.";
+
+    }else if(
+        reputation >= 70
+    ){
+
+        evaluation =
+            "Bom trabalho. Algumas decisões poderiam ser analisadas com mais cuidado.";
+
+    }else if(
+        reputation >= 40
+    ){
+
+        evaluation =
+            "O turno terminou com várias inconsistências. Uma verificação mais cuidadosa seria necessária.";
+
+    }else{
+
+        evaluation =
+            "Muitas decisões incorretas comprometeram o turno.";
+
+    }
+
+
+    resultInfo.innerHTML = `
+
+        ${evaluation}
+
+        <br><br>
+
+        Pessoas analisadas:
+        <strong>${round}</strong>
+
+        <br>
+
+        Decisões corretas:
+        <strong>${correct}</strong>
+
+        <br>
+
+        Erros:
+        <strong>${mistakes}</strong>
+
+        <br>
+
+        Reputação final:
+        <strong>${reputation}</strong>
+
+    `;
+
+}
+
+
+/* =========================================================
+   TECLADO
+========================================================= */
+
+document.addEventListener(
+    "keydown",
+    e => {
+
+        if(
+            gameScreen.style.display !==
+            "block"
+        )
+            return;
+
+        if(e.key === "1"){
+
+            makeDecision(true);
+
+        }
+
+        if(e.key === "2"){
+
+            makeDecision(false);
+
+        }
+
+        if(e.key === "3"){
+
+            investigate();
+
+        }
+
+        if(e.key === "Escape"){
+
+            investigationOverlay.style.display =
+                "none";
+
+        }
+
+    }
+);
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pharma Runner: O Desafio dos Medicamentos</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome para Ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #2e1065;
+            user-select: none;
+        }http://127.0.0.1:3000/endpoint_unsaved/Untitled-2?vscode-livepreview=true
+        #gameCanvas {
+            border-bottom: 4px solid #f472b6;
+            background: linear-gradient(180deg, #4c1d95 0%, #7373e7 40%, #f472b6 100%);
+        }
+    </style>
+</head>
+<body class="text-pink-100 min-h-screen flex flex-col justify-between font-sans">
+
+    <!-- Cabeçalho / Placar -->
+    <header class="bg-fuchsia-950/90 border-b border-pink-800/50 p-4 sticky top-0 z-50 shadow-lg">
+        <div class="max-w-3xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-pink-500/20 border border-pink-400/40 p-2 rounded-xl text-pink-300">
+                    <i class="fa-solid fa-capsules text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-white leading-tight">Pharma Runner</h1>
+                    <p class="text-xs text-pink-200">Desvie dos erros de manejo clínico!</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4 text-sm font-semibold">
+                <div class="bg-fuchsia-900/80 border border-pink-700/60 px-3 py-1.5 rounded-lg shadow-sm">
+                    <i class="fa-solid fa-trophy text-amber-300 mr-1"></i> Recorde: <strong id="recorde" class="text-amber-300">0</strong>
+                </div>
+                <div class="bg-fuchsia-900/80 border border-pink-700/60 px-3 py-1.5 rounded-lg shadow-sm">
+                    <i class="fa-solid fa-star text-pink-300 mr-1"></i> Pontos: <strong id="pontuacao" class="text-pink-300">0</strong>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Banner de Dicas Clínicas Coletadas -->
+    <div class="max-w-3xl w-full mx-auto px-4 mt-4">
+        <div id="painel-dica" class="bg-fuchsia-900/90 border border-pink-500/50 p-3 rounded-xl text-xs sm:text-sm text-pink-100 flex items-center gap-3 shadow-xl min-h-[52px]">
+            <i class="fa-solid fa-lightbulb text-amber-300 text-lg shrink-0"></i>
+            <span id="texto-dica">Pressione <strong>ESPAÇO</strong> ou toque na tela para pular e começar a corrida!</span>
+        </div>
+    </div>
+
+    <!-- Canvas do Jogo + Modal de Perguntas -->
+    <main class="flex-1 max-w-3xl w-full mx-auto p-4 flex flex-col items-center justify-center">
+        <div class="relative w-full overflow-hidden rounded-2xl border-2 border-pink-400/50 shadow-2xl shadow-pink-950">
+            <canvas id="gameCanvas" width="800" height="300" class="w-full h-auto block"></canvas>
+
+            <!-- Assistente Flutuante (Dr. Farma) -->
+            <div id="npc-assistente" class="absolute top-3 right-3 flex items-center gap-2 bg-fuchsia-950/90 border border-pink-500/40 p-2 rounded-xl shadow-lg transition-all transform hover:scale-105">
+                <div class="w-10 h-10 bg-emerald-500/20 border border-emerald-400/40 rounded-full flex items-center justify-center text-xl text-emerald-300 shrink-0">
+                    👨‍⚕️
+                </div>
+                <div class="text-left hidden sm:block">
+                    <p class="text-xs font-bold text-emerald-300 leading-none">Dr. Farma</p>
+                    <p class="text-[10px] text-pink-200/80 leading-tight">Preceptor Clínico</p>
+                </div>
+            </div>
+
+            <!-- Overlay de Pergunta / Quiz Ampliado -->
+            <div id="modal-quiz" class="hidden absolute inset-0 bg-fuchsia-950/95 backdrop-blur-md flex flex-col justify-between p-4 sm:p-6 text-left z-40 overflow-y-auto max-h-full">
+                <div>
+                    <div class="flex items-center gap-3 mb-3 border-b border-pink-800/40 pb-2">
+                        <div class="w-10 h-10 bg-emerald-500/20 border border-emerald-400/50 rounded-full flex items-center justify-center text-xl shrink-0">
+                            👨‍⚕️
+                        </div>
+                        <div>
+                            <span class="text-[10px] sm:text-xs font-semibold text-emerald-400 uppercase tracking-wider">Pausa Educativa • Dr. Farma</span>
+                            <h3 id="quiz-titulo" class="text-base sm:text-lg font-bold text-white leading-tight">Pergunta sobre o medicamento</h3>
+                        </div>
+                    </div>
+
+                    <p id="quiz-pergunta" class="text-pink-100 text-xs sm:text-sm mb-3 font-medium leading-relaxed bg-fuchsia-900/60 p-3 rounded-xl border border-pink-800/50">
+                        Carregando pergunta...
+                    </p>
+
+                    <div id="quiz-opcoes" class="flex flex-col gap-2.5 my-2">
+                        <!-- Opções geradas dinamicamente com espaço amplo para textos longos -->
+                    </div>
+                </div>
+
+                <p id="quiz-feedback" class="hidden text-xs font-semibold p-2.5 mt-2 rounded-xl text-center break-words"></p>
+            </div>
+
+            <!-- Tela de Game Over / Início Overlay -->
+            <div id="camada-sobreposta" class="absolute inset-0 bg-fuchsia-950/85 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center z-30">
+                <div class="w-16 h-16 bg-pink-500/20 border border-pink-400/40 rounded-full flex items-center justify-center text-pink-300 text-3xl mb-3 animate-bounce">
+                    <i class="fa-solid fa-heart"></i>
+                </div>
+                <h2 id="titulo-sobreposto" class="text-2xl font-extrabold text-white mb-2">Pronto para o Plantão?</h2>
+                <p id="descricao-sobreposta" class="text-pink-200 text-xs sm:text-sm max-w-md mb-6">
+                    Colete a <strong>Levotiroxina</strong>, <strong>Alendronato</strong> e <strong>Varfarina</strong>, mas desvie do leite, do excesso de vitamina K e da cama!
+                </p>
+                <button onclick="iniciarJogo()" class="bg-pink-600 hover:bg-pink-500 text-white font-bold py-3 px-8 rounded-xl transition duration-200 shadow-lg shadow-pink-600/40 text-base active:scale-95">
+                    Pressionar Espaço / Iniciar 🚀
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Rodapé de Controles -->
+    <footer class="text-center py-4 text-xs text-pink-300/70 border-t border-pink-900/40">
+        Pressione <kbd class="px-2 py-1 bg-fuchsia-900 text-pink-200 rounded border border-pink-700">Espaço</kbd> ou toque na tela para pular.
+    </footer>
+
+    <!-- Código Lógico do Jogo -->
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Estado do Jogo
+        let emJogo = false;
+        let emPausaQuiz = false;
+        let pontuacao = 0;
+        let recorde = 0;
+        let velocidadeJogo = 5;
+        let contadorQuadros = 0;
+        let idAnimacao;
+
+        // Dicas dos Medicamentos
+        const dicas = {
+            levo: "💊 <strong>Levotiroxina:</strong> Tome em jejum absoluto apenas com água. Aguarde 30 a 60 min para o café!",
+            alen: "🦴 <strong>Alendronato:</strong> Tome com água e fique em pé ou sentado por 30 min para proteger o esôfago!",
+            varf: "🩸 <strong>Varfarina:</strong> Anticoagulante oral. Mantenha consumo constante de Vitamina K e monitore o INR!"
+        };
+
+        // Banco de Perguntas do Assistente (Dr. Farma)
+        const perguntasQuiz = {
+            levo: {
+                titulo: "Desafio: Levotiroxina",
+                pergunta: "Qual é a orientação correta sobre a administração da Levotiroxina?",
+                opcoes: [
+                    { texto: "Tomar junto com o café da manhã enriquecido com leite ou derivados.", correta: false },
+                    { texto: "Tomar em jejum absoluto apenas com água, aguardando de 30 a 60 minutos para realizar a primeira refeição.", correta: true },
+                    { texto: "Tomar imediatamente antes de deitar-se na cama para melhor absorção noturna.", correta: false }
+                ],
+                explicacao: "Correto! Alimentos e cálcio inibem a absorção do hormônio tireoidiano."
+            },
+            alen: {
+                titulo: "Desafio: Alendronato",
+                pergunta: "Por que o paciente não deve se deitar logo após tomar o medicamento Alendronato?",
+                opcoes: [
+                    { texto: "Para evitar o refluxo do medicamento, prevenindo esofagite grave e ulcerações no esôfago.", correta: true },
+                    { texto: "Porque o medicamento causa sonolência excessiva e tontura imediata.", correta: false },
+                    { texto: "Porque a posição deitada reduz drasticamente a absorção do remédio pelos rins.", correta: false }
+                ],
+                explicacao: "Excelente! O refluxo do bisfosfonato causa lesão corrosiva na mucosa esofágica."
+            },
+            varf: {
+                titulo: "Desafio: Varfarina",
+                pergunta: "Qual é o principal risco ao alterar bruscamente o consumo de vegetais verde-escuros durante o tratamento?",
+                opcoes: [
+                    { texto: "Não há relação direta comprovada entre a dieta alimentícia e este remédio.", correta: false },
+                    { texto: "Pode induzir o aparecimento de uma crise hipertensiva fulminante.", correta: false },
+                    { texto: "A Vitamina K contida nesses vegetais altera e inativa a eficácia anticoagulante da Varfarina.", correta: true }
+                ],
+                explicacao: "Perfeito! A Vitamina K antagoniza a Varfarina. A dieta deve ser constante!"
+            }
+        };
+
+        // Jogador Clássico
+        const corredor = {
+            x: 50,
+            y: 215,
+            largura: 30,
+            altura: 50,
+            vy: 0,
+            gravidade: 0.65,
+            forcaPulo: -12.5,
+            noChao: true,
+            corCorpo: '#0284c7'
+        };
+
+        // Obstáculos
+        let obstaculos = [];
+        const tiposObstaculos = [
+            { nome: "Copo de Leite", cor: "#f8fafc", icone: "🥛", desc: "Interação com Cálcio (Inativa a absorção do remédio!)" },
+            { nome: "Deitar na Cama", cor: "#fb7185", icone: "🛏️", desc: "Perigo de Refluxo e Lesão Esofágica no Alendronato!" },
+            { nome: "Excesso Vit. K", cor: "#4ade80", icone: "🥦", desc: "Pico de Vitamina K inativa a ação da Varfarina!" }
+        ];
+
+        // Itens Coletáveis
+        let coletaveis = [];
+        const tiposItens = [
+            { id: "levo", nome: "Levotiroxina", cor: "#f59e0b", icone: "💊" },
+            { id: "alen", nome: "Alendronato", cor: "#3b82f6", icone: "🦴" },
+            { id: "varf", nome: "Varfarina", cor: "#10b981", icone: "🩸" }
+        ];
+
+        // Controles de Entrada
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'ArrowUp') {
+                e.preventDefault();
+                if (!emJogo && !emPausaQuiz) {
+                    iniciarJogo();
+                } else if (emJogo && !emPausaQuiz) {
+                    pular();
+                }
+            }
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!emJogo && !emPausaQuiz) {
+                iniciarJogo();
+            } else if (emJogo && !emPausaQuiz) {
+                pular();
+            }
+        }, { passive: false });
+
+        function pular() {
+            if (corredor.noChao) {
+                corredor.vy = corredor.forcaPulo;
+                corredor.noChao = false;
+            }
+        }
+
+        function iniciarJogo() {
+            pontuacao = 0;
+            velocidadeJogo = 5;
+            obstaculos = [];
+            coletaveis = [];
+            contadorQuadros = 0;
+            emJogo = true;
+            emPausaQuiz = false;
+            corredor.y = 215;
+            corredor.vy = 0;
+
+            document.getElementById('camada-sobreposta').classList.add('hidden');
+            document.getElementById('modal-quiz').classList.add('hidden');
+            document.getElementById('pontuacao').innerText = '0';
+
+            cancelAnimationFrame(idAnimacao);
+            loopJogo();
+        }
+
+        function loopJogo() {
+            if (!emJogo || emPausaQuiz) return;
+
+            atualizar();
+            desenhar();
+
+            contadorQuadros++;
+            idAnimacao = requestAnimationFrame(loopJogo);
+        }
+
+        function atualizar() {
+            if (velocidadeJogo < 11) {
+                velocidadeJogo += 0.0008;
+            }
+
+            // Física do Jogador
+            corredor.vy += corredor.gravidade;
+            corredor.y += corredor.vy;
+
+            if (corredor.y >= 215) {
+                corredor.y = 215;
+                corredor.vy = 0;
+                corredor.noChao = true;
+            }
+
+            // Gerar Obstáculos
+            const intervaloObstaculos = Math.max(75, Math.floor(130 - velocidadeJogo * 4));
+            if (contadorQuadros % intervaloObstaculos === 0) {
+                const tipo = tiposObstaculos[Math.floor(Math.random() * tiposObstaculos.length)];
+                obstaculos.push({
+                    x: canvas.width,
+                    y: 235,
+                    largura: 30,
+                    altura: 35,
+                    tipo: tipo
+                });
+            }
+
+            // Gerar Coletáveis
+            if (contadorQuadros % 170 === 0) {
+                const tipo = tiposItens[Math.floor(Math.random() * tiposItens.length)];
+                coletaveis.push({
+                    x: canvas.width,
+                    y: 135 - Math.random() * 45,
+                    largura: 26,
+                    altura: 26,
+                    tipo: tipo,
+                    faseFlutuacao: Math.random() * Math.PI * 2
+                });
+            }
+
+            // Mover e Checar Colisão com Obstáculos
+            const margemHitbox = 4;
+            for (let i = obstaculos.length - 1; i >= 0; i--) {
+                const obs = obstaculos[i];
+                obs.x -= velocidadeJogo;
+
+                if (
+                    corredor.x + margemHitbox < obs.x + obs.largura - margemHitbox &&
+                    corredor.x + corredor.largura - margemHitbox > obs.x + margemHitbox &&
+                    corredor.y + margemHitbox < obs.y + obs.altura - margemHitbox &&
+                    corredor.y + corredor.altura - margemHitbox > obs.y + margemHitbox
+                ) {
+                    fimDeJogo(obs.tipo);
+                    return;
+                }
+
+                if (obs.x + obs.largura < 0) {
+                    obstaculos.splice(i, 1);
+                }
+            }
+
+            // Mover e Checar Coleta de Medicamentos
+            for (let i = coletaveis.length - 1; i >= 0; i--) {
+                const item = coletaveis[i];
+                item.x -= velocidadeJogo;
+
+                if (
+                    corredor.x < item.x + item.largura &&
+                    corredor.x + corredor.largura > item.x &&
+                    corredor.y < item.y + item.altura &&
+                    corredor.y + corredor.altura > item.y
+                ) {
+                    pontuacao += 15;
+                    document.getElementById('pontuacao').innerText = pontuacao;
+                    exibirDica(dicas[item.tipo.id]);
+                    
+                    const idItem = item.tipo.id;
+                    coletaveis.splice(i, 1);
+                    
+                    // Dispara a Pergunta do Assistente (Dr. Farma)
+                    pausarParaPergunta(idItem);
+                    return;
+                }
+
+                if (item.x + item.largura < 0) {
+                    coletaveis.splice(i, 1);
+                }
+            }
+        }
+
+        function pausarParaPergunta(itemId) {
+            emPausaQuiz = true;
+            const quiz = perguntasQuiz[itemId];
+            if (!quiz) return;
+
+            document.getElementById('quiz-titulo').innerText = quiz.titulo;
+            document.getElementById('quiz-pergunta').innerText = quiz.pergunta;
+
+            const containerOpcoes = document.getElementById('quiz-opcoes');
+            const elementoFeedback = document.getElementById('quiz-feedback');
+            
+            containerOpcoes.innerHTML = '';
+            elementoFeedback.classList.add('hidden');
+
+            quiz.opcoes.forEach((opcao) => {
+                const botao = document.createElement('button');
+                botao.className = "w-full text-left p-3 rounded-xl bg-fuchsia-900/90 hover:bg-pink-800/80 border border-pink-700/60 text-xs sm:text-sm text-pink-100 font-medium transition active:scale-[0.99] whitespace-normal break-words leading-snug flex items-start gap-2";
+                botao.innerHTML = `<span class="text-pink-400 font-bold">•</span> <span>${opcao.texto}</span>`;
+                
+                botao.onclick = () => {
+                    // Desabilita botões temporariamente
+                    Array.from(containerOpcoes.children).forEach(b => b.disabled = true);
+
+                    if (opcao.correta) {
+                        pontuacao += 30;
+                        document.getElementById('pontuacao').innerText = pontuacao;
+                        elementoFeedback.className = "text-xs font-semibold p-2.5 rounded-lg text-center bg-emerald-950/90 border border-emerald-500/50 text-emerald-300 block break-words";
+                        elementoFeedback.innerText = "✨ " + quiz.explicacao + " (+30 pontos!)";
+                    } else {
+                        elementoFeedback.className = "text-xs font-semibold p-2.5 rounded-lg text-center bg-rose-950/90 border border-rose-500/50 text-rose-300 block break-words";
+                        elementoFeedback.innerText = "❌ Incorreto! Fique atento às orientações do Dr. Farma.";
+                    }
+
+                    setTimeout(() => {
+                        document.getElementById('modal-quiz').classList.add('hidden');
+                        emPausaQuiz = false;
+                        loopJogo();
+                    }, 2400);
+                };
+
+                containerOpcoes.appendChild(botao);
+            });
+
+            document.getElementById('modal-quiz').classList.remove('hidden');
+        }
+
+        function desenhar() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Linha do Chão
+            ctx.strokeStyle = '#f472b6';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(0, 270);
+            ctx.lineTo(canvas.width, 270);
+            ctx.stroke();
+
+            // Sombra
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.beginPath();
+            ctx.ellipse(corredor.x + corredor.largura/2, 270, 14, 4, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // --- JOGADOR ---
+            const x = corredor.x;
+            const y = corredor.y;
+
+            // Corpo
+            ctx.fillStyle = corredor.corCorpo;
+            ctx.beginPath();
+            ctx.roundRect(x, y + 15, corredor.largura, 28, 4);
+            ctx.fill();
+
+            // Cabeça
+            ctx.fillStyle = '#fde047';
+            ctx.beginPath();
+            ctx.arc(x + 15, y + 10, 10, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Olho
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath();
+            ctx.arc(x + 19, y + 9, 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Pernas com Animação
+            ctx.strokeStyle = '#0f172a';
+            ctx.lineWidth = 3;
+            const cicloPernas = Math.sin(contadorQuadros * 0.3);
+
+            if (corredor.noChao) {
+                ctx.beginPath();
+                ctx.moveTo(x + 8, y + 43);
+                ctx.lineTo(x + 8 + cicloPernas * 6, y + 52);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(x + 22, y + 43);
+                ctx.lineTo(x + 22 - cicloPernas * 6, y + 52);
+                ctx.stroke();
+            } else {
+                ctx.beginPath();
+                ctx.moveTo(x + 8, y + 43);
+                ctx.lineTo(x + 2, y + 49);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(x + 22, y + 43);
+                ctx.lineTo(x + 28, y + 49);
+                ctx.stroke();
+            }
+
+            // --- OBSTÁCULOS ---
+            obstaculos.forEach(obs => {
+                ctx.fillStyle = obs.tipo.cor;
+                ctx.beginPath();
+                ctx.roundRect(obs.x, obs.y, obs.largura, obs.altura, 6);
+                ctx.fill();
+
+                ctx.font = '18px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(obs.tipo.icone, obs.x + obs.largura / 2, obs.y + 24);
+            });
+
+            // --- MEDICAMENTOS ---
+            coletaveis.forEach(item => {
+                const deslocamentoY = Math.sin(contadorQuadros * 0.1 + item.faseFlutuacao) * 3;
+                const itemY = item.y + deslocamentoY;
+
+                ctx.fillStyle = item.tipo.cor;
+                ctx.beginPath();
+                ctx.arc(item.x + 13, itemY + 13, 14, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.font = '14px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(item.tipo.icone, item.x + 13, itemY + 18);
+            });
+        }
+
+        function exibirDica(textoDica) {
+            document.getElementById('texto-dica').innerHTML = textoDica;
+        }
+
+        function fimDeJogo(causa) {
+            emJogo = false;
+
+            if (pontuacao > recorde) {
+                recorde = pontuacao;
+                document.getElementById('recorde').innerText = recorde;
+            }
+
+            document.getElementById('titulo-sobreposto').innerText = "Erro de Manejo!";
+            document.getElementById('descricao-sobreposta').innerHTML = `
+                Você colidiu com: <strong class="text-rose-400">${causa.nome}</strong>!<br>
+                <span class="text-xs text-pink-200/80 mt-1 block">${causa.desc}</span>
+                <span class="text-amber-300 font-bold block mt-2 text-base">Pontuação Final: ${pontuacao}</span>
+            `;
+            document.getElementById('camada-sobreposta').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
