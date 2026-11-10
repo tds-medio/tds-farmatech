@@ -1,0 +1,98 @@
+/* Overlay azul que cobre a TELA INTEIRA com animação em círculo */
+#transicao-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #0A2241; /* Azul escuro do tema */
+    z-index: 99999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+    /* Começa invisível no centro da tela (círculo 0%) */
+    clip-path: circle(0% at 50% 50%);
+    transition: clip-path 0.5s cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* Quando ativado, o fundo azul expande e cobre a tela inteira */
+#transicao-overlay.ativo {
+    pointer-events: all;
+    clip-path: circle(150% at 50% 50%);
+}
+
+/* Container centralizado (Robô + Spinner) com efeito Pop-Up (Zoom) */
+.transicao-conteudo {
+    position: relative;
+    width: 100%;
+    max-width: 380px; /* Tamanho do robô no centro */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+    /* Começa pequeno no centro e invisível */
+    transform: scale(0);
+    opacity: 0;
+    /* Efeito pop-up suave com leve mola (cubic-bezier) */
+    transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+}
+
+/* Quando ativado: cresce até o tamanho normal */
+#transicao-overlay.ativo .transicao-conteudo {
+    transform: scale(1);
+    opacity: 1;
+}
+
+/* Ao sair: diminui (encolhe) até sumir */
+#transicao-overlay.saindo .transicao-conteudo {
+    transform: scale(0);
+    opacity: 0;
+    transition: transform 0.4s ease-in, opacity 0.3s ease-in;
+}
+
+/* Imagem do Robozinho */
+.logo-transicao {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Círculo giratório (Spinner) posicionado no visor do robô */
+.transicao-spinner {
+    position: absolute;
+    top: 40%;
+    left: 49%;
+    transform: translate(-50%, -50%);
+    width: 50px;
+    height: 50px;
+    
+    /* 1. Borda com cor sólida (sem transparência no tom) */
+    border: 8px solid #59ee8d; /* Verde sólido do seu exemplo */
+    
+    /* 2. Deixa apenas uma ponta vazia para formar o "C" */
+    border-top-color: transparent; 
+    
+    border-radius: 50%;
+    
+    /* 3. Alterem Aqui: Mudem de 1 para 0.5 ou menos para a rodinha ser transparente */
+    opacity: 1; 
+    
+    animation: girar 0.8s linear infinite;
+    pointer-events: none;
+}
+
+/* Exibe o spinner apenas durante o carregamento */
+#transicao-overlay.carregando .transicao-spinner {
+    opacity: 1;
+}
+
+/* Animação de rotação mantendo a centralização no visor */
+@keyframes girar {
+    0% { 
+        transform: translate(-50%, -50%) rotate(0deg); 
+    }
+    100% { 
+        transform: translate(-50%, -50%) rotate(360deg); 
+    }
+}
