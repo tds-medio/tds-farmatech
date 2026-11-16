@@ -1007,7 +1007,29 @@ RXZlbnRMaXN0ZW5lcignRE9NQ29udGVudExvYWRlZCcsIGluaXRHYW1lKTsKCjwvc2NyaXB0Pgo8L2Jv
       const url = URL.createObjectURL(new Blob([bytes], { type: 'text/html;charset=utf-8' }));
       if (!window.open(url, '_blank')) window.location.href = url;
     }
+    <script>
+(function () {
+  var candidatos = ['../TDS-FarmaTech.html', '../index.html', '../'];
+  var links = document.querySelectorAll('a[href="../TDS-FarmaTech.html"]');
+  if (!links.length) return;
+
+  function testar(i) {
+    if (i >= candidatos.length) return;
+    fetch(candidatos[i], { method: 'HEAD' })
+      .then(function (r) {
+        if (r.ok) {
+          links.forEach(function (a) { a.href = candidatos[i]; });
+        } else {
+          testar(i + 1);
+        }
+      })
+      .catch(function () { testar(i + 1); });
+  }
+  testar(0);
+})();
+</script>
   </script>
 </script>
+  
 </body>
 </html>
